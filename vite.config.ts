@@ -1,10 +1,9 @@
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import { resolve } from "path";
-import { defineConfig } from "vite";
 
 const root = resolve(__dirname, "src");
 
-// https://vitejs.dev/config/
 export default defineConfig({
   build: {
     manifest: true,
@@ -17,8 +16,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": resolve(root, ""),
-      "pages": resolve(root, "pages"),
+      "@": root, // This maps "@" to "src/"
+      pages: resolve(root, "pages"),
+      components: resolve(root, "components"),
+      lib: resolve(root, "lib"), // For "@/lib/utils"
     },
   },
 });
