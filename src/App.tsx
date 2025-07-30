@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AuthProvider } from "./contexts/AuthContext";
+import DashboardPage from "./pages/dashboard";
 import ErrorPage from "./pages/error/error_page";
 import HomePage from "./pages/home/page/home_page";
 import Login from "./pages/auth/Loginpage";
@@ -29,39 +30,7 @@ const App = () => {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/volunteer/dashboard"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/authority/dashboard"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/user/dashboard"
-          element={
-            <ProtectedRoute>
-              <HomePage />
+              <DashboardPage />
             </ProtectedRoute>
           }
         />
