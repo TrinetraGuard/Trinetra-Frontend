@@ -184,6 +184,7 @@ const navSections = [
         )}
       </>
     );
+    
   }
 
 export { Sidebar };
