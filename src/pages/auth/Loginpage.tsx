@@ -2,6 +2,7 @@ import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { auth, db } from "../../firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
+import RouteMetadata from "@/components/ui/RouteMetadata";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -80,8 +81,7 @@ const Login = () => {
               className="h-16 w-auto object-contain rounded-lg"
             />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your account to continue</p>
+          <RouteMetadata />
         </div>
 
         {/* Login Form */}
@@ -145,57 +145,41 @@ const Login = () => {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
               </div>
             )}
 
-            {/* Login Button */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                   Signing in...
                 </>
               ) : (
                 "Sign In"
               )}
             </button>
+
+            {/* Sign Up Link */}
+            <div className="text-center">
+              <p className="text-gray-600">
+                Don't have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/signup")}
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                >
+                  Sign up here
+                </button>
+              </p>
+            </div>
           </form>
-
-          {/* Additional Links */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Don't have an account?{" "}
-              <button 
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                onClick={() => navigate("/signup")}
-              >
-                Sign up
-              </button>
-            </p>
-          </div>
-
-          {/* Forgot Password */}
-          <div className="mt-4 text-center">
-            <button 
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200"
-              onClick={() => navigate("/forgot-password")}
-            >
-              Forgot your password?
-            </button>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-xs text-gray-500">
-            © 2025 Trinetra. All rights reserved.
-          </p>
         </div>
       </div>
     </div>

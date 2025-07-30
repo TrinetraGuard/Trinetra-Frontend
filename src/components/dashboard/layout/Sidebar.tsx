@@ -1,12 +1,12 @@
 import {
-    ChevronLeft,
-    ChevronRight,
-    FileText,
-    LayoutDashboard,
-    LogOut,
-    Settings,
-    UserCircle,
-    Users,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Settings,
+  UserCircle,
+  Users,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useRef, useState } from "react";
@@ -72,7 +72,7 @@ const navSections = [
             {/* Logo */}
             {!collapsed ? (
               <div className="flex items-center gap-2">
-                <img src="/assets/logo.png" alt="logo" className="w-8 h-8" />
+                <img src="/assets/logo.png" alt="logo" className="w-8 h-8 rounded-lg" />
                 <span className="text-xl font-bold text-gray-900">Trinetra</span>
               </div>
             ) : (
@@ -185,3 +185,5 @@ const navSections = [
       </>
     );
   }
+
+export { Sidebar };

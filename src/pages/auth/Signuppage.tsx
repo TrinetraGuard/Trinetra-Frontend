@@ -2,6 +2,7 @@ import { Eye, EyeOff, Loader2, Lock, Mail, Phone, User, UserCheck } from "lucide
 import { auth, db } from "../../firebase/firebase";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
+import RouteMetadata from "@/components/ui/RouteMetadata";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -90,39 +91,34 @@ const Signup = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleSignup(e as React.FormEvent);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo and Header */}
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-4">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
             <img 
               src="/assets/logo.png" 
               alt="Trinetra Logo" 
               className="h-16 w-auto object-contain rounded-lg"
             />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Create Account</h1>
-          <p className="text-sm text-gray-600">Join Trinetra and start your journey</p>
+          <RouteMetadata />
         </div>
 
         {/* Signup Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
-          <form onSubmit={handleSignup} className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+          <form onSubmit={handleSignup} className="space-y-6">
             {/* Name Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium text-gray-700">
                 Full Name
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-4 w-4 text-gray-400" />
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="name"
@@ -130,8 +126,7 @@ const Signup = () => {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Enter your full name"
                   disabled={isLoading}
                 />
@@ -139,13 +134,13 @@ const Signup = () => {
             </div>
 
             {/* Email Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-4 w-4 text-gray-400" />
+                  <Mail className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="email"
@@ -153,8 +148,7 @@ const Signup = () => {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Enter your email"
                   disabled={isLoading}
                 />
@@ -162,13 +156,13 @@ const Signup = () => {
             </div>
 
             {/* Phone Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label htmlFor="phone" className="text-sm font-medium text-gray-700">
                 Phone Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Phone className="h-4 w-4 text-gray-400" />
+                  <Phone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="phone"
@@ -176,22 +170,46 @@ const Signup = () => {
                   type="tel"
                   value={formData.phone}
                   onChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Enter your phone number"
                   disabled={isLoading}
                 />
               </div>
             </div>
 
+            {/* Role Field */}
+            <div className="space-y-2">
+              <label htmlFor="role" className="text-sm font-medium text-gray-700">
+                Role
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <UserCheck className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  disabled={isLoading}
+                >
+                  <option value="user">User</option>
+                  <option value="volunteer">Volunteer</option>
+                  <option value="authority">Authority</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
             {/* Password Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-gray-400" />
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="password"
@@ -199,9 +217,8 @@ const Signup = () => {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
-                  placeholder="Create a password"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
+                  placeholder="Enter your password"
                   disabled={isLoading}
                 />
                 <button
@@ -211,22 +228,22 @@ const Signup = () => {
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   )}
                 </button>
               </div>
             </div>
 
             {/* Confirm Password Field */}
-            <div className="space-y-1">
+            <div className="space-y-2">
               <label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                 Confirm Password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-4 w-4 text-gray-400" />
+                  <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
                   id="confirmPassword"
@@ -234,8 +251,7 @@ const Signup = () => {
                   type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  onKeyPress={handleKeyPress}
-                  className="w-full pl-9 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white text-sm"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
                   placeholder="Confirm your password"
                   disabled={isLoading}
                 />
@@ -246,87 +262,51 @@ const Signup = () => {
                   disabled={isLoading}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                   )}
                 </button>
               </div>
             </div>
 
-            {/* Role Selection */}
-            <div className="space-y-1">
-              <label htmlFor="role" className="text-sm font-medium text-gray-700">
-                Account Type
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <UserCheck className="h-4 w-4 text-gray-400" />
-                </div>
-                <select
-                  id="role"
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white appearance-none text-sm"
-                  disabled={isLoading}
-                >
-                  <option value="user">Regular User</option>
-                  <option value="volunteer">Volunteer</option>
-                  <option value="authority">Authority</option>
-                  <option value="admin">Administrator</option>
-                </select>
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
               </div>
             )}
 
-            {/* Signup Button */}
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-2.5 px-4 rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 focus:ring-4 focus:ring-blue-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                  Creating Account...
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Creating account...
                 </>
               ) : (
                 "Create Account"
               )}
             </button>
+
+            {/* Login Link */}
+            <div className="text-center">
+              <p className="text-gray-600">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => navigate("/login")}
+                  className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+                >
+                  Sign in here
+                </button>
+              </p>
+            </div>
           </form>
-
-          {/* Additional Links */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{" "}
-              <button 
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
-                onClick={() => navigate("/login")}
-              >
-                Sign in
-              </button>
-            </p>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-4">
-          <p className="text-xs text-gray-500">
-            © 2025 Trinetra. All rights reserved.
-          </p>
         </div>
       </div>
     </div>
