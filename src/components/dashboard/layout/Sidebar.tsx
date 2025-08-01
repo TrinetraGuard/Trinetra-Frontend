@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   LogOut,
   Settings,
+  Upload,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -23,6 +24,8 @@ const navSections = [
       items: [
         { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
         { name: "Settings", path: "/dashboard/settings", icon: Settings },
+        { name: "Users", path: "/dashboard/users", icon: Users },
+        { name: "Upload", path: "/dashboard/upload", icon: Upload },
       ],
     },
     {
