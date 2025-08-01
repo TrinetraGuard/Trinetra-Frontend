@@ -31,6 +31,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
   "/dashboard/reports": {
     title: "Reports",
     description: "View and generate security reports"
+  },
+  "/dashboard/upload": {
+    title: "Upload",
+    description: "Upload a video to the dashboard"
   }
 };
 
@@ -45,4 +49,4 @@ export const getRouteMetadata = (pathname: string): RouteMetadata => {
     title: "Page Not Found",
     description: "The page you're looking for doesn't exist"
   };
-}; 
+};

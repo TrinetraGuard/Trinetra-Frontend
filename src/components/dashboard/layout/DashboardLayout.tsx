@@ -1,5 +1,4 @@
 import Breadcrumbs from "./Breadcrumbs";
-import PageHeader from "@/components/ui/PageHeader";
 import Sidebar from "./Sidebar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,7 +11,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         <div className="p-6">
           <div className="bg-white rounded-lg shadow p-6">
-            <PageHeader />
             {children}
           </div>
         </div>
