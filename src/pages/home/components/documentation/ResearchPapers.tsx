@@ -4,32 +4,32 @@ import PDFPreview from "./PDFPreview";
 const ResearchPapers = () => {
   const academicPapers = [
     {
-      title: "Digital Transformation in Religious Tourism Management",
-      description: "IEEE International Conference on Smart Cities, 2024",
-      pdfPath: "/pdf/digital-transformation-religious-tourism.pdf"
+      title: " AI-Powered Crowd Safety at Religious Gatherings",
+      description: "IEEE International Conference on Communication, Security, and Artificial Intelligence, 2025",
+      pdfPath: "/pdf/Leveraging_Machine_Learning_for_Real-Time_Crowd_Control_and_Safety_at_Kumbh_Mela.pdf"
     },
     {
-      title: "AI-Powered Crowd Management Systems",
-      description: "Journal of Computer Science & Engineering, 2024",
-      pdfPath: "/pdf/ai-crowd-management.pdf"
+      title: "Web-Based Lost & Found Systems",
+      description: "MIT International Journal of Computer Science and Information Technology, 2022",
+      pdfPath: "/pdf/Web-Based Lost and Found System.pdf"
     },
     {
-      title: "Blockchain Security in Digital Identity Management",
-      description: "International Journal of Information Security, 2024",
-      pdfPath: "/pdf/blockchain-security-identity.pdf"
+      title: "Cultural & Social Impact of Kumbh Mela",
+      description: "Idealistic Journal of Advanced Research in Progressive Spectrums, 2025",
+      pdfPath: "/pdf/Influence of Kumbh Mela on Indian Society.pdf"
     }
   ];
 
   const technicalPapers = [
     {
-      title: "Real-time Analytics for Large-scale Events",
-      description: "Technical Report - TrinetraGuard Research Team",
-      pdfPath: "/pdf/real-time-analytics-events.pdf"
+      title: "Real-Time Face Detection Using Computer Vision",
+      description: "International Conference on Communication, Computing, and Internet of Things, 2023",
+      pdfPath: "/pdf/Facedetectionbykrutirishi-2.pdf"
     },
     {
-      title: "Mobile Application Security Framework",
-      description: "Security Analysis Report, 2024",
-      pdfPath: "/pdf/mobile-security-framework.pdf"
+      title: " FastAPI for Modern Backend Development",
+      description: "Bachelor’s Thesis, Tampere University of Applied Sciences, 2024",
+      pdfPath: "/pdf/Fast Api as a backend framework.pdf"
     }
   ];
 

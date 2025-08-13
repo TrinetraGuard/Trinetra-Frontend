@@ -5,7 +5,7 @@ const Synopsis = () => {
   const projectSynopsis = {
     title: "TrinetraGuard Project Synopsis",
     description: "Comprehensive project overview and technical specifications",
-    pdfPath: "/pdf/project-synopsis.pdf"
+    pdfPath: "/pdf/Trinetra_Synopsis.pdf"
   };
 
   return (

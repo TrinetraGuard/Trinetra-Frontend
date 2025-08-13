@@ -51,7 +51,7 @@ const DocumentationSection = () => {
               <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
               Technical Documentation
             </h4>
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               {technicalDocs.map((doc, index) => (
                 <PDFPreview
                   key={index}
@@ -60,7 +60,7 @@ const DocumentationSection = () => {
                   pdfPath={doc.pdfPath}
                 />
               ))}
-            </div>
+            </div> */}
           </div>
           
           <div className="space-y-4">
@@ -68,7 +68,7 @@ const DocumentationSection = () => {
               <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
               User Documentation
             </h4>
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               {userDocs.map((doc, index) => (
                 <PDFPreview
                   key={index}
@@ -77,7 +77,7 @@ const DocumentationSection = () => {
                   pdfPath={doc.pdfPath}
                 />
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

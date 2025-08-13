@@ -5,7 +5,7 @@ const GitHubRepos = () => {
     {
       name: "trinetra-frontend",
       description: "React.js frontend application",
-      url: "https://github.com/trinetra-guard/trinetra-frontend",
+      url: "https://github.com/TrinetraGuard/Trinetra-Frontend",
       stars: 150,
       forks: 45,
       language: "TypeScript"
@@ -13,47 +13,39 @@ const GitHubRepos = () => {
     {
       name: "trinetra-backend",
       description: "Node.js backend API server",
-      url: "https://github.com/trinetra-guard/trinetra-backend",
+      url: "https://github.com/TrinetraGuard/TrinetraGuard-backend",
       stars: 120,
       forks: 32,
       language: "JavaScript"
     },
-    {
-      name: "trinetra-mobile",
-      description: "React Native mobile application",
-      url: "https://github.com/trinetra-guard/trinetra-mobile",
-      stars: 95,
-      forks: 28,
-      language: "TypeScript"
-    }
   ];
 
-  const supportingRepos = [
-    {
-      name: "trinetra-ai",
-      description: "Machine learning models and AI components",
-      url: "https://github.com/trinetra-guard/trinetra-ai",
-      stars: 75,
-      forks: 18,
-      language: "Python"
-    },
-    {
-      name: "trinetra-docs",
-      description: "Documentation and guides",
-      url: "https://github.com/trinetra-guard/trinetra-docs",
-      stars: 45,
-      forks: 12,
-      language: "Markdown"
-    },
-    {
-      name: "trinetra-deploy",
-      description: "Deployment scripts and configurations",
-      url: "https://github.com/trinetra-guard/trinetra-deploy",
-      stars: 35,
-      forks: 8,
-      language: "Shell"
-    }
-  ];
+  // const supportingRepos = [
+  //   {
+  //     name: "trinetra-ai",
+  //     description: "Machine learning models and AI components",
+  //     url: "https://github.com/TrinetraGuard/Trinetra-Frontend",
+  //     stars: 75,
+  //     forks: 18,
+  //     language: "Python"
+  //   },
+  //   {
+  //     name: "trinetra-docs",
+  //     description: "Documentation and guides",
+  //     url: "https://github.com/trinetra-guard/trinetra-docs",
+  //     stars: 45,
+  //     forks: 12,
+  //     language: "Markdown"
+  //   },
+  //   {
+  //     name: "trinetra-deploy",
+  //     description: "Deployment scripts and configurations",
+  //     url: "https://github.com/trinetra-guard/trinetra-deploy",
+  //     stars: 35,
+  //     forks: 8,
+  //     language: "Shell"
+  //   }
+  // ];
 
   return (
     <div className="space-y-6">
@@ -98,7 +90,7 @@ const GitHubRepos = () => {
             </div>
           </div>
           
-          <div className="space-y-4">
+          {/* <div className="space-y-4">
             <h4 className="text-white font-semibold text-lg">Supporting Repositories</h4>
             <div className="space-y-3">
               {supportingRepos.map((repo, index) => (
@@ -131,7 +123,7 @@ const GitHubRepos = () => {
                 </a>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

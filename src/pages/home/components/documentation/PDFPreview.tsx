@@ -51,7 +51,7 @@ const PDFPreview = ({ title, description, pdfPath, onClose }: PDFPreviewProps) =
           <div className="flex gap-2">
             <button
               onClick={handlePreview}
-              className="p-2 bg-blue-500/20 rounded-lg hover:bg-blue-500/30 transition-colors"
+              className="p-2 bg-blue-500/20 rounded-lg hover:bg-blue-500/30 transition-colors "
               title="Preview PDF"
             >
               <FaEye className="text-blue-400 text-sm" />
