@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+import WlcomeAdmin from "@/components/admin/welcome";
 import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import Login from "@/pages/auth/Loginpage";
@@ -19,17 +20,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
+      <Route path="/" element={<HomePage />} />
 
-      {/* Protected Routes */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomePage />
-          </ProtectedRoute>
-        }
-      />
-      
       {/* Dashboard Routes with nested sub-routes */}
       <Route
         path="/dashboard"
@@ -41,6 +33,23 @@ const AppRoutes = () => {
       >
         {/* Dashboard index route */}
         <Route index element={<DashboardPage />} />
+        
+        {/* Dashboard sub-routes */}
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="upload" element={<VideoUploadPage />} />
+      </Route>
+
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <DashboardLayoutWrapper />
+          </ProtectedRoute>
+        }
+      >
+        {/* Dashboard index route */}
+        <Route index element={<WlcomeAdmin />} />
         
         {/* Dashboard sub-routes */}
         <Route path="settings" element={<SettingsPage />} />
