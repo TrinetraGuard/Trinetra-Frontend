@@ -1,8 +1,11 @@
 import Documentation from "../components/Documentation";
+import FAQ from "../components/FAQ";
 import FlowDiagram from "../components/FlowDiagram";
+import Footer from "../components/Footer";
 import Hero from "../components/Hero";
 import Navbar from "../components/Navbar";
 import TeamMembers from "../components/TeamMembers";
+import VideoShowcase from "../components/VideoShowcase";
 
 const HomePage = () => {
   return (
@@ -26,11 +29,20 @@ const HomePage = () => {
       {/* Flow Diagram Section */}
       <FlowDiagram />
       
+      {/* Video Showcase Section */}
+      <VideoShowcase />
+      
       {/* Documentation Section */}
       <Documentation />
       
+      {/* FAQ Section */}
+      <FAQ />
+      
       {/* Team Members Section */}
       <TeamMembers />
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

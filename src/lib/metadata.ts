@@ -35,6 +35,22 @@ export const routeMetadata: Record<string, RouteMetadata> = {
   "/dashboard/upload": {
     title: "Upload",
     description: "Upload a video to the dashboard"
+  },
+  "/emergency": {
+    title: "Emergency",
+    description: "Emergency page"
+  },
+  "/crowd": {
+    title: "Crowd",
+    description: "Crowd page"
+  },
+  "/lost-found": {
+    title: "Lost & Found",
+    description: "Lost & Found page"
+  },
+  "/users": {
+    title: "Users",
+    description: "Users page"
   }
 };
 

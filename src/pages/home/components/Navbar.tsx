@@ -10,11 +10,11 @@ interface NavLink {
 }
 
 const navLinks: NavLink[] = [
-  { name: "Dashboard", href: "/" },
+  { name: "Home", href: "/" },
   { name: "Crowd Control", href: "/crowd" },
   { name: "Lost & Found", href: "/lost-found" },
   { name: "Emergency", href: "/emergency" },
-  { name: "Reports", href: "/reports" },
+  { name: "Users", href: "/users" },
 ];
 
 // Custom hook for scroll direction

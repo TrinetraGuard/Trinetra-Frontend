@@ -1,27 +1,27 @@
 import {
-    FaBook,
-    FaCode,
-    FaCog,
-    FaDesktop,
-    FaFileAlt,
-    FaFilePdf,
-    FaGithub,
-    FaGraduationCap,
-    FaInfoCircle,
-    FaMobile,
-    FaPlay,
-    FaProjectDiagram,
-    FaRocket,
-    FaServer,
-    FaShieldAlt,
-    FaStar,
-    FaUsers
+  FaBook,
+  FaCode,
+  FaCog,
+  FaDesktop,
+  FaFileAlt,
+  FaFilePdf,
+  FaGithub,
+  FaGraduationCap,
+  FaInfoCircle,
+  FaMobile,
+  FaPlay,
+  FaProjectDiagram,
+  FaRocket,
+  FaServer,
+  FaShieldAlt,
+  FaStar,
+  FaUsers
 } from "react-icons/fa";
 import {
-    MdOutlineApi,
-    MdOutlineSecurity,
-    MdOutlineSpeed,
-    MdOutlineSupport
+  MdOutlineApi,
+  MdOutlineSecurity,
+  MdOutlineSpeed,
+  MdOutlineSupport
 } from "react-icons/md";
 
 import DocumentationSection from "./documentation/DocumentationSection";
@@ -405,7 +405,7 @@ const Documentation = () => {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
+    <section data-section="documentation" className="py-20 bg-gradient-to-br from-gray-900 via-gray-800 to-black relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.1),transparent_50%)]"></div>
