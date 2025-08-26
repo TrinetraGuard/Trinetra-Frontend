@@ -4,37 +4,37 @@ import PDFPreview from "./PDFPreview";
 const DocumentationSection = () => {
   const technicalDocs = [
     {
-      title: "System Architecture",
-      description: "Complete system design and architecture documentation",
-      pdfPath: "/pdf/system-architecture.pdf"
+      title: "Trinetra Synopsis",
+      description: "Complete project overview and system architecture documentation",
+      pdfPath: "/pdf/Trinetra_Synopsis.pdf"
     },
     {
-      title: "API Documentation",
-      description: "RESTful API endpoints and usage guide",
-      pdfPath: "/pdf/api-documentation.pdf"
+      title: "Face Detection System",
+      description: "Technical documentation for face detection implementation",
+      pdfPath: "/pdf/Facedetectionbykrutirishi-2.pdf"
     },
     {
-      title: "Database Schema",
-      description: "Database design and relationships documentation",
-      pdfPath: "/pdf/database-schema.pdf"
+      title: "Fast API Backend Framework",
+      description: "Backend architecture and API documentation",
+      pdfPath: "/pdf/Fast Api as a backend framework.pdf"
     }
   ];
 
   const userDocs = [
     {
-      title: "User Manual",
-      description: "Complete user guide and instructions",
-      pdfPath: "/pdf/user-manual.pdf"
+      title: "Web-Based Lost and Found System",
+      description: "User manual and system documentation",
+      pdfPath: "/pdf/Web-Based Lost and Found System.pdf"
     },
     {
-      title: "Admin Guide",
-      description: "Administrator panel documentation",
-      pdfPath: "/pdf/admin-guide.pdf"
+      title: "Crowd Control and Safety at Kumbh Mela",
+      description: "Machine learning implementation for crowd control",
+      pdfPath: "/pdf/Leveraging_Machine_Learning_for_Real-Time_Crowd_Control_and_Safety_at_Kumbh_Mela.pdf"
     },
     {
-      title: "Deployment Guide",
-      description: "Installation and deployment instructions",
-      pdfPath: "/pdf/deployment-guide.pdf"
+      title: "Kumbh Mela Impact Study",
+      description: "Research on the influence of Kumbh Mela on Indian Society",
+      pdfPath: "/pdf/Influence of Kumbh Mela on Indian Society.pdf"
     }
   ];
 
@@ -51,7 +51,7 @@ const DocumentationSection = () => {
               <span className="w-2 h-2 bg-purple-400 rounded-full"></span>
               Technical Documentation
             </h4>
-            {/* <div className="space-y-3">
+            <div className="space-y-3">
               {technicalDocs.map((doc, index) => (
                 <PDFPreview
                   key={index}
@@ -60,7 +60,7 @@ const DocumentationSection = () => {
                   pdfPath={doc.pdfPath}
                 />
               ))}
-            </div> */}
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -68,7 +68,7 @@ const DocumentationSection = () => {
               <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
               User Documentation
             </h4>
-            {/* <div className="space-y-3">
+            <div className="space-y-3">
               {userDocs.map((doc, index) => (
                 <PDFPreview
                   key={index}
@@ -77,7 +77,7 @@ const DocumentationSection = () => {
                   pdfPath={doc.pdfPath}
                 />
               ))}
-            </div> */}
+            </div>
           </div>
         </div>
       </div>

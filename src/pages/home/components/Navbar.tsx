@@ -15,6 +15,7 @@ const navLinks: NavLink[] = [
   { name: "Lost & Found", href: "/lost-found" },
   { name: "Emergency", href: "/emergency" },
   { name: "Users", href: "/users" },
+  { name: "About us", href: "/about-us" },
 ];
 
 // Custom hook for scroll direction
