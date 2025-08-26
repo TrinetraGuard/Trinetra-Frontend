@@ -1,22 +1,22 @@
 import { Route, Routes } from "react-router-dom";
 
-import WlcomeAdmin from "@/components/admin/welcome";
-import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import Login from "@/pages/auth/Loginpage";
-import Signup from "@/pages/auth/Signuppage";
-import DashboardPage from "@/pages/dashboard";
-import SettingsPage from "@/pages/dashboard/settings";
-import UsersPage from "@/pages/dashboard/UsersPage";
-import ErrorPage from "@/pages/error/error_page";
 import AboutUsPage from "@/pages/home/page/aboutus_page";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
+import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
+import DashboardPage from "@/pages/dashboard";
 import EmergencyPage from "@/pages/home/page/emergency_page";
+import ErrorPage from "@/pages/error/error_page";
 import HomePage from "@/pages/home/page/home_page";
+import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
-import UserPage from "@/pages/home/page/user_page";
-import VideoUploadPage from "@/pages/upload/VideoUploadPage";
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import SettingsPage from "@/pages/dashboard/settings";
+import Signup from "@/pages/auth/Signuppage";
+import UserPage from "@/pages/home/page/user_page";
+import UsersPage from "@/pages/dashboard/UsersPage";
+import VideoUploadPage from "@/pages/upload/VideoUploadPage";
+import WlcomeAdmin from "@/components/admin/welcome";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const AppRoutes = () => {
   useDocumentTitle();
