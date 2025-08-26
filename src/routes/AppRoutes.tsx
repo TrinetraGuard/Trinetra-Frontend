@@ -9,6 +9,7 @@ import DashboardPage from "@/pages/dashboard";
 import SettingsPage from "@/pages/dashboard/settings";
 import UsersPage from "@/pages/dashboard/UsersPage";
 import ErrorPage from "@/pages/error/error_page";
+import AboutUsPage from "@/pages/home/page/aboutus_page";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
 import EmergencyPage from "@/pages/home/page/emergency_page";
 import HomePage from "@/pages/home/page/home_page";
@@ -29,6 +30,7 @@ const AppRoutes = () => {
       <Route path="/lost-found" element={<LostFoundPage />} />
       <Route path="/emergency" element={<EmergencyPage />} />
       <Route path="/users" element={<UserPage />} />
+      <Route path="/about-us" element={<AboutUsPage />} />
 
       {/* Dashboard Routes with nested sub-routes */}
       <Route
