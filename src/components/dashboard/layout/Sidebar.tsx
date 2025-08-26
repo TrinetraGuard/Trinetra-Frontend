@@ -1,6 +1,7 @@
 import {
   ChevronLeft,
   ChevronRight,
+  Users as CrowdControl,
   FileText,
   LayoutDashboard,
   LogOut,
@@ -9,20 +10,21 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
 import { useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
+import { useAuth } from "@/contexts/AuthContext";
 import { auth } from "@/firebase/firebase";
 import { cn } from "@/lib/utils";
-import { createPortal } from "react-dom";
 import { signOut } from "firebase/auth";
-import { useAuth } from "@/contexts/AuthContext";
+import { createPortal } from "react-dom";
 
 const navSections = [
     {
       heading: "Main",
       items: [
         { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+        { name: "Crowd Control", path: "/dashboard/crowd-control", icon: CrowdControl },
         { name: "Settings", path: "/dashboard/settings", icon: Settings },
         { name: "Users", path: "/dashboard/users", icon: Users },
         { name: "Upload", path: "/dashboard/upload", icon: Upload },

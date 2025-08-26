@@ -1,35 +1,48 @@
-import PageHeader from "@/components/ui/PageHeader";
+import Documentation from "../components/Documentation";
+import FAQ from "../components/FAQ";
+import FlowDiagram from "../components/FlowDiagram";
+import Footer from "../components/Footer";
+import Hero from "../components/Hero";
+import Navbar from "../components/Navbar";
+import TeamMembers from "../components/TeamMembers";
+import VideoShowcase from "../components/VideoShowcase";
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <PageHeader />
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Welcome to Trinetra
-            </h2>
-            <p className="text-gray-600 mb-8">
-              Your comprehensive security monitoring and management platform
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">Security Monitoring</h3>
-                <p className="text-blue-700 text-sm">Real-time threat detection and monitoring</p>
-              </div>
-              <div className="bg-green-50 p-6 rounded-lg">
-                <h3 className="font-semibold text-green-900 mb-2">Analytics</h3>
-                <p className="text-green-700 text-sm">Comprehensive security analytics and insights</p>
-              </div>
-              <div className="bg-purple-50 p-6 rounded-lg">
-                <h3 className="font-semibold text-purple-900 mb-2">Management</h3>
-                <p className="text-purple-700 text-sm">Centralized security management tools</p>
-              </div>
-            </div>
+    <div className="min-h-screen">
+      <Navbar />
+      <div 
+        className="relative flex flex-col items-center justify-center h-screen bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/img/bg.jpg')" }}
+      >
+        {/* Blur overlay */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
+        
+        {/* Hero Section - Left Aligned */}
+        <div className="relative z-10 flex items-center h-full w-full ">
+          <div className="px-6 md:px-12 lg:px-16">
+            <Hero />
           </div>
         </div>
       </div>
+      
+      {/* Flow Diagram Section */}
+      <FlowDiagram />
+      
+      {/* Video Showcase Section */}
+      <VideoShowcase />
+      
+      {/* Documentation Section */}
+      <Documentation />
+      
+      {/* FAQ Section */}
+      <FAQ />
+      
+      {/* Team Members Section */}
+      <TeamMembers />
+      
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
