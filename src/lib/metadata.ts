@@ -51,6 +51,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
   "/users": {
     title: "Users",
     description: "Users page"
+  },
+  "/dashboard/lost-people": {
+    title: "Lost People",
+    description: "Lost People page"
   }
 };
 

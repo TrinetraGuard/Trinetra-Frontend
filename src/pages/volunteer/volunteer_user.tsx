@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, updateDoc, where } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import { db } from "@/firebase/firebase";
 
 type UserRecord = {
@@ -12,16 +13,14 @@ type UserRecord = {
   phone?: string;
   role?: string;
   appName?: string;
-  latitude?: number;
-  longitude?: number;
-  createdAt?: unknown;
 };
 
-const UsersPage = () => {
+const Volunteersmangement = () => {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [updatingId, setUpdatingId] = useState<string>("");
 
   useEffect(() => {
     setLoading(true);
@@ -32,12 +31,11 @@ const UsersPage = () => {
         usersRef,
         where("appName", "==", "Trinetra"),
         where("role", "==", "user"),
-        // orderBy("createdAt", "desc")
       );
       const unsub = onSnapshot(
         q,
         (snap) => {
-          const data: UserRecord[] = snap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() as Record<string, unknown>) })) as UserRecord[];
+          const data: UserRecord[] = snap.docs.map((d) => ({ uid: d.id, ...(d.data() as Record<string, unknown>) })) as UserRecord[];
           setUsers(data);
           setLoading(false);
         },
@@ -67,20 +65,29 @@ const UsersPage = () => {
     );
   }, [users, search]);
 
-  return (
-    <div className="space-y-6">
+  const promoteToVolunteer = async (uid: string) => {
+    try {
+      setUpdatingId(uid);
+      await updateDoc(doc(db, "users", uid), { role: "volunteer" });
+    } catch (e: unknown) {
+      // eslint-disable-next-line no-alert
+      alert(e instanceof Error ? e.message : "Failed to update role");
+    } finally {
+      setUpdatingId("");
+    }
+  };
 
+  return (
+    <div className="">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-4">
-          <CardTitle className="text-2xl">Users</CardTitle>
-          <div className="flex items-center gap-2">
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, phone, or UID"
-              className="h-10 w-72 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none ring-0 focus:border-gray-400 focus:ring-0"
-            />
-          </div>
+          <CardTitle className="text-2xl">Users eligible for promotion</CardTitle>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, email, phone, or UID"
+            className="h-10 w-72 rounded-md border border-gray-300 bg-white px-3 text-sm outline-none ring-0 focus:border-gray-400 focus:ring-0"
+          />
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -88,19 +95,18 @@ const UsersPage = () => {
           ) : error ? (
             <div className="flex h-40 items-center justify-center text-red-600">{error}</div>
           ) : filteredUsers.length === 0 ? (
-            <div className="flex h-40 items-center justify-center text-gray-500">No users found.</div>
+            <div className="flex h-40 items-center justify-center text-gray-500">No eligible users found.</div>
           ) : (
             <Table>
-              <TableCaption>Users registered on Trinetra</TableCaption>
+              <TableCaption>Promote users to volunteers</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[48px]">#</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Latitude</TableHead>
-                  <TableHead>Longitude</TableHead>
                   <TableHead className="hidden md:table-cell">UID</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -110,9 +116,16 @@ const UsersPage = () => {
                     <TableCell className="font-medium">{u.name || "—"}</TableCell>
                     <TableCell>{u.email || "—"}</TableCell>
                     <TableCell>{u.phone || "—"}</TableCell>
-                    <TableCell>{typeof u.latitude === "number" ? u.latitude.toFixed(6) : "—"}</TableCell>
-                    <TableCell>{typeof u.longitude === "number" ? u.longitude.toFixed(6) : "—"}</TableCell>
                     <TableCell className="hidden md:table-cell text-xs text-gray-500">{u.uid}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        disabled={updatingId === u.uid}
+                        onClick={() => promoteToVolunteer(u.uid)}
+                      >
+                        {updatingId === u.uid ? "Updating…" : "Promote to Volunteer"}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -122,6 +135,6 @@ const UsersPage = () => {
       </Card>
     </div>
   );
-};
+}
 
-export default UsersPage;
+export default Volunteersmangement

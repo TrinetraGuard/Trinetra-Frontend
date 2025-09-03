@@ -1,43 +1,55 @@
 import {
+  Calendar,
   ChevronLeft,
   ChevronRight,
-  Users as CrowdControl,
-  FileText,
+  Globe2,
+  Layers,
   LayoutDashboard,
   LogOut,
-  Settings,
-  Upload,
+  Map,
+  MapPin,
+  MapPinned,
+  UserCheck,
   UserCircle,
-  Users,
+  UserCog,
+  UserSearch,
+  Users
 } from "lucide-react";
-import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useRef, useState } from "react";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { auth } from "@/firebase/firebase";
 import { cn } from "@/lib/utils";
-import { signOut } from "firebase/auth";
 import { createPortal } from "react-dom";
+import { signOut } from "firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const navSections = [
-    {
-      heading: "Main",
-      items: [
-        { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-        { name: "Crowd Control", path: "/dashboard/crowd-control", icon: CrowdControl },
-        { name: "Settings", path: "/dashboard/settings", icon: Settings },
-        { name: "Users", path: "/dashboard/users", icon: Users },
-        { name: "Upload", path: "/dashboard/upload", icon: Upload },
-      ],
-    },
-    {
-      heading: "Manage",
-      items: [
-        { name: "Users", path: "/dashboard/users", icon: Users },
-        { name: "Reports", path: "/dashboard/reports", icon: FileText },
-      ],
-    },
-  ];
+  {
+    heading: "Main",
+    items: [
+      { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
+      { name: "Users", path: "/dashboard/users", icon: Users },
+      { name: "Features", path: "/dashboard/section-features", icon: Layers },
+      // { name: "Categories", path: "/dashboard/section-categories", icon: Layers },
+      { name: "Places", path: "/dashboard/section-place", icon: MapPin },
+      { name: "Event's", path: "/dashboard/section-event", icon: Calendar },
+      { name: "Lost People", path: "/dashboard/lost-people", icon: UserSearch },
+      // { name: "Feature Post", path: "/dashboard/feature-post", icon: Newspaper },
+      { name: "User's Map", path: "/dashboard/users-map", icon: Globe2 },
+    ],
+  },
+  {
+    heading: "Volunteer",
+    items: [
+      { name: "Volunteer Management", path: "/dashboard/volunteer-user", icon: UserCog },
+      { name: "Volunteer's", path: "/dashboard/volunteers", icon: UserCheck },
+      { name: "Maps View", path: "/dashboard/volunteers-map", icon: Map },
+      { name: "Volunteer Area", path: "/dashboard/volunteer-area", icon: MapPinned },
+    ],
+  },
+];
+
   
   export default function Sidebar() {
     const location = useLocation();

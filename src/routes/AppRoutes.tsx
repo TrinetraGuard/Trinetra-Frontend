@@ -1,23 +1,32 @@
 import { Route, Routes } from "react-router-dom";
 
-import WlcomeAdmin from "@/components/admin/welcome";
-import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
-import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import Login from "@/pages/auth/Loginpage";
-import Signup from "@/pages/auth/Signuppage";
-import DashboardPage from "@/pages/dashboard";
-import SettingsPage from "@/pages/dashboard/settings";
-import UsersPage from "@/pages/dashboard/UsersPage";
-import ErrorPage from "@/pages/error/error_page";
 import AboutUsPage from "@/pages/home/page/aboutus_page";
+import CategorySectionAdmin from "@/pages/component/CategorySection";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
+import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
+import DashboardPage from "@/pages/dashboard";
 import EmergencyPage from "@/pages/home/page/emergency_page";
+import ErrorPage from "@/pages/error/error_page";
+import EventSectionAdmin from "@/pages/component/EventSection";
+import FeatureSectionAdmin from "@/pages/component/FeatureSection";
 import HomePage from "@/pages/home/page/home_page";
+import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
-import UserPage from "@/pages/home/page/user_page";
 import Lostperson from "@/pages/lost/lostperson";
-import VideoUploadPage from "@/pages/upload/VideoUploadPage";
+import PlacesAdmin from "@/pages/component/PlacesAdmin";
 import ProtectedRoute from "@/routes/ProtectedRoute";
+import SettingsPage from "@/pages/dashboard/settings";
+import Signup from "@/pages/auth/Signuppage";
+import UserPage from "@/pages/home/page/user_page";
+import UsersMap from "@/pages/users/users_map";
+import UsersPage from "@/pages/dashboard/UsersPage";
+import VideoUploadPage from "@/pages/upload/VideoUploadPage";
+import VolunteerArea from "@/pages/volunteer/volunteer_area";
+import Volunteers from "../pages/volunteer/volunteers";
+import VolunteersMap from "../pages/volunteer/volunteers_map";
+import Volunteersmangement from "../pages/volunteer/volunteer_user";
+import WlcomeAdmin from "@/components/admin/welcome";
+import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 
 const AppRoutes = () => {
   useDocumentTitle();
@@ -51,6 +60,23 @@ const AppRoutes = () => {
         <Route path="users" element={<UsersPage />} />
         <Route path="upload" element={<VideoUploadPage />} />
         <Route path="lost-people" element={<Lostperson />} />
+        <Route path="volunteer-user" element={<Volunteersmangement />} />
+        <Route path="volunteers" element={<Volunteers />} />
+        <Route path="volunteers-map" element={<VolunteersMap />} />
+        <Route path="users-map" element={<UsersMap />} />
+        <Route path="feature-post" element={<UsersMap />} />
+        <Route path="volunteer-area" element={<VolunteerArea />} />
+        <Route path="section-categories" element={<CategorySectionAdmin />} />
+        <Route path="section-event" element={<EventSectionAdmin />} />
+        <Route path="section-features" element={<FeatureSectionAdmin />} />
+        <Route path="section-place" element={<PlacesAdmin />} />
+        
+
+
+        
+        
+        
+        
 
       </Route>
 
