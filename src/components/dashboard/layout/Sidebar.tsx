@@ -59,10 +59,10 @@ const navSections = [
     ],
   },
   {
-    heading: "CCTV Monitaring",
+    heading: "CCTV Monitoring",
     items: [
       {
-        name: "Crowd Monitaring",
+        name: "Crowd Monitoring",
         path: "/dashboard/crowd-control",
         icon: UserCog,
       },
