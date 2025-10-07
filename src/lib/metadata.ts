@@ -6,101 +6,104 @@ export interface RouteMetadata {
 export const routeMetadata: Record<string, RouteMetadata> = {
   "/": {
     title: "Home",
-    description: "Welcome to Trinetra - Your security dashboard"
+    description: "Welcome to Trinetra - Your security dashboard",
   },
   "/login": {
     title: "Login",
-    description: "Sign in to your Trinetra account"
+    description: "Sign in to your Trinetra account",
   },
   "/signup": {
     title: "Sign Up",
-    description: "Create a new Trinetra account"
+    description: "Create a new Trinetra account",
   },
   "/dashboard": {
     title: "Dashboard",
-    description: "Main dashboard overview and analytics"
+    description: "Main dashboard overview and analytics",
   },
   "/dashboard/settings": {
     title: "Settings",
-    description: "Manage your account settings and preferences"
+    description: "Manage your account settings and preferences",
   },
   "/dashboard/users": {
     title: "Users",
-    description: "Manage user accounts and permissions"
+    description: "Manage user accounts and permissions",
   },
   "/dashboard/reports": {
     title: "Reports",
-    description: "View and generate security reports"
+    description: "View and generate security reports",
   },
   "/dashboard/upload": {
     title: "Upload",
-    description: "Upload a video to the dashboard"
+    description: "Upload a video to the dashboard",
   },
   "/emergency": {
     title: "Emergency",
-    description: "Emergency page"
+    description: "Emergency page",
   },
   "/crowd": {
     title: "Crowd",
-    description: "Crowd page"
+    description: "Crowd page",
   },
   "/lost-found": {
     title: "Lost & Found",
-    description: "Lost & Found page"
+    description: "Lost & Found page",
   },
   "/users": {
     title: "Users",
-    description: "Users page"
+    description: "Users page",
   },
   "/dashboard/lost-people": {
-    title: "Lost People",
-    description: "Lost People page"
+    title: "Lost Peoples",
+    description: "Lost People page",
   },
   "/dashboard/volunteer-user": {
     title: "Lost People",
-    description: "Lost People page"
+    description: "Lost People page",
   },
   "/dashboard/volunteers": {
     title: "Volunteers",
-    description: "Volunteers page"
+    description: "Volunteers page",
   },
   "/dashboard/volunteers-map": {
     title: "Volunteers Map",
-    description: "Volunteers Map page"
+    description: "Volunteers Map page",
   },
   "/dashboard/volunteer-area": {
     title: "Volunteer Area",
-    description: "Volunteer Area page"
+    description: "Volunteer Area page",
   },
   "/dashboard/section-categories": {
     title: "Categories",
-    description: "Categories page"
+    description: "Categories page",
   },
   "/dashboard/section-event": {
     title: "Event's",
-    description: "Event's page"
+    description: "Event's page",
   },
   "/dashboard/section-features": {
     title: "Features",
-    description: "Features page"
+    description: "Features page",
   },
   "/dashboard/section-place": {
     title: "Places",
-    description: "Places page"
+    description: "Places page",
   },
   "/dashboard/sos-alerts": {
     title: "SOS Alerts",
-    description: "SOS Alerts page"
+    description: "SOS Alerts page",
   },
   "/dashboard/users-map": {
     title: "Users Map",
-    description: "Users Map page"
+    description: "Users Map page",
   },
   "/dashboard/feature-post": {
     title: "Feature Post",
-    description: "Feature Post page"
-  }
-  
+    description: "Feature Post page",
+  },
+  "/dashboard/crowd-control": {
+    title: "Crowd Control",
+    description: "crowd control page",
+  },
 };
 
 export const getRouteMetadata = (pathname: string): RouteMetadata => {
@@ -108,10 +111,10 @@ export const getRouteMetadata = (pathname: string): RouteMetadata => {
   if (routeMetadata[pathname]) {
     return routeMetadata[pathname];
   }
-  
+
   // Fallback for dynamic routes or unknown paths
   return {
     title: "Page Not Found",
-    description: "The page you're looking for doesn't exist"
+    description: "The page you're looking for doesn't exist",
   };
 };

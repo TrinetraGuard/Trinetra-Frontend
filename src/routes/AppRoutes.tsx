@@ -28,6 +28,7 @@ import VolunteersMap from "../pages/volunteer/volunteers_map";
 import Volunteersmangement from "../pages/volunteer/volunteer_user";
 import WlcomeAdmin from "@/components/admin/welcome";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 
 const AppRoutes = () => {
   useDocumentTitle();
@@ -52,10 +53,9 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        
         {/* Dashboard index route */}
         <Route index element={<DashboardPage />} />
-        
+
         {/* Dashboard sub-routes */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
@@ -72,14 +72,7 @@ const AppRoutes = () => {
         <Route path="section-features" element={<FeatureSectionAdmin />} />
         <Route path="section-place" element={<PlacesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
-        
-
-
-        
-        
-        
-        
-
+        <Route path="crowd-control" element={<CrowdControl />} />
       </Route>
 
       <Route
@@ -92,16 +85,16 @@ const AppRoutes = () => {
       >
         {/* Dashboard index route */}
         <Route index element={<WlcomeAdmin />} />
-        
+
         {/* Dashboard sub-routes */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="upload" element={<VideoUploadPage />} />
       </Route>
-      
+
       <Route path="*" element={<ErrorPage />} />
     </Routes>
   );
 };
 
-export default AppRoutes; 
+export default AppRoutes;
