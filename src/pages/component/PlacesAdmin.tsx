@@ -1,16 +1,15 @@
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-    addDoc,
-    collection,
-    deleteDoc,
-    doc,
-    onSnapshot,
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
@@ -19,10 +18,39 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from "../../firebase/firebase";
 
+// All available categories
+const ALL_CATEGORIES = [
+  "Temple",
+  "Yagyashala",
+  "Ghat",
+  "Meditation",
+  "Spiritual",
+  "Aarti",
+  "Discover Nashik",
+  "Pilgrimage",
+  "Cultural",
+  "Nature",
+];
+
+type Place = {
+  id: string;
+  name: string;
+  categories: string[];
+  latitude: number;
+  longitude: number;
+  urls: string[];
+  description: string;
+  visitTime: string;
+  crowd: string;
+  bestSeason: string;
+  entryFee: string;
+  openingHours: string;
+};
+
 const PlacesAdmin = () => {
-  const [places, setPlaces] = useState<any[]>([]);
+  const [places, setPlaces] = useState<Place[]>([]);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("Temple");
+  const [categories, setCategories] = useState<string[]>([]);
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [urls, setUrls] = useState<string[]>([]);
@@ -30,10 +58,13 @@ const PlacesAdmin = () => {
   const [description, setDescription] = useState("");
   const [visitTime, setVisitTime] = useState("");
   const [crowd, setCrowd] = useState("Low");
+  const [bestSeason, setBestSeason] = useState("");
+  const [entryFee, setEntryFee] = useState("");
+  const [openingHours, setOpeningHours] = useState("");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
-      setPlaces(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setPlaces(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Place[]);
     });
     return () => unsub();
   }, []);
@@ -49,6 +80,14 @@ const PlacesAdmin = () => {
     setUrls(urls.filter((_, i) => i !== index));
   };
 
+  const toggleCategory = (cat: string) => {
+    if (categories.includes(cat)) {
+      setCategories(categories.filter((c) => c !== cat));
+    } else {
+      setCategories([...categories, cat]);
+    }
+  };
+
   const handleAddPlace = async () => {
     if (!name || !latitude || !longitude || !description) {
       alert("Please fill all required fields");
@@ -57,24 +96,31 @@ const PlacesAdmin = () => {
 
     await addDoc(collection(db, "places"), {
       name,
-      category,
+      categories, // ✅ store array
       latitude: parseFloat(latitude),
       longitude: parseFloat(longitude),
       urls,
       description,
       visitTime,
       crowd,
+      bestSeason,
+      entryFee,
+      openingHours,
+      createdAt: new Date(),
     });
 
     // Reset form
     setName("");
-    setCategory("Temple");
+    setCategories([]);
     setLatitude("");
     setLongitude("");
     setUrls([]);
     setDescription("");
     setVisitTime("");
     setCrowd("Low");
+    setBestSeason("");
+    setEntryFee("");
+    setOpeningHours("");
   };
 
   const handleDelete = async (id: string) => {
@@ -89,24 +135,32 @@ const PlacesAdmin = () => {
           <CardTitle>Add / Update Place</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Name */}
           <Input
             placeholder="Name of Place"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
-          <Select onValueChange={setCategory} value={category}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Temple">Temple</SelectItem>
-              <SelectItem value="Yagyashala">Yagyashala</SelectItem>
-              <SelectItem value="Ghat">Ghat</SelectItem>
-              <SelectItem value="Meditation">Meditation</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Multiple Category Selection */}
+          <div>
+            <p className="text-sm font-medium mb-2">Categories</p>
+            <div className="flex flex-wrap gap-2">
+              {ALL_CATEGORIES.map((cat) => (
+                <Button
+                  key={cat}
+                  type="button"
+                  size="sm"
+                  variant={categories.includes(cat) ? "default" : "outline"}
+                  onClick={() => toggleCategory(cat)}
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
+          </div>
 
+          {/* Lat & Lng */}
           <div className="grid grid-cols-2 gap-4">
             <Input
               placeholder="Latitude"
@@ -120,6 +174,7 @@ const PlacesAdmin = () => {
             />
           </div>
 
+          {/* Images */}
           <div>
             <div className="flex gap-2">
               <Input
@@ -148,29 +203,56 @@ const PlacesAdmin = () => {
             </div>
           </div>
 
+          {/* Description */}
           <Textarea
             placeholder="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
 
+          {/* Visit Time */}
           <Input
-            placeholder="Right Time to Visit"
+            placeholder="Right Time to Visit (e.g. Morning, Evening)"
             value={visitTime}
             onChange={(e) => setVisitTime(e.target.value)}
           />
 
-          <Select onValueChange={setCrowd} value={crowd}>
-            <SelectTrigger>
-              <SelectValue placeholder="Current Crowd" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Low">Low</SelectItem>
-              <SelectItem value="Medium">Medium</SelectItem>
-              <SelectItem value="High">High</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Crowd */}
+          <div>
+            <p className="text-sm font-medium mb-2">Crowd Level</p>
+            <div className="flex gap-2">
+              {["Low", "Medium", "High"].map((level) => (
+                <Button
+                  key={level}
+                  type="button"
+                  size="sm"
+                  variant={crowd === level ? "default" : "outline"}
+                  onClick={() => setCrowd(level)}
+                >
+                  {level}
+                </Button>
+              ))}
+            </div>
+          </div>
 
+          {/* Additional fields */}
+          <Input
+            placeholder="Best Season (e.g. Winter, Monsoon)"
+            value={bestSeason}
+            onChange={(e) => setBestSeason(e.target.value)}
+          />
+          <Input
+            placeholder="Entry Fee (if any)"
+            value={entryFee}
+            onChange={(e) => setEntryFee(e.target.value)}
+          />
+          <Input
+            placeholder="Opening Hours (e.g. 6 AM - 8 PM)"
+            value={openingHours}
+            onChange={(e) => setOpeningHours(e.target.value)}
+          />
+
+          {/* Save */}
           <Button onClick={handleAddPlace} className="w-full">
             Save Place
           </Button>
@@ -191,9 +273,11 @@ const PlacesAdmin = () => {
               >
                 <div>
                   <p className="font-semibold">{place.name}</p>
-                  <p className="text-sm text-gray-500">{place.category}</p>
+                  <p className="text-sm text-gray-500">
+                    {place.categories?.join(", ")}
+                  </p>
                   <p className="text-xs text-gray-400">
-                    Crowd: {place.crowd}
+                    Crowd: {place.crowd} | Season: {place.bestSeason}
                   </p>
                 </div>
                 <Button

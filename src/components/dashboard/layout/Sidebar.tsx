@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -37,6 +38,7 @@ const navSections = [
       { name: "Lost People", path: "/dashboard/lost-people", icon: UserSearch },
       // { name: "Feature Post", path: "/dashboard/feature-post", icon: Newspaper },
       { name: "User's Map", path: "/dashboard/users-map", icon: Globe2 },
+      { name: "SOS Alerts", path: "/dashboard/sos-alerts", icon: AlertCircle },
     ],
   },
   {

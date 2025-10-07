@@ -55,7 +55,52 @@ export const routeMetadata: Record<string, RouteMetadata> = {
   "/dashboard/lost-people": {
     title: "Lost People",
     description: "Lost People page"
+  },
+  "/dashboard/volunteer-user": {
+    title: "Lost People",
+    description: "Lost People page"
+  },
+  "/dashboard/volunteers": {
+    title: "Volunteers",
+    description: "Volunteers page"
+  },
+  "/dashboard/volunteers-map": {
+    title: "Volunteers Map",
+    description: "Volunteers Map page"
+  },
+  "/dashboard/volunteer-area": {
+    title: "Volunteer Area",
+    description: "Volunteer Area page"
+  },
+  "/dashboard/section-categories": {
+    title: "Categories",
+    description: "Categories page"
+  },
+  "/dashboard/section-event": {
+    title: "Event's",
+    description: "Event's page"
+  },
+  "/dashboard/section-features": {
+    title: "Features",
+    description: "Features page"
+  },
+  "/dashboard/section-place": {
+    title: "Places",
+    description: "Places page"
+  },
+  "/dashboard/sos-alerts": {
+    title: "SOS Alerts",
+    description: "SOS Alerts page"
+  },
+  "/dashboard/users-map": {
+    title: "Users Map",
+    description: "Users Map page"
+  },
+  "/dashboard/feature-post": {
+    title: "Feature Post",
+    description: "Feature Post page"
   }
+  
 };
 
 export const getRouteMetadata = (pathname: string): RouteMetadata => {

@@ -17,6 +17,7 @@ import PlacesAdmin from "@/pages/component/PlacesAdmin";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
+import SosAlerts from "@/pages/component/SosAlerts";
 import UserPage from "@/pages/home/page/user_page";
 import UsersMap from "@/pages/users/users_map";
 import UsersPage from "@/pages/dashboard/UsersPage";
@@ -70,6 +71,7 @@ const AppRoutes = () => {
         <Route path="section-event" element={<EventSectionAdmin />} />
         <Route path="section-features" element={<FeatureSectionAdmin />} />
         <Route path="section-place" element={<PlacesAdmin />} />
+        <Route path="sos-alerts" element={<SosAlerts />} />
         
 
 

@@ -13,6 +13,9 @@ export default defineConfig({
     cors: true,
     port: 3000,
     origin: "http://localhost:3000",
+    hmr: {
+      port: 3000,
+    },
   },
   resolve: {
     alias: {
