@@ -1,7 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 
 import AboutUsPage from "@/pages/home/page/aboutus_page";
+import AddPlacesAdmin from "@/pages/component/AddPlacesAdmin";
 import CategorySectionAdmin from "@/pages/component/CategorySection";
+import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
 import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
 import DashboardPage from "@/pages/dashboard";
@@ -13,11 +15,11 @@ import HomePage from "@/pages/home/page/home_page";
 import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
 import Lostperson from "@/pages/lost/lostperson";
-import PlacesAdmin from "@/pages/component/PlacesAdmin";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
 import SosAlerts from "@/pages/component/SosAlerts";
+import UpdatePlacesAdmin from "@/pages/component/UpdatePlacesAdmin";
 import UserPage from "@/pages/home/page/user_page";
 import UsersMap from "@/pages/users/users_map";
 import UsersPage from "@/pages/dashboard/UsersPage";
@@ -28,7 +30,6 @@ import VolunteersMap from "../pages/volunteer/volunteers_map";
 import Volunteersmangement from "../pages/volunteer/volunteer_user";
 import WlcomeAdmin from "@/components/admin/welcome";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
-import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 
 const AppRoutes = () => {
   useDocumentTitle();
@@ -70,7 +71,8 @@ const AppRoutes = () => {
         <Route path="section-categories" element={<CategorySectionAdmin />} />
         <Route path="section-event" element={<EventSectionAdmin />} />
         <Route path="section-features" element={<FeatureSectionAdmin />} />
-        <Route path="section-place" element={<PlacesAdmin />} />
+        <Route path="add-places" element={<AddPlacesAdmin />} />
+        <Route path="update-places" element={<UpdatePlacesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="crowd-control" element={<CrowdControl />} />
       </Route>

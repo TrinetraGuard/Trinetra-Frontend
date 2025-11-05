@@ -1,23 +1,20 @@
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
+    addDoc,
+    collection,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from "../../firebase/firebase";
+import { useState } from "react";
 
 // All available categories
 const ALL_CATEGORIES = [
@@ -54,26 +51,7 @@ type Facility = {
   estimatedPrice: string;
 };
 
-type Place = {
-  id: string;
-  name: string;
-  categories: string[];
-  latitude: number;
-  longitude: number;
-  urls: string[];
-  description: string;
-  visitTime: string;
-  crowd: string;
-  bestSeason: string;
-  entryType: string[]; // ["Free"], ["Paid"], or ["Free", "Paid"]
-  entryFee: string;
-  openingHours: string;
-  transportModes: TransportMode[]; // Array of transport modes with pricing
-  facilities: Facility[]; // Available facilities nearby with pricing
-};
-
-const PlacesAdmin = () => {
-  const [places, setPlaces] = useState<Place[]>([]);
+const AddPlacesAdmin = () => {
   const [name, setName] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
   const [latitude, setLatitude] = useState("");
@@ -84,18 +62,12 @@ const PlacesAdmin = () => {
   const [visitTime, setVisitTime] = useState("");
   const [crowd, setCrowd] = useState("Low");
   const [bestSeason, setBestSeason] = useState("");
-  const [entryType, setEntryType] = useState<string[]>([]); // ["Free"], ["Paid"], or both
+  const [entryType, setEntryType] = useState<string[]>([]);
   const [entryFee, setEntryFee] = useState("");
   const [openingHours, setOpeningHours] = useState("");
   const [transportModes, setTransportModes] = useState<TransportMode[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
-      setPlaces(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Place[]);
-    });
-    return () => unsub();
-  }, []);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddUrl = () => {
     if (urlInput.trim() !== "") {
@@ -119,7 +91,6 @@ const PlacesAdmin = () => {
   const toggleEntryType = (type: string) => {
     if (entryType.includes(type)) {
       setEntryType(entryType.filter((t) => t !== type));
-      // Clear entry fee if "Paid" is unchecked
       if (type === "Paid") {
         setEntryFee("");
       }
@@ -131,10 +102,8 @@ const PlacesAdmin = () => {
   const toggleTransportMode = (mode: string) => {
     const existing = transportModes.find((t) => t.mode === mode);
     if (existing) {
-      // Remove if already exists
       setTransportModes(transportModes.filter((t) => t.mode !== mode));
     } else {
-      // Add new transport mode with empty prices
       setTransportModes([...transportModes, { mode, minPrice: "", maxPrice: "" }]);
     }
   };
@@ -148,10 +117,8 @@ const PlacesAdmin = () => {
   const toggleFacility = (facilityName: string) => {
     const existing = facilities.find((f) => f.name === facilityName);
     if (existing) {
-      // Remove if already exists
       setFacilities(facilities.filter((f) => f.name !== facilityName));
     } else {
-      // Add new facility with empty prices
       setFacilities([
         ...facilities,
         { name: facilityName, minPrice: "", maxPrice: "", estimatedPrice: "" },
@@ -169,35 +136,7 @@ const PlacesAdmin = () => {
     );
   };
 
-  const handleAddPlace = async () => {
-    if (!name || !latitude || !longitude || !description) {
-      alert("Please fill all required fields (Name, Latitude, Longitude, Description)");
-      return;
-    }
-    if (categories.length === 0) {
-      alert("Please select at least one category");
-      return;
-    }
-
-    await addDoc(collection(db, "places"), {
-      name,
-      categories, // ✅ store array
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-      urls,
-      description,
-      visitTime,
-      crowd,
-      bestSeason,
-      entryType, // ✅ store array: ["Free"], ["Paid"], or ["Free", "Paid"]
-      entryFee,
-      openingHours,
-      transportModes, // ✅ store array of transport modes with pricing
-      facilities, // ✅ store array of facilities
-      createdAt: new Date(),
-    });
-
-    // Reset form
+  const resetForm = () => {
     setName("");
     setCategories([]);
     setLatitude("");
@@ -214,16 +153,51 @@ const PlacesAdmin = () => {
     setFacilities([]);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteDoc(doc(db, "places", id));
+  const handleAddPlace = async () => {
+    if (!name || !latitude || !longitude || !description) {
+      alert("Please fill all required fields (Name, Latitude, Longitude, Description)");
+      return;
+    }
+    if (categories.length === 0) {
+      alert("Please select at least one category");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, "places"), {
+        name,
+        categories,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        urls,
+        description,
+        visitTime,
+        crowd,
+        bestSeason,
+        entryType,
+        entryFee,
+        openingHours,
+        transportModes,
+        facilities,
+        createdAt: new Date(),
+      });
+
+      alert("Place added successfully!");
+      resetForm();
+    } catch (error) {
+      console.error("Error adding place:", error);
+      alert("Failed to add place. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Form */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle>Add / Update Place</CardTitle>
+          <CardTitle>Add New Place</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Name */}
@@ -420,9 +394,7 @@ const PlacesAdmin = () => {
           {/* Entry Fee */}
           {entryType.includes("Paid") && (
             <div className="space-y-2">
-              <Label htmlFor="entry-fee">
-                Entry Fee (INR)
-              </Label>
+              <Label htmlFor="entry-fee">Entry Fee (INR)</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
                   ₹
@@ -623,92 +595,14 @@ const PlacesAdmin = () => {
           </div>
 
           {/* Save */}
-          <Button onClick={handleAddPlace} className="w-full">
-            Save Place
+          <Button onClick={handleAddPlace} className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Adding Place..." : "Add Place"}
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* List */}
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>All Places</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {places.map((place) => (
-              <div
-                key={place.id}
-                className="p-3 border rounded-lg flex justify-between items-center"
-              >
-                <div>
-                  <p className="font-semibold">{place.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {place.categories?.join(", ")}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Crowd: {place.crowd} | Season: {place.bestSeason}
-                    {place.entryType && place.entryType.length > 0 && (
-                      <> | Entry: {place.entryType.join(", ")}</>
-                    )}
-                    {place.entryFee && (
-                      <> | Fee: ₹{place.entryFee} INR</>
-                    )}
-                  </p>
-                  {place.transportModes && place.transportModes.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Transport:{" "}
-                      {place.transportModes
-                        .map((t) => {
-                          const hasPrice = t.minPrice || t.maxPrice;
-                          if (hasPrice) {
-                            const min = t.minPrice || "0";
-                            const max = t.maxPrice || "0";
-                            return `${t.mode} (₹${min}-${max})`;
-                          }
-                          return t.mode;
-                        })
-                        .join(", ")}
-                    </p>
-                  )}
-                  {place.facilities && place.facilities.length > 0 && (
-                    <p className="text-xs text-blue-500 mt-1">
-                      Facilities:{" "}
-                      {place.facilities
-                        .map((f) => {
-                          const hasPrice = f.minPrice || f.maxPrice || f.estimatedPrice;
-                          if (hasPrice) {
-                            const parts: string[] = [f.name];
-                            if (f.minPrice || f.maxPrice) {
-                              const min = f.minPrice || "0";
-                              const max = f.maxPrice || "0";
-                              parts.push(`₹${min}-${max}`);
-                            }
-                            if (f.estimatedPrice) {
-                              parts.push(`(Est: ₹${f.estimatedPrice})`);
-                            }
-                            return parts.join(" ");
-                          }
-                          return f.name;
-                        })
-                        .join(", ")}
-                    </p>
-                  )}
-                </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(place.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>
   );
 };
 
-export default PlacesAdmin;
+export default AddPlacesAdmin;
+

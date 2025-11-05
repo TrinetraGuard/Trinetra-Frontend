@@ -106,7 +106,6 @@ src/
 │   └── upload/         # Upload pages
 └── routes/             # Routing configuration
 ```
-
 ## 🎯 Core Features
 
 ### 1. Crowd Management System

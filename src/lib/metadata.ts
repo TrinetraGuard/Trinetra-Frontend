@@ -84,9 +84,13 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Features",
     description: "Features page",
   },
-  "/dashboard/section-place": {
-    title: "Places",
-    description: "Places page",
+  "/dashboard/add-places": {
+    title: "Add Places",
+    description: "Add new places to the system",
+  },
+  "/dashboard/update-places": {
+    title: "Update Places",
+    description: "Update existing places",
   },
   "/dashboard/sos-alerts": {
     title: "SOS Alerts",
