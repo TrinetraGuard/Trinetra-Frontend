@@ -7,6 +7,7 @@ import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
 import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
 import DashboardPage from "@/pages/dashboard";
+import EditEventSection from "@/pages/component/EditEventSection";
 import EmergencyPage from "@/pages/home/page/emergency_page";
 import ErrorPage from "@/pages/error/error_page";
 import EventSectionAdmin from "@/pages/component/EventSection";
@@ -69,7 +70,8 @@ const AppRoutes = () => {
         <Route path="feature-post" element={<UsersMap />} />
         <Route path="volunteer-area" element={<VolunteerArea />} />
         <Route path="section-categories" element={<CategorySectionAdmin />} />
-        <Route path="section-event" element={<EventSectionAdmin />} />
+        <Route path="add-event" element={<EventSectionAdmin />} />
+        <Route path="edit-event" element={<EditEventSection />} />
         <Route path="section-features" element={<FeatureSectionAdmin />} />
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
