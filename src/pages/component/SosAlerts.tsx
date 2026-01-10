@@ -4,7 +4,7 @@ import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Mail, MapPin, Navigation
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Timestamp, arrayRemove, arrayUnion, collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { Timestamp, arrayRemove, arrayUnion, collection, doc, getDoc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -106,6 +106,7 @@ interface Volunteer {
   latitude?: number;
   longitude?: number;
   role?: string;
+  appName?: string;
 }
 
 // Component to update map view when location changes
@@ -216,6 +217,7 @@ const SosAlerts: React.FC = () => {
     });
 
     return () => unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAlert?.id]);
 
   // Calculate nearest volunteers for selected alert
@@ -264,7 +266,7 @@ const SosAlerts: React.FC = () => {
   const handleGrantAccess = async (alertId: string, volunteerId: string) => {
     try {
       const alertRef = doc(db, 'sos_alerts', alertId);
-      const alertDoc = await alertRef.get();
+      const alertDoc = await getDoc(alertRef);
       const currentAuthorized = alertDoc.data()?.authorizedVolunteers || [];
       
       if (!currentAuthorized.includes(volunteerId)) {
@@ -359,15 +361,15 @@ const SosAlerts: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+            <div>
           <h1 className="text-3xl font-bold text-gray-900">SOS Alerts</h1>
           <p className="text-gray-500 mt-1">Monitor and manage emergency alerts in real-time</p>
-        </div>
+            </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg border border-red-200">
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-red-700">{activeAlerts.length} Active</span>
-          </div>
+              </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span className="text-sm font-medium text-green-700">{resolvedAlerts.length} Resolved</span>
@@ -376,8 +378,8 @@ const SosAlerts: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Alerts List */}
-        <div className="lg:col-span-1">
+          {/* Alerts List */}
+          <div className="lg:col-span-1">
           <Card>
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -412,7 +414,7 @@ const SosAlerts: React.FC = () => {
                 {filteredAlerts.length} {filter === 'all' ? 'total' : filter} alert{filteredAlerts.length !== 1 ? 's' : ''}
               </CardDescription>
             </CardHeader>
-            
+              
             <CardContent className="p-0">
               <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
                 {filteredAlerts.length === 0 ? (
@@ -428,15 +430,15 @@ const SosAlerts: React.FC = () => {
                       const isSelected = selectedAlert?.id === alert.id;
                       
                       return (
-                        <div
-                          key={alert.id}
+                    <div
+                      key={alert.id}
                           className={`p-4 cursor-pointer transition-all duration-200 ${
                             isSelected
                               ? 'bg-orange-50 border-l-4 border-orange-500'
                               : 'hover:bg-gray-50'
                           } ${isNew ? 'animate-pulse bg-red-50' : ''}`}
-                          onClick={() => handleAlertSelect(alert)}
-                        >
+                      onClick={() => handleAlertSelect(alert)}
+                    >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
@@ -461,44 +463,44 @@ const SosAlerts: React.FC = () => {
                               <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                 <div className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
-                                  {getTimeAgo(alert.activatedAt)}
+                              {getTimeAgo(alert.activatedAt)}
                                 </div>
                                 {alert.status === 'active' && alert.latitude && alert.longitude && (
                                   <div className="flex items-center gap-1">
                                     <MapPin className="w-3 h-3" />
                                     {getLocationUpdateTime(alert)}
-                                  </div>
+                          </div>
                                 )}
-                              </div>
-                            </div>
-                            {alert.status === 'active' && (
+                        </div>
+                          </div>
+                          {alert.status === 'active' && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleResolveAlert(alert.id);
-                                }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleResolveAlert(alert.id);
+                              }}
                                 className="flex-shrink-0 border-green-600 text-green-600 hover:bg-green-50"
-                              >
+                            >
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Resolve
+                              Resolve
                               </Button>
-                            )}
-                          </div>
+                          )}
                         </div>
+                      </div>
                       );
                     })}
-                  </div>
+                    </div>
                 )}
               </div>
             </CardContent>
           </Card>
-        </div>
+          </div>
 
-        {/* Map and Details */}
+          {/* Map and Details */}
         <div className="lg:col-span-2 space-y-6">
-          {selectedAlert ? (
+              {selectedAlert ? (
             <>
               {/* Alert Details Card */}
               <Card>
@@ -574,7 +576,7 @@ const SosAlerts: React.FC = () => {
                           <p className="text-xs text-gray-500 mt-1">
                             {getTimeAgo(selectedAlert.activatedAt)}
                           </p>
-                        </div>
+                  </div>
                       </div>
                       {selectedAlert.resolvedAt && (
                         <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
@@ -627,8 +629,8 @@ const SosAlerts: React.FC = () => {
                       <div className="text-center py-8">
                         <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-gray-500">No volunteers with location data available</p>
-                      </div>
-                    ) : (
+                </div>
+              ) : (
                       <div className="space-y-3 max-h-96 overflow-y-auto">
                         {nearestVolunteers.map((volunteer, index) => {
                           const hasAccess = selectedAlert.authorizedVolunteers?.includes(volunteer.uid) || false;
@@ -661,8 +663,8 @@ const SosAlerts: React.FC = () => {
                                       Has Access
                                     </Badge>
                                   )}
-                                </div>
-                              </div>
+                  </div>
+                </div>
                               <div className="flex items-center gap-2">
                                 {hasAccess ? (
                                   <Button
@@ -684,12 +686,12 @@ const SosAlerts: React.FC = () => {
                                     <Eye className="w-4 h-4 mr-1" />
                                     Grant Access
                                   </Button>
-                                )}
-                              </div>
-                            </div>
+              )}
+            </div>
+          </div>
                           );
                         })}
-                      </div>
+        </div>
                     )}
                   </CardContent>
                 </Card>
@@ -701,7 +703,7 @@ const SosAlerts: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-600 rounded-lg">
                       <MapPin className="w-5 h-5 text-white" />
-                    </div>
+              </div>
                     <div>
                       <CardTitle>Live Location</CardTitle>
                       <CardDescription>
@@ -709,8 +711,8 @@ const SosAlerts: React.FC = () => {
                           ? `Tracking user's real-time location`
                           : 'Location not available'}
                       </CardDescription>
-                    </div>
-                  </div>
+              </div>
+            </div>
                 </CardHeader>
                 
                 <CardContent className="p-0">
@@ -747,7 +749,7 @@ const SosAlerts: React.FC = () => {
                                 <p className="text-xs text-gray-500 mt-1">
                                   <strong>Coordinates:</strong> {selectedAlert.latitude.toFixed(6)}, {selectedAlert.longitude.toFixed(6)}
                                 </p>
-                              </div>
+              </div>
                             </Popup>
                           </Marker>
 
@@ -771,7 +773,7 @@ const SosAlerts: React.FC = () => {
                                       <Eye className="w-3 h-3 mr-1" />
                                       Has Access
                                     </Badge>
-                                  </div>
+              </div>
                                 </Popup>
                               </Marker>
                             ))}
@@ -781,8 +783,8 @@ const SosAlerts: React.FC = () => {
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                               <p className="text-sm font-medium text-gray-700">Live Tracking Active</p>
-                            </div>
-                          </div>
+            </div>
+          </div>
                         )}
                       </>
                     ) : (
@@ -793,8 +795,8 @@ const SosAlerts: React.FC = () => {
                           <p className="text-sm text-gray-500 mt-2">
                             Waiting for location update from user's device
                           </p>
-                        </div>
-                      </div>
+              </div>
+            </div>
                     )}
                   </div>
                 </CardContent>
@@ -809,7 +811,7 @@ const SosAlerts: React.FC = () => {
                   <p className="text-gray-500">
                     Choose an alert from the list to view details and location
                   </p>
-                </div>
+          </div>
               </CardContent>
             </Card>
           )}

@@ -65,7 +65,6 @@ const CrowdLogs = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
-  const [selectedDay, setSelectedDay] = useState<string>('all');
 
   // Real-time listener for CCTV cameras
   useEffect(() => {
@@ -259,16 +258,6 @@ const CrowdLogs = () => {
 
     generateLogs();
   }, [cameras, dateRange]);
-
-  const getDensityColor = (level: string) => {
-    switch (level) {
-      case 'low': return 'bg-green-600';
-      case 'medium': return 'bg-yellow-600';
-      case 'high': return 'bg-orange-600';
-      case 'critical': return 'bg-red-600';
-      default: return 'bg-gray-600';
-    }
-  };
 
   const filteredSummaries = selectedCamera 
     ? Array.from(summaries.values()).filter(s => s.cameraId === selectedCamera)

@@ -7,6 +7,7 @@ import {
     Info,
     MapPin,
     RefreshCw,
+    TrendingDown,
     TrendingUp,
     Users,
     Zap
@@ -43,14 +44,6 @@ interface PredictionData {
   coordinates: { lat: number; lng: number };
   historicalAverage: number;
   predictedChange: number;
-}
-
-interface TimeSlotPrediction {
-  hour: number;
-  predictedPeople: number;
-  confidence: number;
-  riskLevel: 'low' | 'medium' | 'high';
-  label: string;
 }
 
 const CrowdPredictions = () => {
@@ -159,7 +152,7 @@ const CrowdPredictions = () => {
             }
 
             cameraPredictions.push({
-              cameraId: camera.id,
+              cameraId: camera.id!,
               placeName: camera.placeName,
               predictedPeople: Math.round(predictedPeople),
               predictedDensity: Math.round(predictedDensity),
@@ -206,15 +199,6 @@ const CrowdPredictions = () => {
       case 'high': return { bg: 'bg-orange-600', text: 'text-orange-700', border: 'border-orange-300', light: 'bg-orange-50' };
       case 'critical': return { bg: 'bg-red-600', text: 'text-red-700', border: 'border-red-300', light: 'bg-red-50' };
       default: return { bg: 'bg-gray-600', text: 'text-gray-700', border: 'border-gray-300', light: 'bg-gray-50' };
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'low': return 'bg-green-600';
-      case 'medium': return 'bg-yellow-600';
-      case 'high': return 'bg-red-600';
-      default: return 'bg-gray-600';
     }
   };
 
@@ -424,7 +408,6 @@ const CrowdPredictions = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {cameraPredictions.map((prediction, index) => {
                       const colors = getDensityColor(prediction.densityLevel);
-                      const riskColor = getRiskColor(prediction.riskLevel);
                       
                       return (
                         <Card 

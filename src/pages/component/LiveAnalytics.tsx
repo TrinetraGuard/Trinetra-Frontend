@@ -13,7 +13,6 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
-  Eye,
   Zap,
   X
 } from 'lucide-react';
