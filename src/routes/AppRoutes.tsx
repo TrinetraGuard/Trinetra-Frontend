@@ -2,6 +2,7 @@ import { Route, Routes } from "react-router-dom";
 
 import AboutUsPage from "@/pages/home/page/aboutus_page";
 import AddPlacesAdmin from "@/pages/component/AddPlacesAdmin";
+import CCTVManagement from "@/pages/component/CCTVManagement";
 import CategorySectionAdmin from "@/pages/component/CategorySection";
 import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
@@ -76,6 +77,7 @@ const AppRoutes = () => {
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
+        <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
       </Route>
 

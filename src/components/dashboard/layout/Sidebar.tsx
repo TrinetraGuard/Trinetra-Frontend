@@ -4,6 +4,7 @@ import {
   BarChart3,
   Brain,
   Calendar,
+  Camera,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -24,14 +25,14 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import { useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useRef, useState } from "react";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { auth } from "@/firebase/firebase";
 import { cn } from "@/lib/utils";
-import { signOut } from "firebase/auth";
 import { createPortal } from "react-dom";
+import { signOut } from "firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface NavItem {
   name: string;
@@ -123,6 +124,11 @@ const navSections: NavSection[] = [
       {
         name: "Real-time Monitoring",
         items: [
+          {
+            name: "CCTV Management",
+            path: "/dashboard/cctv-management",
+            icon: Camera,
+          },
           {
             name: "Crowd Monitoring",
             path: "/dashboard/crowd-control",
