@@ -136,7 +136,7 @@ const navSections: NavSection[] = [
           },
           {
             name: "Live Analytics",
-            path: "/dashboard/crowd-control",
+            path: "/dashboard/live-analytics",
             icon: Activity,
           },
         ],

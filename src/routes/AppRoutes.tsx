@@ -14,6 +14,7 @@ import ErrorPage from "@/pages/error/error_page";
 import EventSectionAdmin from "@/pages/component/EventSection";
 import FeatureSectionAdmin from "@/pages/component/FeatureSection";
 import HomePage from "@/pages/home/page/home_page";
+import LiveAnalytics from "@/pages/component/LiveAnalytics";
 import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
 import Lostperson from "@/pages/lost/lostperson";
@@ -79,6 +80,7 @@ const AppRoutes = () => {
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
+        <Route path="live-analytics" element={<LiveAnalytics />} />
       </Route>
 
       <Route
