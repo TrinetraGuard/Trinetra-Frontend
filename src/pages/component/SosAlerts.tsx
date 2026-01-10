@@ -1,9 +1,13 @@
 import 'leaflet/dist/leaflet.css';
 
-import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
-import React, { useEffect, useRef, useState } from 'react';
-import { Timestamp, collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Mail, MapPin, Navigation2, Phone, User, Users, Zap } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Timestamp, arrayRemove, arrayUnion, collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import L from 'leaflet';
 import { db } from '../../firebase/firebase';
 
@@ -14,6 +18,70 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
+
+// Calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+};
+
+// Custom red marker for SOS alerts
+const createSOSIcon = () => {
+  return L.divIcon({
+    className: 'sos-marker',
+    html: `<div style="
+      width: 40px;
+      height: 40px;
+      background: #ef4444;
+      border: 3px solid white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      animation: pulse 2s infinite;
+    ">
+      <span style="color: white; font-size: 20px;">🚨</span>
+    </div>
+    <style>
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+    </style>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+  });
+};
+
+// Custom blue marker for volunteers
+const createVolunteerIcon = () => {
+  return L.divIcon({
+    className: 'volunteer-marker',
+    html: `<div style="
+      width: 35px;
+      height: 35px;
+      background: #3b82f6;
+      border: 3px solid white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    ">
+      <span style="color: white; font-size: 16px;">👤</span>
+    </div>`,
+    iconSize: [35, 35],
+    iconAnchor: [17.5, 17.5],
+  });
+};
 
 interface SOSAlert {
   id: string;
@@ -27,20 +95,48 @@ interface SOSAlert {
   latitude?: number;
   longitude?: number;
   lastLocationUpdate?: Timestamp;
+  authorizedVolunteers?: string[]; // Array of volunteer UIDs with access
 }
+
+interface Volunteer {
+  uid: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
+  role?: string;
+}
+
+// Component to update map view when location changes
+const MapUpdater = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (lat && lng) {
+      map.setView([lat, lng], map.getZoom());
+    }
+  }, [lat, lng, map]);
+  
+  return null;
+};
 
 const SosAlerts: React.FC = () => {
   const [alerts, setAlerts] = useState<SOSAlert[]>([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAlert, setSelectedAlert] = useState<SOSAlert | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('all');
-  const [mapKey, setMapKey] = useState(0);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [mapError, setMapError] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('active');
+  const [newAlerts, setNewAlerts] = useState<Set<string>>(new Set());
   const mapRef = useRef<L.Map | null>(null);
+  const previousAlertsRef = useRef<Set<string>>(new Set());
 
+  // Real-time listener for SOS alerts
   useEffect(() => {
-    const q = query(collection(db, 'sos_alerts'), orderBy('activatedAt', 'desc'));
+    const q = query(
+      collection(db, 'sos_alerts'),
+      orderBy('activatedAt', 'desc')
+    );
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const alertsData = snapshot.docs.map(doc => ({
@@ -48,121 +144,170 @@ const SosAlerts: React.FC = () => {
         ...doc.data()
       })) as SOSAlert[];
       
+      // Detect new alerts
+      const currentAlertIds = new Set(alertsData.map(a => a.id));
+      const newAlertIds = new Set(
+        Array.from(currentAlertIds).filter(id => !previousAlertsRef.current.has(id))
+      );
+      
+      if (newAlertIds.size > 0) {
+        setNewAlerts(newAlertIds);
+        setTimeout(() => {
+          setNewAlerts(prev => {
+            const updated = new Set(prev);
+            newAlertIds.forEach(id => updated.delete(id));
+            return updated;
+          });
+        }, 5000);
+      }
+      
+      previousAlertsRef.current = currentAlertIds;
       setAlerts(alertsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error listening to SOS alerts:', error);
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Force map re-render when selected alert changes
+  // Real-time listener for volunteers
   useEffect(() => {
-    if (selectedAlert) {
-      setMapKey(prev => prev + 1);
-      setMapLoaded(false);
-      setMapError(false);
-      
-      // Set a timeout to detect if map fails to load
-      const timeout = setTimeout(() => {
-        if (!mapLoaded) {
-          setMapError(true);
-        }
-      }, 5000);
-      
-      return () => clearTimeout(timeout);
-    }
-  }, [selectedAlert, mapLoaded]);
-
-  // Handle map resize when container changes
-  useEffect(() => {
-    if (mapRef.current && mapLoaded) {
-      const timer = setTimeout(() => {
-        mapRef.current?.invalidateSize();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [mapLoaded, selectedAlert]);
-
-  // Map component to handle proper initialization
-  const MapComponent = () => {
-    if (!selectedAlert || !selectedAlert.latitude || !selectedAlert.longitude) {
-      return (
-        <div className="h-full flex items-center justify-center text-gray-500">
-          <div className="text-center">
-            <div className="text-4xl mb-2">📍</div>
-            <p>Location not available</p>
-            <p className="text-sm mt-2">Latitude: {selectedAlert?.latitude || 'N/A'}</p>
-            <p className="text-sm">Longitude: {selectedAlert?.longitude || 'N/A'}</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="h-full w-full">
-        <MapContainer
-          key={mapKey}
-          center={[selectedAlert.latitude, selectedAlert.longitude]}
-          zoom={15}
-          style={{ height: '100%', width: '100%' }}
-          className="z-0"
-          ref={(map) => {
-            if (map) {
-              mapRef.current = map;
-              setMapLoaded(true);
-              setMapError(false);
-              // Force a resize to ensure proper rendering
-              setTimeout(() => {
-                map.invalidateSize();
-              }, 100);
-            }
-          }}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          <Marker position={[selectedAlert.latitude, selectedAlert.longitude]}>
-            <Popup>
-              <div className="p-2">
-                <h4 className="font-semibold">{selectedAlert.userName}</h4>
-                <p className="text-sm text-gray-600">{selectedAlert.userEmail}</p>
-                <p className="text-xs text-gray-500">
-                  Last updated: {selectedAlert.lastLocationUpdate ? 
-                    formatTime(selectedAlert.lastLocationUpdate) : 
-                    'Unknown'
-                  }
-                </p>
-              </div>
-            </Popup>
-          </Marker>
-        </MapContainer>
-      </div>
+    const q = query(
+      collection(db, 'users'),
+      orderBy('name')
     );
-  };
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const volunteersData = snapshot.docs
+        .map(doc => ({ uid: doc.id, ...doc.data() } as Volunteer))
+        .filter(v => v.role === 'volunteer' && v.appName === 'Trinetra');
+      
+      setVolunteers(volunteersData);
+    }, (error) => {
+      console.error('Error listening to volunteers:', error);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Auto-select first active alert if none selected
+  useEffect(() => {
+    if (!selectedAlert && alerts.length > 0) {
+      const activeAlert = alerts.find(a => a.status === 'active');
+      if (activeAlert) {
+        setSelectedAlert(activeAlert);
+      }
+    }
+  }, [alerts, selectedAlert]);
+
+  // Real-time location updates for selected alert
+  useEffect(() => {
+    if (!selectedAlert || selectedAlert.status !== 'active') return;
+
+    const alertRef = doc(db, 'sos_alerts', selectedAlert.id);
+    const unsubscribe = onSnapshot(alertRef, (doc) => {
+      if (doc.exists()) {
+        const updatedData = { id: doc.id, ...doc.data() } as SOSAlert;
+        setSelectedAlert(updatedData);
+        setAlerts(prev => prev.map(a => a.id === updatedData.id ? updatedData : a));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [selectedAlert?.id]);
+
+  // Calculate nearest volunteers for selected alert
+  const nearestVolunteers = useMemo(() => {
+    if (!selectedAlert || !selectedAlert.latitude || !selectedAlert.longitude) {
+      return [];
+    }
+
+    return volunteers
+      .filter(v => v.latitude && v.longitude)
+      .map(v => ({
+        ...v,
+        distance: calculateDistance(
+          selectedAlert.latitude!,
+          selectedAlert.longitude!,
+          v.latitude!,
+          v.longitude!
+        )
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 10); // Top 10 nearest
+  }, [selectedAlert, volunteers]);
 
   const handleResolveAlert = async (alertId: string) => {
+    if (!window.confirm('Are you sure you want to mark this alert as resolved?')) {
+      return;
+    }
+
     try {
       await updateDoc(doc(db, 'sos_alerts', alertId), {
         status: 'resolved',
-        resolvedAt: new Date()
+        resolvedAt: Timestamp.now(),
+        authorizedVolunteers: [] // Revoke all access when resolved
       });
+      
+      if (selectedAlert?.id === alertId) {
+        const nextActive = alerts.find(a => a.id !== alertId && a.status === 'active');
+        setSelectedAlert(nextActive || null);
+      }
     } catch (error) {
       console.error('Error resolving alert:', error);
+      alert('Failed to resolve alert. Please try again.');
+    }
+  };
+
+  const handleGrantAccess = async (alertId: string, volunteerId: string) => {
+    try {
+      const alertRef = doc(db, 'sos_alerts', alertId);
+      const alertDoc = await alertRef.get();
+      const currentAuthorized = alertDoc.data()?.authorizedVolunteers || [];
+      
+      if (!currentAuthorized.includes(volunteerId)) {
+        await updateDoc(alertRef, {
+          authorizedVolunteers: arrayUnion(volunteerId)
+        });
+      }
+    } catch (error) {
+      console.error('Error granting access:', error);
+      alert('Failed to grant access. Please try again.');
+    }
+  };
+
+  const handleRevokeAccess = async (alertId: string, volunteerId: string) => {
+    try {
+      await updateDoc(doc(db, 'sos_alerts', alertId), {
+        authorizedVolunteers: arrayRemove(volunteerId)
+      });
+    } catch (error) {
+      console.error('Error revoking access:', error);
+      alert('Failed to revoke access. Please try again.');
     }
   };
 
   const handleAlertSelect = (alert: SOSAlert) => {
     setSelectedAlert(alert);
+    setNewAlerts(prev => {
+      const updated = new Set(prev);
+      updated.delete(alert.id);
+      return updated;
+    });
   };
 
-  const filteredAlerts = alerts.filter(alert => {
-    if (filter === 'active') {
-      return alert.status === 'active';
-    }
-    if (filter === 'resolved') {
-      return alert.status === 'resolved';
-    }
+  // Sort alerts: active first, then by time (newest first)
+  const sortedAlerts = [...alerts].sort((a, b) => {
+    if (a.status === 'active' && b.status !== 'active') return -1;
+    if (a.status !== 'active' && b.status === 'active') return 1;
+    return b.activatedAt.toMillis() - a.activatedAt.toMillis();
+  });
+
+  const filteredAlerts = sortedAlerts.filter(alert => {
+    if (filter === 'active') return alert.status === 'active';
+    if (filter === 'resolved') return alert.status === 'resolved';
     return true;
   });
 
@@ -170,295 +315,504 @@ const SosAlerts: React.FC = () => {
   const resolvedAlerts = alerts.filter(alert => alert.status === 'resolved');
 
   const formatTime = (timestamp: Timestamp) => {
-    return new Date(timestamp.toDate()).toLocaleString();
+    return new Date(timestamp.toDate()).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const getTimeAgo = (timestamp: Timestamp) => {
     const now = new Date();
     const alertTime = new Date(timestamp.toDate());
-    const diffInMinutes = Math.floor((now.getTime() - alertTime.getTime()) / (1000 * 60));
+    const diffInSeconds = Math.floor((now.getTime() - alertTime.getTime()) / 1000);
     
-    if (diffInMinutes < 1) {
-      return 'Just now';
-    }
-    if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    }
-    if (diffInMinutes < 1440) {
-      return `${Math.floor(diffInMinutes / 60)}h ago`;
-    }
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffInSeconds < 10) return 'Just now';
+    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays}d ago`;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-red-500';
-      case 'resolved': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'ACTIVE';
-      case 'resolved': return 'RESOLVED';
-      default: return 'UNKNOWN';
-    }
+  const getLocationUpdateTime = (alert: SOSAlert) => {
+    if (!alert.lastLocationUpdate) return 'Never';
+    return getTimeAgo(alert.lastLocationUpdate);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div>
-          <p className=" text-gray-600">Loading SOS alerts...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show message if no alerts exist
-  if (alerts.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <div className="text-6xl mb-4">🚨</div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">No SOS Alerts</h1>
-            <p className="text-gray-600">There are currently no emergency alerts in the system.</p>
-          </div>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">SOS Alerts Dashboard</h1>
-              <p className="mt-1 text-sm text-gray-500">Monitor and manage emergency alerts</p>
-            </div>
-            <div className="flex space-x-4">
-              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
-                {activeAlerts.length} Active
-              </div>
-              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                {resolvedAlerts.length} Resolved
-              </div>
-            </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">SOS Alerts</h1>
+          <p className="text-gray-500 mt-1">Monitor and manage emergency alerts in real-time</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg border border-red-200">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-red-700">{activeAlerts.length} Active</span>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
+            <CheckCircle2 className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium text-green-700">{resolvedAlerts.length} Resolved</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Alerts List */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-6 border-b border-gray-200">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">Alerts</h2>
-                  <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'resolved')}
-                    className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Alerts List */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Emergency Alerts</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant={filter === 'active' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilter('active')}
+                    className={filter === 'active' ? 'bg-red-600 hover:bg-red-700' : ''}
                   >
-                    <option value="all">All Alerts</option>
-                    <option value="active">Active Only</option>
-                    <option value="resolved">Resolved Only</option>
-                  </select>
+                    Active
+                  </Button>
+                  <Button
+                    variant={filter === 'resolved' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilter('resolved')}
+                    className={filter === 'resolved' ? 'bg-green-600 hover:bg-green-700' : ''}
+                  >
+                    Resolved
+                  </Button>
+                  <Button
+                    variant={filter === 'all' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilter('all')}
+                  >
+                    All
+                  </Button>
                 </div>
               </div>
-              
-              <div className="max-h-96 overflow-y-auto">
+              <CardDescription>
+                {filteredAlerts.length} {filter === 'all' ? 'total' : filter} alert{filteredAlerts.length !== 1 ? 's' : ''}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="p-0">
+              <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
                 {filteredAlerts.length === 0 ? (
-                  <div className="p-6 text-center text-gray-500">
-                    <div className="text-4xl mb-2">🚨</div>
-                    <p>No {filter === 'all' ? '' : filter} alerts found</p>
+                  <div className="p-8 text-center">
+                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 font-medium">No {filter === 'all' ? '' : filter} alerts found</p>
+                    <p className="text-sm text-gray-400 mt-2">Alerts will appear here when users activate SOS</p>
                   </div>
                 ) : (
-                  filteredAlerts.map((alert) => (
-                    <div
-                      key={alert.id}
-                      className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                        selectedAlert?.id === alert.id ? 'bg-blue-50 border-blue-200' : ''
-                      }`}
-                      onClick={() => handleAlertSelect(alert)}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${getStatusColor(alert.status)}`}>
-                              {getStatusText(alert.status)}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              {getTimeAgo(alert.activatedAt)}
-                            </span>
+                  <div className="divide-y divide-gray-200">
+                    {filteredAlerts.map((alert) => {
+                      const isNew = newAlerts.has(alert.id);
+                      const isSelected = selectedAlert?.id === alert.id;
+                      
+                      return (
+                        <div
+                          key={alert.id}
+                          className={`p-4 cursor-pointer transition-all duration-200 ${
+                            isSelected
+                              ? 'bg-orange-50 border-l-4 border-orange-500'
+                              : 'hover:bg-gray-50'
+                          } ${isNew ? 'animate-pulse bg-red-50' : ''}`}
+                          onClick={() => handleAlertSelect(alert)}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                {isNew && (
+                                  <Badge className="bg-red-600 text-white animate-bounce">
+                                    <Zap className="w-3 h-3 mr-1" />
+                                    NEW
+                                  </Badge>
+                                )}
+                                <Badge
+                                  variant={alert.status === 'active' ? 'destructive' : 'default'}
+                                  className={alert.status === 'active' ? 'bg-red-600' : 'bg-green-600'}
+                                >
+                                  {alert.status === 'active' ? 'ACTIVE' : 'RESOLVED'}
+                                </Badge>
+                                {alert.status === 'active' && (
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                )}
+                              </div>
+                              <h3 className="font-semibold text-gray-900 truncate">{alert.userName}</h3>
+                              <p className="text-sm text-gray-600 truncate">{alert.userEmail}</p>
+                              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {getTimeAgo(alert.activatedAt)}
+                                </div>
+                                {alert.status === 'active' && alert.latitude && alert.longitude && (
+                                  <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    {getLocationUpdateTime(alert)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {alert.status === 'active' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResolveAlert(alert.id);
+                                }}
+                                className="flex-shrink-0 border-green-600 text-green-600 hover:bg-green-50"
+                              >
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                                Resolve
+                              </Button>
+                            )}
                           </div>
-                          <h3 className="font-medium text-gray-900">{alert.userName}</h3>
-                          <p className="text-sm text-gray-600">{alert.userEmail}</p>
-                          <p className="text-xs text-gray-500">{alert.userPhone}</p>
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-500">
-                            {formatTime(alert.activatedAt)}
-                          </div>
-                          {alert.status === 'active' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleResolveAlert(alert.id);
-                              }}
-                              className="mt-2 bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 transition-colors"
-                            >
-                              Resolve
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                      );
+                    })}
+                  </div>
                 )}
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Map and Details */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow" style={{ height: '600px' }}>
-              {selectedAlert ? (
-                <div className="h-full flex flex-col">
-                  {/* Alert Details Header */}
-                  <div className="p-6 border-b border-gray-200 bg-gray-50 flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {selectedAlert.userName}
-                        </h3>
-                        <p className="text-sm text-gray-600">{selectedAlert.userEmail}</p>
+        {/* Map and Details */}
+        <div className="lg:col-span-2 space-y-6">
+          {selectedAlert ? (
+            <>
+              {/* Alert Details Card */}
+              <Card>
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-red-600 rounded-lg">
+                        <User className="w-5 h-5 text-white" />
                       </div>
-                      <div className="text-right">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white ${getStatusColor(selectedAlert.status)}`}>
-                          {getStatusText(selectedAlert.status)}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Alerted {getTimeAgo(selectedAlert.activatedAt)}
-                        </p>
+                      <div>
+                        <CardTitle className="text-2xl">{selectedAlert.userName}</CardTitle>
+                        <CardDescription className="text-base">{selectedAlert.userEmail}</CardDescription>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Map */}
-                  <div className="flex-1 relative" style={{ minHeight: '300px' }}>
-                    {!mapLoaded && selectedAlert && !mapError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto"></div>
-                          <p className="mt-2 text-sm text-gray-600">Loading map...</p>
-                        </div>
-                      </div>
-                    )}
-                    {mapError && selectedAlert && (
-                      <div className="h-full flex items-center justify-center text-red-500">
-                        <div className="text-center">
-                          <div className="text-4xl mb-2">⚠️</div>
-                          <p>Failed to load map</p>
-                          <button 
-                            onClick={() => {
-                              setMapError(false);
-                              setMapKey(prev => prev + 1);
-                            }}
-                            className="mt-2 bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
-                          >
-                            Retry
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    <MapComponent />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-600">
-                        <p><strong>Phone:</strong> {selectedAlert.userPhone}</p>
-                        <p><strong>Alerted:</strong> {formatTime(selectedAlert.activatedAt)}</p>
-                        {selectedAlert.resolvedAt && (
-                          <p><strong>Resolved:</strong> {formatTime(selectedAlert.resolvedAt)}</p>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant={selectedAlert.status === 'active' ? 'destructive' : 'default'}
+                        className={`text-base px-4 py-2 ${
+                          selectedAlert.status === 'active' ? 'bg-red-600' : 'bg-green-600'
+                        }`}
+                      >
+                        {selectedAlert.status === 'active' ? (
+                          <>
+                            <AlertCircle className="w-4 h-4 mr-2" />
+                            ACTIVE EMERGENCY
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            RESOLVED
+                          </>
                         )}
-                      </div>
+                      </Badge>
                       {selectedAlert.status === 'active' && (
-                        <button
+                        <Button
                           onClick={() => handleResolveAlert(selectedAlert.id)}
-                          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                         >
-                          Mark as Resolved
-                        </button>
+                          <CheckCircle2 className="w-4 h-4 mr-2" />
+                          Mark Resolved
+                        </Button>
                       )}
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <div className="text-4xl mb-2">👆</div>
-                    <p>Select an alert to view details and location</p>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Phone className="w-5 h-5 text-gray-600" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Phone Number</p>
+                          <p className="text-base font-semibold text-gray-900">{selectedAlert.userPhone}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Mail className="w-5 h-5 text-gray-600" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Email</p>
+                          <p className="text-base font-semibold text-gray-900">{selectedAlert.userEmail}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <Clock className="w-5 h-5 text-gray-600" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Alert Activated</p>
+                          <p className="text-base font-semibold text-gray-900">
+                            {formatTime(selectedAlert.activatedAt)}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {getTimeAgo(selectedAlert.activatedAt)}
+                          </p>
+                        </div>
+                      </div>
+                      {selectedAlert.resolvedAt && (
+                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium">Resolved At</p>
+                            <p className="text-base font-semibold text-gray-900">
+                              {formatTime(selectedAlert.resolvedAt)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {selectedAlert.status === 'active' && selectedAlert.lastLocationUpdate && (
+                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                          <Navigation2 className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <p className="text-xs text-gray-500 font-medium">Last Location Update</p>
+                            <p className="text-base font-semibold text-gray-900">
+                              {getLocationUpdateTime(selectedAlert)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
+
+              {/* Nearby Volunteers Card */}
+              {selectedAlert.status === 'active' && selectedAlert.latitude && selectedAlert.longitude && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600 rounded-lg">
+                          <Users className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle>Nearby Volunteers</CardTitle>
+                          <CardDescription>
+                            Closest volunteers to the emergency location
+                          </CardDescription>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    {nearestVolunteers.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <p className="text-gray-500">No volunteers with location data available</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {nearestVolunteers.map((volunteer, index) => {
+                          const hasAccess = selectedAlert.authorizedVolunteers?.includes(volunteer.uid) || false;
+                          
+                          return (
+                            <div
+                              key={volunteer.uid}
+                              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            >
+                              <div className="flex items-center gap-4 flex-1">
+                                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
+                                  <span className="text-blue-600 font-semibold">
+                                    {index + 1}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900 truncate">
+                                    {volunteer.name || 'Unknown Volunteer'}
+                                  </p>
+                                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                                    <span>{volunteer.email}</span>
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="w-3 h-3" />
+                                      {volunteer.distance.toFixed(2)} km away
+                                    </span>
+                                  </div>
+                                  {hasAccess && (
+                                    <Badge className="bg-green-600 mt-2">
+                                      <Eye className="w-3 h-3 mr-1" />
+                                      Has Access
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {hasAccess ? (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleRevokeAccess(selectedAlert.id, volunteer.uid)}
+                                    className="border-red-600 text-red-600 hover:bg-red-50"
+                                  >
+                                    <EyeOff className="w-4 h-4 mr-1" />
+                                    Revoke
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleGrantAccess(selectedAlert.id, volunteer.uid)}
+                                    className="border-green-600 text-green-600 hover:bg-green-50"
+                                  >
+                                    <Eye className="w-4 h-4 mr-1" />
+                                    Grant Access
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* Summary Stats */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Alerts</p>
-                <p className="text-2xl font-semibold text-gray-900">{activeAlerts.length}</p>
-              </div>
-            </div>
-          </div>
+              {/* Map Card */}
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-600 rounded-lg">
+                      <MapPin className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle>Live Location</CardTitle>
+                      <CardDescription>
+                        {selectedAlert.latitude && selectedAlert.longitude
+                          ? `Tracking user's real-time location`
+                          : 'Location not available'}
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="p-0">
+                  <div className="h-[500px] relative bg-gray-100">
+                    {selectedAlert.latitude && selectedAlert.longitude ? (
+                      <>
+                        <MapContainer
+                          center={[selectedAlert.latitude, selectedAlert.longitude]}
+                          zoom={15}
+                          style={{ height: '100%', width: '100%' }}
+                          className="z-0"
+                          ref={(map) => {
+                            if (map) mapRef.current = map;
+                          }}
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          />
+                          <MapUpdater lat={selectedAlert.latitude} lng={selectedAlert.longitude} />
+                          
+                          {/* SOS Marker */}
+                          <Marker
+                            position={[selectedAlert.latitude, selectedAlert.longitude]}
+                            icon={createSOSIcon()}
+                          >
+                            <Popup>
+                              <div className="p-2">
+                                <h4 className="font-semibold text-gray-900 mb-1">{selectedAlert.userName}</h4>
+                                <p className="text-sm text-gray-600 mb-2">{selectedAlert.userEmail}</p>
+                                <p className="text-xs text-gray-500">
+                                  <strong>Last Update:</strong> {getLocationUpdateTime(selectedAlert)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  <strong>Coordinates:</strong> {selectedAlert.latitude.toFixed(6)}, {selectedAlert.longitude.toFixed(6)}
+                                </p>
+                              </div>
+                            </Popup>
+                          </Marker>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Resolved Alerts</p>
-                <p className="text-2xl font-semibold text-gray-900">{resolvedAlerts.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Alerts</p>
-                <p className="text-2xl font-semibold text-gray-900">{alerts.length}</p>
-              </div>
-            </div>
-          </div>
+                          {/* Volunteer Markers */}
+                          {nearestVolunteers
+                            .filter(v => v.latitude && v.longitude && selectedAlert.authorizedVolunteers?.includes(v.uid))
+                            .map(volunteer => (
+                              <Marker
+                                key={volunteer.uid}
+                                position={[volunteer.latitude!, volunteer.longitude!]}
+                                icon={createVolunteerIcon()}
+                              >
+                                <Popup>
+                                  <div className="p-2">
+                                    <h4 className="font-semibold text-gray-900 mb-1">{volunteer.name || 'Volunteer'}</h4>
+                                    <p className="text-sm text-gray-600 mb-2">{volunteer.email}</p>
+                                    <p className="text-xs text-gray-500">
+                                      <strong>Distance:</strong> {volunteer.distance.toFixed(2)} km
+                                    </p>
+                                    <Badge className="bg-green-600 mt-2">
+                                      <Eye className="w-3 h-3 mr-1" />
+                                      Has Access
+                                    </Badge>
+                                  </div>
+                                </Popup>
+                              </Marker>
+                            ))}
+                        </MapContainer>
+                        {selectedAlert.status === 'active' && (
+                          <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3 border border-gray-200 z-[1000]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                              <p className="text-sm font-medium text-gray-700">Live Tracking Active</p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center">
+                          <MapPin className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                          <p className="text-gray-600 font-medium">Location not available</p>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Waiting for location update from user's device
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card className="h-full min-h-[600px]">
+              <CardContent className="h-full flex items-center justify-center p-12">
+                <div className="text-center">
+                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Select an Alert</h3>
+                  <p className="text-gray-500">
+                    Choose an alert from the list to view details and location
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
