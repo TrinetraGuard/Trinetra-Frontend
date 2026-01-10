@@ -6,15 +6,6 @@ const TeamSection = () => {
   const teamMembers = [
     {
       id: 1,
-      name: "Omakar Sonawane",
-      role: "Lead Developer",
-      image: "https://media.licdn.com/dms/image/v2/D5603AQEorR399M8UlQ/profile-displayphoto-scale_400_400/B56ZiGFv5eH0Ak-/0/1754596314952?e=1758153600&v=beta&t=Zp5mNlNFM8J_WumqOEr_Qpi_MOFOP35gvviIn8iOIMI",
-      linkedin: "https://www.linkedin.com/in/omkar-sonawane273/",
-      github: "https://github.com/omkar273",
-      email: "omkarsonawane622@gmail.com"
-    },
-    {
-      id: 2,
       name: "Nisarga Lokhande",
       role: "AI/ML Engineer",
       image: "https://media.licdn.com/dms/image/v2/D5603AQFf0LUpm6vKGg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1723629889029?e=1758153600&v=beta&t=SQaXEJ0ClschWjSYna1kuzJeRYJ6Nsx7I1IjoQ-1OJg",
@@ -23,7 +14,7 @@ const TeamSection = () => {
       email: "priya@trinetra.com"
     },
     {
-      id: 3,
+          id: 2,
       name: "Rushikesh Landge",
       role: "Security Specialist",
       image: "https://media.licdn.com/dms/image/v2/D5635AQGroe21fQanrA/profile-framedphoto-shrink_400_400/profile-framedphoto-shrink_400_400/0/1735480011094?e=1755608400&v=beta&t=s_5rgg-pFt-187er73Wift3wYkOONBWCftziabBRmjI",
@@ -32,7 +23,7 @@ const TeamSection = () => {
       email: "rushilandge12@gmail.com"
     },
     {
-      id: 4,
+        id: 3,
       name: "Dhanashri Sonawane",
       role: "UX/UI Designer",
       image: "https://media.licdn.com/dms/image/v2/D4E03AQGJwowFc76IwA/profile-displayphoto-shrink_400_400/B4EZQnr875HEAg-/0/1735832622303?e=1758153600&v=beta&t=bYaL_RQaf8_cKryHB2UbQ33vIITaM6mP6As2G_cpctA",
@@ -41,7 +32,7 @@ const TeamSection = () => {
       email: "dhanashrisonawane2004@gmail.com"
     },
     {
-      id: 5,
+      id: 4,
       name: "Gayatri Vadge",
       role: "DevOps Engineer",
       image: "https://media.licdn.com/dms/image/v2/D5635AQG9Eh2ZJwFibQ/profile-framedphoto-shrink_400_400/profile-framedphoto-shrink_400_400/0/1719404676846?e=1755608400&v=beta&t=5pKJD-spPTIXKa7jqS-eZiQSjLsGlaej8EOYl2L92n0",

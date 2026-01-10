@@ -9,11 +9,8 @@ import {
 import {
   addDoc,
   collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
 } from "firebase/firestore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,26 +19,8 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { db } from "../../firebase/firebase";
 
-interface EventData {
-  id?: string;
-  eventName: string;
-  eventType: string;
-  startDate: string;
-  endDate: string;
-  startTime: string;
-  endTime: string;
-  description: string;
-  isRecurring: boolean;
-  organizer: string;
-  latitude: number;
-  longitude: number;
-  imageUrl: string;
-  entryFeeType: "free" | "paid";
-  entryFeeAmount: string;
-}
 
 const EventSectionAdmin = () => {
-  const [events, setEvents] = useState<EventData[]>([]);
   const [eventName, setEventName] = useState("");
   const [eventType, setEventType] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -56,13 +35,6 @@ const EventSectionAdmin = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [entryFeeType, setEntryFeeType] = useState<"free" | "paid">("free");
   const [entryFeeAmount, setEntryFeeAmount] = useState("");
-
-  useEffect(() => {
-    const unsub = onSnapshot(collection(db, "events"), (snapshot) => {
-      setEvents(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as EventData)));
-    });
-    return () => unsub();
-  }, []);
 
   const handleAdd = async () => {
     // Validate all required fields
@@ -103,7 +75,7 @@ const EventSectionAdmin = () => {
     }
 
     try {
-      const eventData: Omit<EventData, 'id'> = {
+      const eventData = {
         eventName: eventName.trim(),
         eventType: eventType.trim(),
         startDate: startDate.trim(),
@@ -142,12 +114,6 @@ const EventSectionAdmin = () => {
     } catch (error) {
       console.error("Error adding event:", error);
       alert("Failed to add event. Please try again.");
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this event?")) {
-    await deleteDoc(doc(db, "events", id));
     }
   };
 
@@ -449,107 +415,6 @@ const EventSectionAdmin = () => {
         <Button onClick={handleAdd} className="w-full">
           Add Event
         </Button>
-
-        {/* EXISTING EVENTS SECTION */}
-        <div className="mt-8 space-y-4 border-t-2 border-gray-200 pt-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Existing Events</h3>
-          
-          {events.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-              <p className="text-sm text-gray-500">No events added yet</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {events
-                .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-                .map((ev) => (
-            <div
-              key={ev.id}
-                    className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:border-gray-400 hover:shadow-lg transition-all duration-200"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        {/* Event Header */}
-                        <div className="flex items-center gap-3 mb-3 flex-wrap">
-                          <h4 className="font-bold text-xl text-gray-900">{ev.eventName}</h4>
-                          <span className="px-3 py-1 text-xs font-semibold bg-black text-white rounded-full">
-                            {ev.eventType}
-                          </span>
-                          {ev.isRecurring && (
-                            <span className="px-3 py-1 text-xs font-semibold bg-gray-800 text-white rounded-full">
-                              Recurring
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Description */}
-                        <p className="text-sm text-gray-600 mb-4 leading-relaxed">{ev.description}</p>
-                        
-                        {/* Event Details Grid */}
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Start Date</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.startDate}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">End Date</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.endDate}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Start Time</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.startTime}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">End Time</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.endTime}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Organizer</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.organizer}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Entry Fee</p>
-                            <p className="text-sm font-bold text-gray-900">{ev.entryFeeAmount}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Latitude</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.latitude}</p>
-                          </div>
-                          <div className="bg-gray-50 p-3 rounded-md border border-gray-200">
-                            <p className="font-semibold text-xs text-gray-500 uppercase mb-1">Longitude</p>
-                            <p className="text-sm font-medium text-gray-900">{ev.longitude}</p>
-                          </div>
-                        </div>
-                        
-                        {/* Event Image */}
-                        {ev.imageUrl && (
-                          <img 
-                            src={ev.imageUrl} 
-                            alt={ev.eventName}
-                            className="w-full h-48 object-cover rounded-md border-2 border-gray-200"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        )}
-              </div>
-                      
-                      {/* Delete Button */}
-              <Button
-                variant="destructive"
-                size="sm"
-                        onClick={() => handleDelete(ev.id!)}
-                        className="flex-shrink-0"
-              >
-                Delete
-              </Button>
-            </div>
-                  </div>
-                ))
-              }
-            </div>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
