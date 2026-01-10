@@ -6,6 +6,9 @@ import CCTVManagement from "@/pages/component/CCTVManagement";
 import CategorySectionAdmin from "@/pages/component/CategorySection";
 import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
+import CrowdDensity from "@/pages/component/CrowdDensity";
+import CrowdLogs from "@/pages/component/CrowdLogs";
+import CrowdPredictions from "@/pages/component/CrowdPredictions";
 import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
 import DashboardPage from "@/pages/dashboard";
 import EditEventSection from "@/pages/component/EditEventSection";
@@ -81,6 +84,9 @@ const AppRoutes = () => {
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
         <Route path="live-analytics" element={<LiveAnalytics />} />
+        <Route path="crowd-density" element={<CrowdDensity />} />
+        <Route path="crowd-logs" element={<CrowdLogs />} />
+        <Route path="crowd-predictions" element={<CrowdPredictions />} />
       </Route>
 
       <Route

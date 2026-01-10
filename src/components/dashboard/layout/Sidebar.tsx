@@ -146,17 +146,17 @@ const navSections: NavSection[] = [
         items: [
           {
             name: "Crowd Density",
-            path: "/dashboard/crowd-control",
+            path: "/dashboard/crowd-density",
             icon: BarChart3,
           },
           {
             name: "Crowd Logs",
-            path: "/dashboard/crowd-control",
+            path: "/dashboard/crowd-logs",
             icon: FileText,
           },
           {
             name: "Crowd Prediction",
-            path: "/dashboard/crowd-control",
+            path: "/dashboard/crowd-predictions",
             icon: Brain,
           },
           {
