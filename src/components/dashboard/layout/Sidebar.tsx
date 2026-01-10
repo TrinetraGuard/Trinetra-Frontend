@@ -17,7 +17,6 @@ import {
   Map,
   MapPin,
   MapPinned,
-  TrendingUp,
   UserCheck,
   UserCircle,
   UserCog,
@@ -158,11 +157,6 @@ const navSections: NavSection[] = [
             name: "Crowd Prediction",
             path: "/dashboard/crowd-predictions",
             icon: Brain,
-          },
-          {
-            name: "Trends & Insights",
-            path: "/dashboard/crowd-control",
-            icon: TrendingUp,
           },
         ],
       },
@@ -345,10 +339,10 @@ export default function Sidebar() {
                                     onMouseLeave={handleMouseLeave}
                                     className={cn(
                                       "flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
-                                      "hover:bg-gray-100 hover:text-gray-900",
+                                      isActive
+                                        ? "bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold shadow-md hover:bg-gray-900 hover:from-gray-900 hover:to-gray-900"
+                                        : "hover:bg-gray-100 hover:text-gray-900",
                                       "hover:shadow-sm hover:translate-x-0.5",
-                                      isActive &&
-                                        "bg-gradient-to-r from-gray-900 to-gray-800 text-white font-semibold shadow-md",
                                       collapsed ? "justify-center" : "",
                                       !collapsed && "ml-2"
                                     )}
