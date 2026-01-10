@@ -80,6 +80,14 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Event's",
     description: "Event's page",
   },
+  "/dashboard/add-event": {
+    title: "Add Event",
+    description: "Add new events to the pilgrimage calendar",
+  },
+  "/dashboard/edit-event": {
+    title: "Edit Event",
+    description: "Edit and manage existing events",
+  },
   "/dashboard/section-features": {
     title: "Features",
     description: "Features page",
@@ -94,7 +102,7 @@ export const routeMetadata: Record<string, RouteMetadata> = {
   },
   "/dashboard/sos-alerts": {
     title: "SOS Alerts",
-    description: "SOS Alerts page",
+    description: "Manage emergency SOS alerts, track user locations, and coordinate with nearby volunteers",
   },
   "/dashboard/users-map": {
     title: "Users Map",
@@ -104,9 +112,29 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Feature Post",
     description: "Feature Post page",
   },
+  "/dashboard/cctv-management": {
+    title: "CCTV Management",
+    description: "Manage CCTV cameras, add RTSP links, and monitor camera status",
+  },
   "/dashboard/crowd-control": {
-    title: "Crowd Control",
-    description: "crowd control page",
+    title: "Crowd Monitoring",
+    description: "Real-time monitoring of all CCTV cameras for crowd management",
+  },
+  "/dashboard/live-analytics": {
+    title: "Live Analytics",
+    description: "Real-time crowd analysis and density monitoring with AI-powered insights",
+  },
+  "/dashboard/crowd-density": {
+    title: "Crowd Density Analysis",
+    description: "Comprehensive crowd density monitoring and analysis across all locations",
+  },
+  "/dashboard/crowd-logs": {
+    title: "Crowd Logs",
+    description: "Historical crowd data and time-based analysis for all monitored locations",
+  },
+  "/dashboard/crowd-predictions": {
+    title: "Crowd Predictions",
+    description: "AI-powered crowd forecasting based on historical patterns and predictive analytics",
   },
 };
 

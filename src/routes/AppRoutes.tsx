@@ -2,9 +2,13 @@ import { Route, Routes } from "react-router-dom";
 
 import AboutUsPage from "@/pages/home/page/aboutus_page";
 import AddPlacesAdmin from "@/pages/component/AddPlacesAdmin";
+import CCTVManagement from "@/pages/component/CCTVManagement";
 import CategorySectionAdmin from "@/pages/component/CategorySection";
 import CrowdControl from "@/components/cctvcrowd/CrowdControl";
 import CrowdControlPage from "@/pages/home/page/crowd_control_page";
+import CrowdDensity from "@/pages/component/CrowdDensity";
+import CrowdLogs from "@/pages/component/CrowdLogs";
+import CrowdPredictions from "@/pages/component/CrowdPredictions";
 import DashboardLayoutWrapper from "@/components/dashboard/layout/DashboardLayoutWrapper";
 import DashboardPage from "@/pages/dashboard";
 import EditEventSection from "@/pages/component/EditEventSection";
@@ -13,6 +17,7 @@ import ErrorPage from "@/pages/error/error_page";
 import EventSectionAdmin from "@/pages/component/EventSection";
 import FeatureSectionAdmin from "@/pages/component/FeatureSection";
 import HomePage from "@/pages/home/page/home_page";
+import LiveAnalytics from "@/pages/component/LiveAnalytics";
 import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
 import Lostperson from "@/pages/lost/lostperson";
@@ -76,7 +81,12 @@ const AppRoutes = () => {
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
+        <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
+        <Route path="live-analytics" element={<LiveAnalytics />} />
+        <Route path="crowd-density" element={<CrowdDensity />} />
+        <Route path="crowd-logs" element={<CrowdLogs />} />
+        <Route path="crowd-predictions" element={<CrowdPredictions />} />
       </Route>
 
       <Route
