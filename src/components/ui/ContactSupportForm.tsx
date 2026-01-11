@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { FaChevronDown, FaEnvelope, FaPaperPlane, FaSpinner, FaTimes, FaUser } from "react-icons/fa";
+import { useEffect, useState } from "react";
 
 interface ContactFormData {
   name: string;
@@ -142,7 +142,7 @@ const ContactSupportForm: React.FC<ContactSupportFormProps> = ({
         body: JSON.stringify({
           ...formData,
           timestamp: new Date().toISOString(),
-          source: "TrinetraGuard Contact Form"
+          source: "Trinetra Contact Form"
         }),
       });
 
