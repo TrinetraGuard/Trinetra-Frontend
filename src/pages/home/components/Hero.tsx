@@ -53,7 +53,7 @@ const Hero: React.FC = () => {
         <h2 className="text-2xl md:text-3xl font-light text-white/90 mb-8 leading-relaxed">
           Making Pilgrimage Management
           <br />
-          <span className="font-semibold text-white">Seamless, Transparent, and Open!</span>
+          <span className="font-semibold text-white">Seamless, Transparent, and Open</span>
         </h2>
         
         {/* Description */}
