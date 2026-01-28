@@ -77,11 +77,13 @@ const Lostperson = () => {
               key={index}
               className="bg-white rounded-2xl shadow-md hover:shadow-lg transition duration-300 overflow-hidden"
             >
-              <img
-                src={imageUrl}
-                alt={person.name}
-                className="w-full h-56 object-cover"
-              />
+              <div className="w-full h-64 bg-gray-50 flex items-center justify-center overflow-hidden">
+                <img
+                  src={imageUrl}
+                  alt={person.name}
+                  className="max-w-full max-h-full w-auto h-auto object-contain"
+                />
+              </div>
 
               <div className="p-4">
                 <h2 className="text-xl font-semibold text-gray-800">

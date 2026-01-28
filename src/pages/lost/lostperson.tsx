@@ -5,21 +5,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DocumentData,
-  QuerySnapshot,
-  addDoc,
-  collection,
-  collectionGroup,
-  deleteDoc,
-  doc,
-  getDoc,
-  onSnapshot,
-  query,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { Eye, Loader2, MapPin, Send, Trash2, Users } from "lucide-react";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,6 +19,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DocumentData,
+  QuerySnapshot,
+  addDoc,
+  collection,
+  collectionGroup,
+  deleteDoc,
+  doc,
+  getDoc,
+  onSnapshot,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+import { Eye, Loader2, MapPin, Send, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -342,11 +342,11 @@ const LostpersonAdmin = () => {
                     <img
                       src={r.imageUrl}
                       alt={r.name}
-                      className="w-16 h-16 rounded-lg object-cover border cursor-pointer"
+                      className="w-20 h-20 rounded-lg object-contain border cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
                       onClick={() => setPreviewSrc(r.imageUrl!)}
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
+                    <div className="w-20 h-20 bg-gray-100 border rounded flex items-center justify-center text-gray-400">
                       N/A
                     </div>
                   )}
@@ -422,11 +422,19 @@ const LostpersonAdmin = () => {
 
       {/* IMAGE PREVIEW */}
       <Dialog open={!!previewSrc} onOpenChange={() => setPreviewSrc(null)}>
-        <DialogContent className="max-w-3xl bg-white">
+        <DialogContent className="max-w-4xl bg-white">
           <DialogHeader>
             <DialogTitle>Photo Preview</DialogTitle>
           </DialogHeader>
-          {previewSrc && <img src={previewSrc} alt="Preview" className="rounded-lg" />}
+          {previewSrc && (
+            <div className="flex items-center justify-center bg-gray-50 rounded-lg p-4">
+              <img 
+                src={previewSrc} 
+                alt="Preview" 
+                className="max-w-full max-h-[70vh] w-auto h-auto object-contain rounded-lg shadow-md" 
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -448,11 +456,17 @@ const LostpersonAdmin = () => {
             <div className="space-y-6">
               {/* Lost Person Info */}
               <div className="flex gap-4">
-                <img
-                  src={viewReport.imageUrl || "/placeholder.png"}
-                  alt="Lost Person"
-                  className="w-28 h-28 rounded-lg object-cover border"
-                />
+                <div className="w-32 h-32 rounded-lg border bg-gray-50 flex items-center justify-center overflow-hidden">
+                  {viewReport.imageUrl ? (
+                    <img
+                      src={viewReport.imageUrl}
+                      alt="Lost Person"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="text-gray-400 text-sm">No Image</div>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                   <div className="text-gray-500">Name</div>
                   <div className="font-medium">{viewReport.name}</div>
