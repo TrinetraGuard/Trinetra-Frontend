@@ -1,11 +1,11 @@
+import { onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react";
 import { auth, db } from "../../firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
 
 import RouteMetadata from "@/components/ui/RouteMetadata";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -33,32 +33,57 @@ const Login = () => {
 
       if (!userData) {
         setError("User record not found in Firestore");
+        setIsLoading(false);
         return;
       }
 
       const role = userData.role;
 
+      // Wait for auth state to be confirmed before navigating
+      // This ensures ProtectedRoute will recognize the authenticated user
+      // Check if user is already authenticated (should be after signInWithEmailAndPassword)
+      if (auth.currentUser) {
+        // Small delay to ensure AuthContext's onAuthStateChanged has fired
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      } else {
+        // If not immediately available, wait for auth state change
+        await new Promise<void>((resolve) => {
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+              unsubscribe();
+              resolve();
+            }
+          });
+          // Fallback timeout
+          setTimeout(() => {
+            unsubscribe();
+            resolve();
+          }, 2000);
+        });
+      }
+
       // Role-based navigation
       switch (role) {
         case "admin":
-          navigate("/admin/dashboard");
+          navigate("/admin", { replace: true });
           break;
         case "volunteer":
-          navigate("/volunteer");
+          navigate("/volunteer", { replace: true });
           break;
         case "authority":
-          navigate("/authority");
+          navigate("/authority", { replace: true });
           break;
         case "user":
         default:
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
           break;
       }
+      
+      // Don't set loading to false here as we're navigating away
 
     } catch (error: unknown) {
       console.error("Login error:", error);
       setError((error as Error).message || "Login failed");
-    } finally {
       setIsLoading(false);
     }
   };

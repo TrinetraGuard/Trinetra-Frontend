@@ -1,10 +1,10 @@
 import 'leaflet/dist/leaflet.css';
 
-import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Mail, MapPin, Navigation2, Phone, User, Users, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Timestamp, arrayRemove, arrayUnion, collection, doc, getDoc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { AlertCircle, CheckCircle2, Clock, Eye, EyeOff, Mail, MapPin, Navigation2, Phone, User, Users, Zap } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -359,37 +359,63 @@ const SosAlerts: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-            <div>
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
           <h1 className="text-3xl font-bold text-gray-900">SOS Alerts</h1>
           <p className="text-gray-500 mt-1">Monitor and manage emergency alerts in real-time</p>
-            </div>
+        </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg border border-red-200">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-red-700">{activeAlerts.length} Active</span>
+          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100/50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-500 rounded-lg">
+                  <AlertCircle className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-red-600 uppercase tracking-wide">Active Alerts</p>
+                  <p className="text-2xl font-bold text-red-700">{activeAlerts.length}</p>
+                </div>
               </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-medium text-green-700">{resolvedAlerts.length} Resolved</span>
-          </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100/50 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <CheckCircle2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-green-600 uppercase tracking-wide">Resolved</p>
+                  <p className="text-2xl font-bold text-green-700">{resolvedAlerts.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Alerts List */}
-          <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Emergency Alerts</CardTitle>
-                <div className="flex gap-2">
+        {/* Alerts List */}
+        <div className="lg:col-span-1">
+          <Card className="shadow-lg border-gray-200">
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle className="text-xl flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    Emergency Alerts
+                  </CardTitle>
+                  <CardDescription className="mt-1">
+                    {filteredAlerts.length} {filter === 'all' ? 'total' : filter} alert{filteredAlerts.length !== 1 ? 's' : ''}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     variant={filter === 'active' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('active')}
-                    className={filter === 'active' ? 'bg-red-600 hover:bg-red-700' : ''}
+                    className={filter === 'active' ? 'bg-red-600 hover:bg-red-700 text-white shadow-md' : 'border-gray-300'}
                   >
                     Active
                   </Button>
@@ -397,7 +423,7 @@ const SosAlerts: React.FC = () => {
                     variant={filter === 'resolved' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('resolved')}
-                    className={filter === 'resolved' ? 'bg-green-600 hover:bg-green-700' : ''}
+                    className={filter === 'resolved' ? 'bg-green-600 hover:bg-green-700 text-white shadow-md' : 'border-gray-300'}
                   >
                     Resolved
                   </Button>
@@ -405,121 +431,123 @@ const SosAlerts: React.FC = () => {
                     variant={filter === 'all' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('all')}
+                    className={filter === 'all' ? 'bg-gray-900 hover:bg-gray-800 text-white shadow-md' : 'border-gray-300'}
                   >
                     All
                   </Button>
                 </div>
               </div>
-              <CardDescription>
-                {filteredAlerts.length} {filter === 'all' ? 'total' : filter} alert{filteredAlerts.length !== 1 ? 's' : ''}
-              </CardDescription>
             </CardHeader>
               
             <CardContent className="p-0">
-              <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="max-h-[calc(100vh-300px)] overflow-y-auto custom-scrollbar">
                 {filteredAlerts.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 font-medium">No {filter === 'all' ? '' : filter} alerts found</p>
+                  <div className="p-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertCircle className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-600 font-semibold text-lg">No {filter === 'all' ? '' : filter} alerts found</p>
                     <p className="text-sm text-gray-400 mt-2">Alerts will appear here when users activate SOS</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-gray-100">
                     {filteredAlerts.map((alert) => {
                       const isNew = newAlerts.has(alert.id);
                       const isSelected = selectedAlert?.id === alert.id;
                       
                       return (
-                    <div
-                      key={alert.id}
+                        <div
+                          key={alert.id}
                           className={`p-4 cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? 'bg-orange-50 border-l-4 border-orange-500'
+                              ? 'bg-gradient-to-r from-orange-50 to-orange-100/50 border-l-4 border-orange-500 shadow-sm'
                               : 'hover:bg-gray-50'
-                          } ${isNew ? 'animate-pulse bg-red-50' : ''}`}
-                      onClick={() => handleAlertSelect(alert)}
-                    >
+                          } ${isNew ? 'animate-pulse bg-red-50 border-l-4 border-red-500' : ''}`}
+                          onClick={() => handleAlertSelect(alert)}
+                        >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
+                              <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 {isNew && (
-                                  <Badge className="bg-red-600 text-white animate-bounce">
+                                  <Badge className="bg-red-600 text-white animate-bounce shadow-md">
                                     <Zap className="w-3 h-3 mr-1" />
                                     NEW
                                   </Badge>
                                 )}
                                 <Badge
                                   variant={alert.status === 'active' ? 'destructive' : 'default'}
-                                  className={alert.status === 'active' ? 'bg-red-600' : 'bg-green-600'}
+                                  className={`${alert.status === 'active' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold shadow-sm`}
                                 >
                                   {alert.status === 'active' ? 'ACTIVE' : 'RESOLVED'}
                                 </Badge>
                                 {alert.status === 'active' && (
-                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-sm"></div>
                                 )}
                               </div>
-                              <h3 className="font-semibold text-gray-900 truncate">{alert.userName}</h3>
-                              <p className="text-sm text-gray-600 truncate">{alert.userEmail}</p>
+                              <h3 className="font-bold text-gray-900 truncate text-base mb-1">{alert.userName}</h3>
+                              <p className="text-sm text-gray-600 truncate mb-2">{alert.userEmail}</p>
                               <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                              {getTimeAgo(alert.activatedAt)}
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span className="font-medium">{getTimeAgo(alert.activatedAt)}</span>
                                 </div>
                                 {alert.status === 'active' && alert.latitude && alert.longitude && (
-                                  <div className="flex items-center gap-1">
-                                    <MapPin className="w-3 h-3" />
-                                    {getLocationUpdateTime(alert)}
-                          </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5" />
+                                    <span className="font-medium">{getLocationUpdateTime(alert)}</span>
+                                  </div>
                                 )}
-                        </div>
-                          </div>
-                          {alert.status === 'active' && (
+                              </div>
+                            </div>
+                            {alert.status === 'active' && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleResolveAlert(alert.id);
-                              }}
-                                className="flex-shrink-0 border-green-600 text-green-600 hover:bg-green-50"
-                            >
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleResolveAlert(alert.id);
+                                }}
+                                className="flex-shrink-0 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 shadow-sm"
+                              >
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
-                              Resolve
+                                Resolve
                               </Button>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
                       );
                     })}
-                    </div>
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
-          </div>
+        </div>
 
-          {/* Map and Details */}
+        {/* Map and Details */}
         <div className="lg:col-span-2 space-y-6">
-              {selectedAlert ? (
+          {selectedAlert ? (
             <>
               {/* Alert Details Card */}
-              <Card>
-                <CardHeader>
+              <Card className="shadow-lg border-gray-200">
+                <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50/50 border-b">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-600 rounded-lg">
-                        <User className="w-5 h-5 text-white" />
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
+                        <User className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">{selectedAlert.userName}</CardTitle>
-                        <CardDescription className="text-base">{selectedAlert.userEmail}</CardDescription>
+                        <CardTitle className="text-2xl font-bold text-gray-900">{selectedAlert.userName}</CardTitle>
+                        <CardDescription className="text-base mt-1">{selectedAlert.userEmail}</CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Badge
                         variant={selectedAlert.status === 'active' ? 'destructive' : 'default'}
-                        className={`text-base px-4 py-2 ${
-                          selectedAlert.status === 'active' ? 'bg-red-600' : 'bg-green-600'
+                        className={`text-sm px-4 py-2 font-bold shadow-md ${
+                          selectedAlert.status === 'active' 
+                            ? 'bg-red-600 hover:bg-red-700 text-white' 
+                            : 'bg-green-600 hover:bg-green-700 text-white'
                         }`}
                       >
                         {selectedAlert.status === 'active' ? (
@@ -537,7 +565,7 @@ const SosAlerts: React.FC = () => {
                       {selectedAlert.status === 'active' && (
                         <Button
                           onClick={() => handleResolveAlert(selectedAlert.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md font-semibold"
                         >
                           <CheckCircle2 className="w-4 h-4 mr-2" />
                           Mark Resolved
@@ -547,54 +575,64 @@ const SosAlerts: React.FC = () => {
                   </div>
                 </CardHeader>
                 
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <Phone className="w-5 h-5 text-gray-600" />
-                        <div>
-                          <p className="text-xs text-gray-500 font-medium">Phone Number</p>
-                          <p className="text-base font-semibold text-gray-900">{selectedAlert.userPhone}</p>
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Phone className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Phone Number</p>
+                          <p className="text-base font-bold text-gray-900">{selectedAlert.userPhone}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <Mail className="w-5 h-5 text-gray-600" />
-                        <div>
-                          <p className="text-xs text-gray-500 font-medium">Email</p>
-                          <p className="text-base font-semibold text-gray-900">{selectedAlert.userEmail}</p>
+                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <Mail className="w-5 h-5 text-purple-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Email</p>
+                          <p className="text-base font-bold text-gray-900">{selectedAlert.userEmail}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <Clock className="w-5 h-5 text-gray-600" />
-                        <div>
-                          <p className="text-xs text-gray-500 font-medium">Alert Activated</p>
-                          <p className="text-base font-semibold text-gray-900">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl border border-orange-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-orange-100 rounded-lg">
+                          <Clock className="w-5 h-5 text-orange-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Alert Activated</p>
+                          <p className="text-base font-bold text-gray-900">
                             {formatTime(selectedAlert.activatedAt)}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-1 font-medium">
                             {getTimeAgo(selectedAlert.activatedAt)}
                           </p>
-                  </div>
+                        </div>
                       </div>
                       {selectedAlert.resolvedAt && (
-                        <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Resolved At</p>
-                            <p className="text-base font-semibold text-gray-900">
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl border border-green-200 hover:shadow-md transition-shadow">
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Resolved At</p>
+                            <p className="text-base font-bold text-gray-900">
                               {formatTime(selectedAlert.resolvedAt)}
                             </p>
                           </div>
                         </div>
                       )}
                       {selectedAlert.status === 'active' && selectedAlert.lastLocationUpdate && (
-                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                          <Navigation2 className="w-5 h-5 text-blue-600" />
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Last Location Update</p>
-                            <p className="text-base font-semibold text-gray-900">
+                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200 hover:shadow-md transition-shadow">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Navigation2 className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Last Location Update</p>
+                            <p className="text-base font-bold text-gray-900">
                               {getLocationUpdateTime(selectedAlert)}
                             </p>
                           </div>
@@ -607,16 +645,16 @@ const SosAlerts: React.FC = () => {
 
               {/* Nearby Volunteers Card */}
               {selectedAlert.status === 'active' && selectedAlert.latitude && selectedAlert.longitude && (
-                <Card>
-                  <CardHeader>
+                <Card className="shadow-lg border-gray-200">
+                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-lg">
-                          <Users className="w-5 h-5 text-white" />
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
+                          <Users className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                          <CardTitle>Nearby Volunteers</CardTitle>
-                          <CardDescription>
+                          <CardTitle className="text-xl font-bold">Nearby Volunteers</CardTitle>
+                          <CardDescription className="text-base mt-1">
                             Closest volunteers to the emergency location
                           </CardDescription>
                         </div>
@@ -624,54 +662,61 @@ const SosAlerts: React.FC = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent>
+                  <CardContent className="pt-6">
                     {nearestVolunteers.length === 0 ? (
-                      <div className="text-center py-8">
-                        <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500">No volunteers with location data available</p>
-                </div>
-              ) : (
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Users className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-600 font-semibold">No volunteers with location data available</p>
+                        <p className="text-sm text-gray-400 mt-2">Volunteers will appear here when they share their location</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
                         {nearestVolunteers.map((volunteer, index) => {
                           const hasAccess = selectedAlert.authorizedVolunteers?.includes(volunteer.uid) || false;
                           
                           return (
                             <div
                               key={volunteer.uid}
-                              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                              className={`flex items-center justify-between p-4 border-2 rounded-xl transition-all hover:shadow-md ${
+                                hasAccess 
+                                  ? 'bg-gradient-to-r from-green-50 to-green-100/50 border-green-200' 
+                                  : 'bg-white border-gray-200 hover:border-gray-300'
+                              }`}
                             >
                               <div className="flex items-center gap-4 flex-1">
-                                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded-full">
-                                  <span className="text-blue-600 font-semibold">
-                                    {index + 1}
-                                  </span>
+                                <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold text-white shadow-md ${
+                                  hasAccess ? 'bg-green-600' : 'bg-blue-600'
+                                }`}>
+                                  <span className="text-lg">{index + 1}</span>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-gray-900 truncate">
+                                  <p className="font-bold text-gray-900 truncate text-base">
                                     {volunteer.name || 'Unknown Volunteer'}
                                   </p>
-                                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                                    <span>{volunteer.email}</span>
-                                    <span className="flex items-center gap-1">
-                                      <MapPin className="w-3 h-3" />
+                                  <div className="flex items-center gap-4 mt-1.5 text-sm text-gray-600 flex-wrap">
+                                    <span className="font-medium">{volunteer.email}</span>
+                                    <span className="flex items-center gap-1.5 font-semibold">
+                                      <MapPin className="w-3.5 h-3.5" />
                                       {volunteer.distance.toFixed(2)} km away
                                     </span>
                                   </div>
                                   {hasAccess && (
-                                    <Badge className="bg-green-600 mt-2">
+                                    <Badge className="bg-green-600 hover:bg-green-700 text-white mt-2 shadow-sm">
                                       <Eye className="w-3 h-3 mr-1" />
                                       Has Access
                                     </Badge>
                                   )}
-                  </div>
-                </div>
+                                </div>
+                              </div>
                               <div className="flex items-center gap-2">
                                 {hasAccess ? (
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleRevokeAccess(selectedAlert.id, volunteer.uid)}
-                                    className="border-red-600 text-red-600 hover:bg-red-50"
+                                    className="border-red-600 text-red-600 hover:bg-red-50 hover:border-red-700 shadow-sm font-semibold"
                                   >
                                     <EyeOff className="w-4 h-4 mr-1" />
                                     Revoke
@@ -681,38 +726,38 @@ const SosAlerts: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleGrantAccess(selectedAlert.id, volunteer.uid)}
-                                    className="border-green-600 text-green-600 hover:bg-green-50"
+                                    className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 shadow-sm font-semibold"
                                   >
                                     <Eye className="w-4 h-4 mr-1" />
                                     Grant Access
                                   </Button>
-              )}
-            </div>
-          </div>
+                                )}
+                              </div>
+                            </div>
                           );
                         })}
-        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
               )}
 
               {/* Map Card */}
-              <Card className="overflow-hidden">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <MapPin className="w-5 h-5 text-white" />
-              </div>
+              <Card className="overflow-hidden shadow-lg border-gray-200">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
+                      <MapPin className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <CardTitle>Live Location</CardTitle>
-                      <CardDescription>
+                      <CardTitle className="text-xl font-bold">Live Location</CardTitle>
+                      <CardDescription className="text-base mt-1">
                         {selectedAlert.latitude && selectedAlert.longitude
                           ? `Tracking user's real-time location`
                           : 'Location not available'}
                       </CardDescription>
-              </div>
-            </div>
+                    </div>
+                  </div>
                 </CardHeader>
                 
                 <CardContent className="p-0">
@@ -803,15 +848,17 @@ const SosAlerts: React.FC = () => {
               </Card>
             </>
           ) : (
-            <Card className="h-full min-h-[600px]">
+            <Card className="h-full min-h-[600px] shadow-lg border-gray-200">
               <CardContent className="h-full flex items-center justify-center p-12">
                 <div className="text-center">
-                  <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Select an Alert</h3>
-                  <p className="text-gray-500">
+                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Select an Alert</h3>
+                  <p className="text-gray-500 text-lg">
                     Choose an alert from the list to view details and location
                   </p>
-          </div>
+                </div>
               </CardContent>
             </Card>
           )}

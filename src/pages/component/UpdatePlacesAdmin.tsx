@@ -1,16 +1,17 @@
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-    collection,
-    deleteDoc,
-    doc,
-    onSnapshot,
-    updateDoc,
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
+import { Edit, MapPin, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -94,6 +95,7 @@ const UpdatePlacesAdmin = () => {
   const [transportModes, setTransportModes] = useState<TransportMode[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchPlace, setSearchPlace] = useState<string>("");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
@@ -101,6 +103,16 @@ const UpdatePlacesAdmin = () => {
     });
     return () => unsub();
   }, []);
+
+  const filteredPlaces = places.filter((place) => {
+    if (!searchPlace.trim()) return true;
+    const term = searchPlace.toLowerCase();
+    return (
+      place.name.toLowerCase().includes(term) ||
+      place.description.toLowerCase().includes(term) ||
+      place.categories.some((cat) => cat.toLowerCase().includes(term))
+    );
+  });
 
   const loadPlaceForEdit = (place: Place) => {
     setSelectedPlace(place);
@@ -272,6 +284,19 @@ const UpdatePlacesAdmin = () => {
     } catch (error) {
       console.error("Error deleting place:", error);
       alert("Failed to delete place. Please try again.");
+    }
+  };
+
+  const getCrowdColor = (crowd: string) => {
+    switch (crowd?.toLowerCase()) {
+      case "low":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "medium":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "high":
+        return "bg-red-100 text-red-700 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
     }
   };
 
@@ -696,108 +721,245 @@ const UpdatePlacesAdmin = () => {
         </Card>
       )}
 
-      {/* Places List */}
+      {/* All Places Section */}
       <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle>All Places</CardTitle>
-          <p className="text-sm text-gray-500 mt-1">
-            {isEditing
-              ? "Currently editing a place. Click 'Cancel' to stop editing."
-              : "Select a place to edit or delete"}
-          </p>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-50 rounded-lg">
+              <MapPin className="h-6 w-6 text-purple-600" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl">All Places</CardTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                {isEditing
+                  ? "Currently editing a place. Click 'Cancel' to stop editing."
+                  : `${filteredPlaces.length} place${filteredPlaces.length !== 1 ? "s" : ""} available`}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={searchPlace}
+              onChange={(e) => setSearchPlace(e.target.value)}
+              placeholder="Search places by name, category, or description..."
+              className="h-10 w-80"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {places.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
-                No places found. Add a new place first.
-              </p>
-            ) : (
-              places.map((place) => (
-                <div
-                  key={place.id}
-                  className={`p-4 border rounded-lg ${
-                    selectedPlace?.id === place.id
-                      ? "border-primary bg-primary/5"
-                      : "border-gray-200"
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <p className="font-semibold text-lg">{place.name}</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {place.categories?.join(", ")}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-2">
-                        Crowd: {place.crowd} | Season: {place.bestSeason}
-                        {place.entryType && place.entryType.length > 0 && (
-                          <> | Entry: {place.entryType.join(", ")}</>
-                        )}
-                        {place.entryFee && <> | Fee: ₹{place.entryFee} INR</>}
-                      </p>
-                      {place.transportModes && place.transportModes.length > 0 && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          Transport:{" "}
-                          {place.transportModes
-                            .map((t) => {
-                              const hasPrice = t.minPrice || t.maxPrice;
-                              if (hasPrice) {
-                                const min = t.minPrice || "0";
-                                const max = t.maxPrice || "0";
-                                return `${t.mode} (₹${min}-${max})`;
-                              }
-                              return t.mode;
-                            })
-                            .join(", ")}
-                        </p>
-                      )}
-                      {place.facilities && place.facilities.length > 0 && (
-                        <p className="text-xs text-blue-500 mt-1">
-                          Facilities:{" "}
-                          {place.facilities
-                            .map((f) => {
-                              const hasPrice = f.minPrice || f.maxPrice || f.estimatedPrice;
-                              if (hasPrice) {
-                                const parts: string[] = [f.name];
-                                if (f.minPrice || f.maxPrice) {
-                                  const min = f.minPrice || "0";
-                                  const max = f.maxPrice || "0";
-                                  parts.push(`₹${min}-${max}`);
-                                }
-                                if (f.estimatedPrice) {
-                                  parts.push(`(Est: ₹${f.estimatedPrice})`);
-                                }
-                                return parts.join(" ");
-                              }
-                              return f.name;
-                            })
-                            .join(", ")}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => loadPlaceForEdit(place)}
-                        disabled={isEditing && selectedPlace?.id !== place.id}
-                      >
-                        {selectedPlace?.id === place.id && isEditing ? "Editing..." : "Edit"}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(place.id)}
-                        disabled={isSubmitting}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          {places.length === 0 ? (
+            <div className="text-center py-12">
+              <MapPin className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500 text-lg font-medium">No places found</p>
+              <p className="text-sm text-gray-400 mt-2">Add a new place to get started</p>
+            </div>
+          ) : filteredPlaces.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg font-medium">No places match your search</p>
+              <p className="text-sm text-gray-400 mt-2">Try a different search term</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b-2 border-gray-200">
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Place Details
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Location
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Visit Info
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Entry & Fees
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Transport & Facilities
+                    </th>
+                    <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredPlaces.map((place) => (
+                    <tr
+                      key={place.id}
+                      className={`hover:bg-gray-50 transition-colors ${
+                        selectedPlace?.id === place.id && isEditing ? "bg-primary/5" : ""
+                      }`}
+                    >
+                      {/* Place Details */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          {place.urls && place.urls.length > 0 && (
+                            <img
+                              src={place.urls[0]}
+                              alt={place.name}
+                              className="w-16 h-16 rounded-lg object-cover border-2 border-gray-200 flex-shrink-0"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-gray-900 text-base mb-1">{place.name}</h4>
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              {place.categories?.slice(0, 3).map((cat, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-700"
+                                >
+                                  {cat}
+                                </span>
+                              ))}
+                              {place.categories && place.categories.length > 3 && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                  +{place.categories.length - 3}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-600 line-clamp-2">{place.description || "No description available"}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Location */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-0.5 text-xs min-w-[100px]">
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-gray-400" />
+                            <span className="text-gray-900 font-mono">{place.latitude?.toFixed(4) || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-gray-400" />
+                            <span className="text-gray-900 font-mono">{place.longitude?.toFixed(4) || "—"}</span>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Visit Info */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-1.5 min-w-[140px]">
+                          {place.visitTime && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-500">Visit Time</p>
+                              <p className="text-sm font-semibold text-gray-900">{place.visitTime}</p>
+                            </div>
+                          )}
+                          {place.crowd && (
+                            <div className={place.visitTime ? "pt-1 border-t border-gray-200" : ""}>
+                              <p className="text-xs font-medium text-gray-500">Crowd</p>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getCrowdColor(place.crowd)}`}>
+                                {place.crowd}
+                              </span>
+                            </div>
+                          )}
+                          {place.bestSeason && (
+                            <div className={(place.visitTime || place.crowd) ? "pt-1 border-t border-gray-200" : ""}>
+                              <p className="text-xs font-medium text-gray-500">Best Season</p>
+                              <p className="text-sm font-semibold text-gray-900">{place.bestSeason}</p>
+                            </div>
+                          )}
+                          {place.openingHours && (
+                            <div className={(place.visitTime || place.crowd || place.bestSeason) ? "pt-1 border-t border-gray-200" : ""}>
+                              <p className="text-xs font-medium text-gray-500">Hours</p>
+                              <p className="text-sm text-gray-900">{place.openingHours}</p>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Entry & Fees */}
+                      <td className="px-6 py-4">
+                        <div className="space-y-1.5 min-w-[120px]">
+                          {place.entryType && place.entryType.length > 0 ? (
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${
+                                place.entryType.includes("Free")
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-blue-100 text-blue-800"
+                              }`}
+                            >
+                              {place.entryType.includes("Free") ? "Free" : "Paid"}
+                              {place.entryFee && place.entryType.includes("Paid") && ` - ₹${place.entryFee}`}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-gray-500">—</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Transport & Facilities */}
+                      <td className="px-4 py-4">
+                        <div className="space-y-2 min-w-[150px]">
+                          {place.transportModes && place.transportModes.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-gray-500 mb-1">Transport</p>
+                              <div className="space-y-0.5">
+                                {place.transportModes.slice(0, 2).map((t, idx) => {
+                                  const hasPrice = t.minPrice || t.maxPrice;
+                                  return (
+                                    <p key={idx} className="text-xs text-gray-900">
+                                      {t.mode}
+                                      {hasPrice && (
+                                        <span className="text-gray-600"> (₹{t.minPrice || "0"}-{t.maxPrice || "0"})</span>
+                                      )}
+                                    </p>
+                                  );
+                                })}
+                                {place.transportModes.length > 2 && (
+                                  <p className="text-xs text-gray-500">+{place.transportModes.length - 2} more</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {place.facilities && place.facilities.length > 0 && (
+                            <div className={place.transportModes && place.transportModes.length > 0 ? "pt-1 border-t border-gray-200" : ""}>
+                              <p className="text-xs font-medium text-gray-500 mb-1">Facilities</p>
+                              <p className="text-xs text-blue-600 font-medium">
+                                {place.facilities.length} facilit{place.facilities.length === 1 ? "y" : "ies"}
+                              </p>
+                            </div>
+                          )}
+                          {(!place.transportModes || place.transportModes.length === 0) &&
+                            (!place.facilities || place.facilities.length === 0) && (
+                              <span className="text-sm text-gray-500">—</span>
+                            )}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            onClick={() => loadPlaceForEdit(place)}
+                            size="sm"
+                            className="bg-black text-white hover:bg-gray-800"
+                            disabled={isEditing && selectedPlace?.id !== place.id}
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            {selectedPlace?.id === place.id && isEditing ? "Editing..." : "Edit"}
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(place.id)}
+                            disabled={isSubmitting}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
