@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { FaEnvelope, FaGithub, FaLinkedin, FaMapMarkerAlt, FaPhone, FaTwitter } from "react-icons/fa";
 
 const Footer = () => {
@@ -190,9 +191,12 @@ const Footer = () => {
                 © {currentYear} TrinetraGuard. All rights reserved. Making pilgrimage management seamless, transparent, and open.
               </div>
               <div className="flex items-center gap-6 text-sm">
-                <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors duration-300">
+                <a href="/privacy-policy.html" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-orange-400 transition-colors duration-300">
                   Privacy Policy
                 </a>
+                <Link to="/account-deletion-request" className="text-gray-400 hover:text-orange-400 transition-colors duration-300">
+                  Request account deletion
+                </Link>
                 <a href="#" className="text-gray-400 hover:text-orange-400 transition-colors duration-300">
                   Terms of Service
                 </a>

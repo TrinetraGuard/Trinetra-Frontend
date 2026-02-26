@@ -16,6 +16,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Sign Up",
     description: "Create a new Trinetra account",
   },
+  "/account-deletion-request": {
+    title: "Request account deletion",
+    description: "Submit a request to delete your Trinetra account and associated data",
+  },
   "/dashboard": {
     title: "Dashboard",
     description: "Main dashboard overview and analytics",

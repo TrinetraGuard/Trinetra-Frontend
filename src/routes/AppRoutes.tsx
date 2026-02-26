@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router-dom";
 
+import AccountDeletionRequest from "@/pages/account/AccountDeletionRequest";
 import AboutUsPage from "@/pages/home/page/aboutus_page";
 import AddPlacesAdmin from "@/pages/component/AddPlacesAdmin";
 import CCTVManagement from "@/pages/component/CCTVManagement";
@@ -50,6 +51,7 @@ const AppRoutes = () => {
       <Route path="/emergency" element={<EmergencyPage />} />
       <Route path="/users" element={<UserPage />} />
       <Route path="/about-us" element={<AboutUsPage />} />
+      <Route path="/account-deletion-request" element={<AccountDeletionRequest />} />
 
       {/* Dashboard Routes with nested sub-routes */}
       <Route

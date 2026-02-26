@@ -157,7 +157,9 @@ Depending on your location, you may have the right to:
 - **Deletion** — request deletion of your personal data, subject to legal and operational requirements
 - **Object or restrict processing** — where applicable by law
 
-To exercise these rights or raise any privacy concerns, please contact us using the details in the Contact Information section below.
+**Request account and data deletion:** You may request that your account and associated data be deleted at any time by using our dedicated form: [Request account deletion](/account-deletion-request). You can also send a deletion request by email to the address in the Contact Information section below.
+
+To exercise any other rights or raise privacy concerns, please contact us using the details in the Contact Information section below.
 
 ---
 
