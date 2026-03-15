@@ -51,6 +51,7 @@ type FirestoreReport = {
   address: string;
   imageUrl?: string;
   status?: string;
+  ticketCode?: string;
   latitude?: number;
   longitude?: number;
   createdAt?: Timestamp | null;
@@ -153,6 +154,7 @@ const LostpersonAdmin = () => {
             placeLost: data.placeLost,
             address: data.address,
             imageUrl: data.imageUrl,
+            ticketCode: data.ticketCode,
             latitude: data.latitude,
             longitude: data.longitude,
             status: data.status ?? "Pending",
@@ -324,6 +326,7 @@ const LostpersonAdmin = () => {
           <TableHeader>
             <TableRow className="bg-gray-100 text-sm text-gray-700">
               <TableHead>Photo</TableHead>
+              <TableHead>Ticket</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Aadhaar</TableHead>
               <TableHead>Contact</TableHead>
@@ -350,6 +353,9 @@ const LostpersonAdmin = () => {
                       N/A
                     </div>
                   )}
+                </TableCell>
+                <TableCell className="font-mono text-xs font-semibold text-gray-700">
+                  {r.ticketCode || "—"}
                 </TableCell>
                 <TableCell>{r.name}</TableCell>
                 <TableCell>{r.aadhar}</TableCell>

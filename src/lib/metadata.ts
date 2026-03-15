@@ -100,6 +100,10 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Add Places",
     description: "Add new places to the system",
   },
+  "/dashboard/add-places-ai": {
+    title: "Add Places with AI",
+    description: "Generate and add places using AI (no duplicates)",
+  },
   "/dashboard/update-places": {
     title: "Update Places",
     description: "Update existing places",

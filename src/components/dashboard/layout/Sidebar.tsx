@@ -17,6 +17,7 @@ import {
   Map,
   MapPin,
   MapPinned,
+  Sparkles,
   UserCheck,
   UserCircle,
   UserCog,
@@ -72,6 +73,7 @@ const navSections: NavSection[] = [
         name: "Places Management",
         items: [
           { name: "Add Places", path: "/dashboard/add-places", icon: MapPin },
+          { name: "Add Places with AI", path: "/dashboard/add-places-ai", icon: Sparkles },
           { name: "Update Places", path: "/dashboard/update-places", icon: MapPinned },
         ],
       },

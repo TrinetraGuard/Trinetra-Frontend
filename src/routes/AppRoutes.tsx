@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import AccountDeletionRequest from "@/pages/account/AccountDeletionRequest";
 import AboutUsPage from "@/pages/home/page/aboutus_page";
 import AddPlacesAdmin from "@/pages/component/AddPlacesAdmin";
+import AddPlacesWithAI from "@/pages/component/AddPlacesWithAI";
 import CCTVManagement from "@/pages/component/CCTVManagement";
 import CategorySectionAdmin from "@/pages/component/CategorySection";
 import CrowdControl from "@/components/cctvcrowd/CrowdControl";
@@ -81,6 +82,7 @@ const AppRoutes = () => {
         <Route path="edit-event" element={<EditEventSection />} />
         <Route path="section-features" element={<FeatureSectionAdmin />} />
         <Route path="add-places" element={<AddPlacesAdmin />} />
+        <Route path="add-places-ai" element={<AddPlacesWithAI />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="cctv-management" element={<CCTVManagement />} />

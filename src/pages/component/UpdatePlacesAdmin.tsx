@@ -59,6 +59,7 @@ type Place = {
   id: string;
   name: string;
   categories: string[];
+  placeType?: string;
   latitude: number;
   longitude: number;
   urls: string[];
@@ -92,6 +93,7 @@ const UpdatePlacesAdmin = () => {
   const [entryType, setEntryType] = useState<string[]>([]);
   const [entryFee, setEntryFee] = useState("");
   const [openingHours, setOpeningHours] = useState("");
+  const [placeType, setPlaceType] = useState("");
   const [transportModes, setTransportModes] = useState<TransportMode[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,6 +131,7 @@ const UpdatePlacesAdmin = () => {
     setEntryType(place.entryType || []);
     setEntryFee(place.entryFee || "");
     setOpeningHours(place.openingHours || "");
+    setPlaceType(place.placeType || "");
     setTransportModes(place.transportModes || []);
     setFacilities(place.facilities || []);
     
@@ -156,6 +159,7 @@ const UpdatePlacesAdmin = () => {
     setEntryType([]);
     setEntryFee("");
     setOpeningHours("");
+    setPlaceType("");
     setTransportModes([]);
     setFacilities([]);
   };
@@ -245,6 +249,7 @@ const UpdatePlacesAdmin = () => {
       await updateDoc(placeRef, {
         name,
         categories,
+        placeType: placeType.trim() || undefined,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         urls,
@@ -547,6 +552,17 @@ const UpdatePlacesAdmin = () => {
                 placeholder="e.g. 6 AM - 8 PM"
                 value={openingHours}
                 onChange={(e) => setOpeningHours(e.target.value)}
+              />
+            </div>
+
+            {/* Place type (e.g. hidden, ritual, historical) */}
+            <div className="space-y-2">
+              <Label htmlFor="place-type">Place type</Label>
+              <Input
+                id="place-type"
+                placeholder="e.g. hidden, ritual, historical"
+                value={placeType}
+                onChange={(e) => setPlaceType(e.target.value)}
               />
             </div>
 
