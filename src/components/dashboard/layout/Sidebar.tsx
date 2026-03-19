@@ -2,6 +2,7 @@ import {
   Activity,
   AlertCircle,
   BarChart3,
+  BookOpen,
   Brain,
   Calendar,
   Camera,
@@ -75,6 +76,11 @@ const navSections: NavSection[] = [
           { name: "Add Places", path: "/dashboard/add-places", icon: MapPin },
           { name: "Add Places with AI", path: "/dashboard/add-places-ai", icon: Sparkles },
           { name: "Update Places", path: "/dashboard/update-places", icon: MapPinned },
+          {
+            name: "Heritage Narratives",
+            path: "/dashboard/heritage-stories",
+            icon: BookOpen,
+          },
         ],
       },
       {

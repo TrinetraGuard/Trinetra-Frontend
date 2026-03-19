@@ -44,6 +44,7 @@ const ALL_CATEGORIES = [
 
 const PLACE_TYPES = [
   { value: "hidden", label: "Hidden Gems" },
+  { value: "local", label: "Local Favorites (known mainly to locals)" },
   { value: "ritual", label: "Ritual & Religious" },
   { value: "historical", label: "Historical" },
   { value: "nature", label: "Nature & Scenic" },
@@ -184,11 +185,25 @@ Place type theme: ${typeLabel}.
 EXISTING PLACES (do NOT suggest any of these again; names are lowercased for match):
 ${existingNames.length ? existingNames.join("\n") : "(none yet)"}
 
+SCOPE OF PLACES:
+- Include both well-known tourist spots AND spiritual/popular places that are known mainly to locals (small temples, local pilgrimage spots, neighborhood landmarks, lesser-known ghats, local viewpoints, kunds, and cultural sites). The app should cover every spiritual and popular place so that even places only locals know are represented with proper information.
+${selectedPlaceType === "local" ? "- For this run, FOCUS on places known mainly to locals: lesser-known temples, local pilgrimage spots, neighborhood spiritual sites, and popular local spots that may not appear in standard tourist guides. Still use accurate names and real coordinates within Nashik." : ""}
+- Prioritize "top" and important places for the chosen categories so the place section is comprehensive and useful.
+
+INFORMATION MUST BE 100% COMPLETE:
+- Every field below MUST be filled with accurate, non-empty, real values. No placeholders like "N/A", "TBD", or empty strings. Each place's information should be complete and proper so it can be shown as "Information 100%" in the app.
+- description: 2-4 sentences, professional, specific to the place in Nashik (at least 30 characters).
+- visitTime, crowd, bestSeason, openingHours: real plausible values.
+- entryType and entryFee: accurate (e.g. "0" for free, or actual fee in INR).
+- transportModes: include at least one mode with minPrice and maxPrice in INR (e.g. 20-50 for bus).
+- facilities: include at least one facility with minPrice, maxPrice, and estimatedPrice where applicable.
+- urls: 1-3 real Unsplash image URLs (e.g. https://images.unsplash.com/photo-...) that suit the place type.
+
 RULES:
-1. Suggest only real, well-known places in NASHIK (temples, ghats, forts, parks, viewpoints, lakes, kunds, etc.). Use accurate names. Every place must be located in Nashik city or Nashik district only.
+1. Suggest only real places in NASHIK (temples, ghats, forts, parks, viewpoints, lakes, kunds, local shrines, etc.). Use accurate names. Every place must be located in Nashik city or Nashik district only.
 2. Do not duplicate or closely rename any place from the existing list above.
-3. Coordinates MUST be within Nashik: latitude between 19.85 and 20.15, longitude between 73.65 and 74.05 (Nashik city/district bounds). Use real approximate coordinates for each place within this range.
-4. Each place must have: name, categories (array from: ${ALL_CATEGORIES.join(", ")}), placeType ("${selectedPlaceType}"), latitude, longitude (within Nashik bounds above), urls (array of 1-3 image URLs - use real Unsplash placeholder URLs like https://images.unsplash.com/photo-...), description (2-4 sentences, professional, about the place in Nashik), visitTime, crowd ("Low"/"Medium"/"High"), bestSeason, entryType (["Free"] or ["Paid"] or ["Free","Paid"]), entryFee (string, e.g. "0" or "50"), openingHours, transportModes (array of objects with mode, minPrice, maxPrice - use modes from: ${TRANSPORT_MODES.join(", ")}), facilities (array of objects with name, minPrice, maxPrice, estimatedPrice - use names from: ${JSON.stringify(FACILITIES_OPTIONS)}).
+3. Coordinates MUST be within Nashik: latitude between 19.85 and 20.15, longitude between 73.65 and 74.05. Use real approximate coordinates for each place within this range.
+4. Each place must have: name, categories (array from: ${ALL_CATEGORIES.join(", ")}), placeType ("${selectedPlaceType}"), latitude, longitude, urls (array of 1-3 image URLs), description, visitTime, crowd ("Low"/"Medium"/"High"), bestSeason, entryType (["Free"] or ["Paid"] or ["Free","Paid"]), entryFee (string), openingHours, transportModes (array of objects with mode, minPrice, maxPrice - use modes from: ${TRANSPORT_MODES.join(", ")}; provide numeric min/max in INR), facilities (array of objects with name, minPrice, maxPrice, estimatedPrice - use names from: ${JSON.stringify(FACILITIES_OPTIONS)}; provide numeric values where applicable).
 5. Output ONLY a valid JSON array of objects, no markdown, no code fence. Each object must have exactly these keys: name, categories, placeType, latitude, longitude, urls, description, visitTime, crowd, bestSeason, entryType, entryFee, openingHours, transportModes, facilities.`;
 
     try {
@@ -313,7 +328,7 @@ RULES:
             <div>
               <CardTitle className="text-xl">Add Places Using AI</CardTitle>
               <CardDescription>
-                Generate places in Nashik only. Select categories and place type; AI will suggest new Nashik places (no duplicates) with full details. Review and add to the database.
+                Generate places in Nashik only—including local favorites and spiritual spots known mainly to locals. Select categories and place type; AI will suggest new places with 100% complete information (no duplicates). Review and add to the database.
               </CardDescription>
             </div>
           </div>

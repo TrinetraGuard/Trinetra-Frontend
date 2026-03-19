@@ -2,6 +2,7 @@ import {
   Activity,
   AlertCircle,
   ArrowRight,
+  BookOpen,
   Calendar,
   CheckCircle2,
   Clock,
@@ -87,6 +88,7 @@ const DashboardPage = () => {
     totalPlaces: 0,
     totalEvents: 0,
     lostPeople: 0,
+    heritageStoriesPublished: 0,
     systemStatus: "operational",
   });
 
@@ -156,6 +158,14 @@ const DashboardPage = () => {
       setStats((prev) => ({ ...prev, totalEvents: snapshot.size }));
     });
     unsubscribers.push(eventsUnsub);
+
+    const heritageUnsub = onSnapshot(collection(db, "place_stories"), (snapshot) => {
+      const published = snapshot.docs.filter(
+        (d) => d.data()?.published === true && String(d.data()?.storyBody ?? "").trim().length > 0
+      ).length;
+      setStats((prev) => ({ ...prev, heritageStoriesPublished: published }));
+    });
+    unsubscribers.push(heritageUnsub);
 
     // Fetch Lost People (from volunteer_alerts)
     const lostPeopleUnsub = onSnapshot(collection(db, "volunteer_alerts"), (snapshot) => {
@@ -281,6 +291,14 @@ const DashboardPage = () => {
           iconColor="text-indigo-600"
           bgColor="bg-indigo-50"
           description="Events scheduled"
+        />
+        <StatCard
+          title="Heritage Stories Live"
+          value={stats.heritageStoriesPublished}
+          icon={BookOpen}
+          iconColor="text-amber-700"
+          bgColor="bg-amber-50"
+          description="Published in the mobile app"
         />
         <StatCard
           title="System Uptime"
@@ -441,6 +459,20 @@ const DashboardPage = () => {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900">Add Places</p>
                   <p className="text-xs text-gray-500">Add new places</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+              </Link>
+
+              <Link
+                to="/dashboard/heritage-stories"
+                className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all group"
+              >
+                <div className="p-2 bg-amber-50 rounded-lg group-hover:bg-amber-100 transition-colors">
+                  <BookOpen className="h-5 w-5 text-amber-800" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Heritage Narratives</p>
+                  <p className="text-xs text-gray-500">Stories & facts for places</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
               </Link>

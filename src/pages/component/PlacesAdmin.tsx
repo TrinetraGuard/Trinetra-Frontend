@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getPlaceCompleteness } from "@/lib/placeCompleteness";
 import {
   addDoc,
   collection,
@@ -11,6 +12,7 @@ import {
   doc,
   onSnapshot,
 } from "firebase/firestore";
+import { CheckCircle2, Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -89,6 +91,7 @@ const PlacesAdmin = () => {
   const [openingHours, setOpeningHours] = useState("");
   const [transportModes, setTransportModes] = useState<TransportMode[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [showOnlyComplete, setShowOnlyComplete] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
@@ -96,6 +99,10 @@ const PlacesAdmin = () => {
     });
     return () => unsub();
   }, []);
+
+  const displayedPlaces = showOnlyComplete
+    ? places.filter((p) => getPlaceCompleteness(p).isComplete)
+    : places;
 
   const handleAddUrl = () => {
     if (urlInput.trim() !== "") {
@@ -631,17 +638,49 @@ const PlacesAdmin = () => {
 
       {/* List */}
       <Card className="shadow-lg">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-4">
           <CardTitle>All Places</CardTitle>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant={showOnlyComplete ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowOnlyComplete(!showOnlyComplete)}
+              className={showOnlyComplete ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              <Filter className="h-4 w-4 mr-1.5" />
+              {showOnlyComplete ? "Showing 100% complete only" : "Show 100% complete only"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
+          <p className="text-sm text-muted-foreground mb-3">
+            {showOnlyComplete
+              ? `${displayedPlaces.length} place(s) with information filled 100%.`
+              : `${places.length} total · ${places.filter((p) => getPlaceCompleteness(p).isComplete).length} with 100% info`}
+          </p>
           <div className="space-y-3">
-            {places.map((place) => (
+            {displayedPlaces.map((place) => {
+              const { percent, isComplete } = getPlaceCompleteness(place);
+              return (
               <div
                 key={place.id}
                 className="p-3 border rounded-lg flex justify-between items-center"
               >
-                <div>
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0">
+                    {isComplete ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800" title="Information filled 100%">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        100%
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600" title="Information completeness">
+                        {percent}%
+                      </span>
+                    )}
+                  </div>
+                  <div>
                   <p className="font-semibold">{place.name}</p>
                   <p className="text-sm text-gray-500">
                     {place.categories?.join(", ")}
@@ -694,6 +733,7 @@ const PlacesAdmin = () => {
                         .join(", ")}
                     </p>
                   )}
+                  </div>
                 </div>
                 <Button
                   variant="destructive"
@@ -703,7 +743,7 @@ const PlacesAdmin = () => {
                   Delete
                 </Button>
               </div>
-            ))}
+            );})}
           </div>
         </CardContent>
       </Card>

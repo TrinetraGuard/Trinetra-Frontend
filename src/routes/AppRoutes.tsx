@@ -27,6 +27,7 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
 import SosAlerts from "@/pages/component/SosAlerts";
+import PlaceStoriesAdmin from "@/pages/component/PlaceStoriesAdmin";
 import UpdatePlacesAdmin from "@/pages/component/UpdatePlacesAdmin";
 import UserPage from "@/pages/home/page/user_page";
 import UsersMap from "@/pages/users/users_map";
@@ -84,6 +85,7 @@ const AppRoutes = () => {
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="add-places-ai" element={<AddPlacesWithAI />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
+        <Route path="heritage-stories" element={<PlaceStoriesAdmin />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />

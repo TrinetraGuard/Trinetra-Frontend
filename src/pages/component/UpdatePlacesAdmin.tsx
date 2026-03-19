@@ -4,6 +4,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { getPlaceCompleteness } from "@/lib/placeCompleteness";
 import {
   collection,
   deleteDoc,
@@ -11,7 +12,7 @@ import {
   onSnapshot,
   updateDoc,
 } from "firebase/firestore";
-import { Edit, MapPin, Trash2 } from "lucide-react";
+import { CheckCircle2, Edit, Filter, MapPin, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ const UpdatePlacesAdmin = () => {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchPlace, setSearchPlace] = useState<string>("");
+  const [showOnlyComplete, setShowOnlyComplete] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
@@ -106,15 +108,19 @@ const UpdatePlacesAdmin = () => {
     return () => unsub();
   }, []);
 
-  const filteredPlaces = places.filter((place) => {
+  const searchFilteredPlaces = places.filter((place) => {
     if (!searchPlace.trim()) return true;
     const term = searchPlace.toLowerCase();
     return (
       place.name.toLowerCase().includes(term) ||
-      place.description.toLowerCase().includes(term) ||
-      place.categories.some((cat) => cat.toLowerCase().includes(term))
+      place.description?.toLowerCase().includes(term) ||
+      place.categories?.some((cat) => cat.toLowerCase().includes(term))
     );
   });
+
+  const filteredPlaces = showOnlyComplete
+    ? searchFilteredPlaces.filter((p) => getPlaceCompleteness(p).isComplete)
+    : searchFilteredPlaces;
 
   const loadPlaceForEdit = (place: Place) => {
     setSelectedPlace(place);
@@ -749,17 +755,29 @@ const UpdatePlacesAdmin = () => {
               <p className="text-sm text-gray-500 mt-1">
                 {isEditing
                   ? "Currently editing a place. Click 'Cancel' to stop editing."
-                  : `${filteredPlaces.length} place${filteredPlaces.length !== 1 ? "s" : ""} available`}
+                  : showOnlyComplete
+                    ? `${filteredPlaces.length} place(s) with information 100% complete`
+                    : `${filteredPlaces.length} place${filteredPlaces.length !== 1 ? "s" : ""} · ${places.filter((p) => getPlaceCompleteness(p).isComplete).length} with 100% info`}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Input
               value={searchPlace}
               onChange={(e) => setSearchPlace(e.target.value)}
               placeholder="Search places by name, category, or description..."
               className="h-10 w-80"
             />
+            <Button
+              type="button"
+              variant={showOnlyComplete ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowOnlyComplete(!showOnlyComplete)}
+              className={showOnlyComplete ? "bg-green-600 hover:bg-green-700" : ""}
+            >
+              <Filter className="h-4 w-4 mr-1.5" />
+              {showOnlyComplete ? "Showing 100% complete" : "Show 100% complete only"}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -779,6 +797,9 @@ const UpdatePlacesAdmin = () => {
               <table className="w-full">
                 <thead>
                   <tr className="bg-gray-50 border-b-2 border-gray-200">
+                    <th className="px-4 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider w-20">
+                      Info
+                    </th>
                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                       Place Details
                     </th>
@@ -807,6 +828,22 @@ const UpdatePlacesAdmin = () => {
                         selectedPlace?.id === place.id && isEditing ? "bg-primary/5" : ""
                       }`}
                     >
+                      {/* Information completeness */}
+                      <td className="px-4 py-4 text-center">
+                        {(() => {
+                          const { percent, isComplete } = getPlaceCompleteness(place);
+                          return isComplete ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800" title="Information filled 100%">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              100%
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600" title="Information completeness">
+                              {percent}%
+                            </span>
+                          );
+                        })()}
+                      </td>
                       {/* Place Details */}
                       <td className="px-6 py-4">
                         <div className="flex items-start gap-3">
