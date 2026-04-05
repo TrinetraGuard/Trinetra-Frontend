@@ -464,15 +464,15 @@ const DashboardPage = () => {
               </Link>
 
               <Link
-                to="/dashboard/heritage-stories"
+                to="/dashboard/heritage-narratives/manage"
                 className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all group"
               >
                 <div className="p-2 bg-amber-50 rounded-lg group-hover:bg-amber-100 transition-colors">
                   <BookOpen className="h-5 w-5 text-amber-800" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Heritage Narratives</p>
-                  <p className="text-xs text-gray-500">Stories & facts for places</p>
+                  <p className="text-sm font-medium text-gray-900">Heritage narratives</p>
+                  <p className="text-xs text-gray-500">Review & edit — add new from sidebar</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
               </Link>

@@ -3,158 +3,211 @@ export interface RouteMetadata {
   description: string;
 }
 
+/** Default site description when a route has no specific entry (should not happen for known routes). */
+export const defaultSiteDescription =
+  "Trinetra — pilgrimage security, crowd management, heritage content, SOS alerts, and real-time monitoring for Nashik and beyond.";
+
 export const routeMetadata: Record<string, RouteMetadata> = {
   "/": {
     title: "Home",
-    description: "Welcome to Trinetra - Your security dashboard",
+    description:
+      "Trinetra pilgrimage platform: discover places, events, safety tools, and real-time crowd insights.",
   },
   "/login": {
-    title: "Login",
-    description: "Sign in to your Trinetra account",
+    title: "Sign in",
+    description: "Sign in to the Trinetra admin dashboard and tools.",
   },
   "/signup": {
-    title: "Sign Up",
-    description: "Create a new Trinetra account",
+    title: "Create account",
+    description: "Create a Trinetra account to access dashboard and volunteer features.",
+  },
+  "/about-us": {
+    title: "About us",
+    description: "Learn about Trinetra, our mission, and the pilgrimage security platform.",
   },
   "/account-deletion-request": {
     title: "Request account deletion",
-    description: "Submit a request to delete your Trinetra account and associated data",
+    description: "Submit a request to delete your Trinetra account and associated personal data.",
   },
-  "/dashboard": {
-    title: "Dashboard",
-    description: "Main dashboard overview and analytics",
+  "/crowd": {
+    title: "Crowd information",
+    description: "Public crowd and safety information for pilgrims and visitors.",
   },
-  "/dashboard/settings": {
-    title: "Settings",
-    description: "Manage your account settings and preferences",
-  },
-  "/dashboard/users": {
-    title: "Users",
-    description: "Manage user accounts and permissions",
-  },
-  "/dashboard/reports": {
-    title: "Reports",
-    description: "View and generate security reports",
-  },
-  "/dashboard/upload": {
-    title: "Upload",
-    description: "Upload a video to the dashboard",
+  "/lost-found": {
+    title: "Lost & found",
+    description: "Report or search for lost items and people during pilgrimage events.",
   },
   "/emergency": {
     title: "Emergency",
-    description: "Emergency page",
-  },
-  "/crowd": {
-    title: "Crowd",
-    description: "Crowd page",
-  },
-  "/lost-found": {
-    title: "Lost & Found",
-    description: "Lost & Found page",
+    description: "Emergency contacts and safety guidance for pilgrims.",
   },
   "/users": {
     title: "Users",
-    description: "Users page",
+    description: "Trinetra user-facing tools and account access.",
+  },
+
+  "/dashboard": {
+    title: "Dashboard",
+    description: "Admin overview: quick stats, heritage content, places, events, and operations.",
+  },
+  "/dashboard/settings": {
+    title: "Settings",
+    description: "Account and application preferences for the admin panel.",
+  },
+  "/dashboard/users": {
+    title: "Users",
+    description: "View and manage registered users and roles.",
+  },
+  "/dashboard/upload": {
+    title: "Video upload",
+    description: "Upload and manage video assets for the dashboard.",
   },
   "/dashboard/lost-people": {
-    title: "Lost Peoples",
-    description: "Lost People page",
+    title: "Lost people",
+    description: "Review and manage lost-person reports submitted during events.",
   },
   "/dashboard/volunteer-user": {
-    title: "Lost People",
-    description: "Lost People page",
+    title: "Volunteer management",
+    description: "Assign areas, approve volunteers, and coordinate volunteer operations.",
   },
   "/dashboard/volunteers": {
     title: "Volunteers",
-    description: "Volunteers page",
+    description: "Directory and status of active volunteers.",
   },
   "/dashboard/volunteers-map": {
-    title: "Volunteers Map",
-    description: "Volunteers Map page",
+    title: "Volunteers map",
+    description: "Map view of volunteer positions and coverage areas.",
   },
   "/dashboard/volunteer-area": {
-    title: "Volunteer Area",
-    description: "Volunteer Area page",
+    title: "Volunteer areas",
+    description: "Define and edit geographic volunteer zones and assignments.",
+  },
+  "/dashboard/users-map": {
+    title: "Users map",
+    description: "Geographic view of app users and activity (where enabled).",
+  },
+  "/dashboard/feature-post": {
+    title: "Feature post map",
+    description: "Map view for featured posts and user-generated location content.",
   },
   "/dashboard/section-categories": {
     title: "Categories",
-    description: "Categories page",
-  },
-  "/dashboard/section-event": {
-    title: "Event's",
-    description: "Event's page",
+    description: "Manage content categories for the app and CMS.",
   },
   "/dashboard/add-event": {
-    title: "Add Event",
-    description: "Add new events to the pilgrimage calendar",
+    title: "Add event",
+    description: "Create pilgrimage and festival events for the public calendar.",
   },
   "/dashboard/edit-event": {
-    title: "Edit Event",
-    description: "Edit and manage existing events",
+    title: "Edit events",
+    description: "Update or remove existing events and schedules.",
   },
   "/dashboard/section-features": {
     title: "Features",
-    description: "Features page",
+    description: "Configure home-screen feature sections and highlighted content.",
   },
   "/dashboard/add-places": {
-    title: "Add Places",
-    description: "Add new places to the system",
+    title: "Add places",
+    description: "Add new pilgrimage and heritage places to the directory.",
   },
   "/dashboard/add-places-ai": {
-    title: "Add Places with AI",
-    description: "Generate and add places using AI (no duplicates)",
+    title: "Add places with AI",
+    description: "Draft place records with AI assistance while avoiding duplicates.",
   },
   "/dashboard/update-places": {
-    title: "Update Places",
-    description: "Update existing places",
+    title: "Update places",
+    description: "Edit existing place details, coordinates, media, and metadata.",
+  },
+  "/dashboard/replace-place-images": {
+    title: "Replace place images",
+    description: "Fix missing or broken image URLs for every slot in each place’s gallery list.",
+  },
+  "/dashboard/heritage-stories": {
+    title: "Heritage narratives",
+    description: "Redirect to manage saved pilgrimage stories and facts (legacy URL).",
+  },
+  "/dashboard/heritage-narratives/add": {
+    title: "Add heritage narrative",
+    description: "Create a new place story: overview, main text, facts, hero image, and publish to the app.",
+  },
+  "/dashboard/heritage-narratives/manage": {
+    title: "Update heritage narratives",
+    description: "Browse all saved narratives by display order, filter drafts or published, and open the editor.",
   },
   "/dashboard/sos-alerts": {
-    title: "SOS Alerts",
-    description: "Manage emergency SOS alerts, track user locations, and coordinate with nearby volunteers",
-  },
-  "/dashboard/users-map": {
-    title: "Users Map",
-    description: "Users Map page",
-  },
-  "/dashboard/feature-post": {
-    title: "Feature Post",
-    description: "Feature Post page",
+    title: "SOS alerts",
+    description: "Monitor emergency SOS signals, locations, and coordination with volunteers.",
   },
   "/dashboard/cctv-management": {
-    title: "CCTV Management",
-    description: "Manage CCTV cameras, add RTSP links, and monitor camera status",
+    title: "CCTV management",
+    description: "Register cameras, RTSP streams, and monitor device status.",
   },
   "/dashboard/crowd-control": {
-    title: "Crowd Monitoring",
-    description: "Real-time monitoring of all CCTV cameras for crowd management",
+    title: "Crowd monitoring",
+    description: "Live CCTV mosaic and crowd oversight for key locations.",
   },
   "/dashboard/live-analytics": {
-    title: "Live Analytics",
-    description: "Real-time crowd analysis and density monitoring with AI-powered insights",
+    title: "Live analytics",
+    description: "Real-time crowd analytics and AI-assisted density insights.",
   },
   "/dashboard/crowd-density": {
-    title: "Crowd Density Analysis",
-    description: "Comprehensive crowd density monitoring and analysis across all locations",
+    title: "Crowd density",
+    description: "Spatial and temporal crowd density analysis across monitored sites.",
   },
   "/dashboard/crowd-logs": {
-    title: "Crowd Logs",
-    description: "Historical crowd data and time-based analysis for all monitored locations",
+    title: "Crowd logs",
+    description: "Historical crowd logs and time-series views for audits and planning.",
   },
   "/dashboard/crowd-predictions": {
-    title: "Crowd Predictions",
-    description: "AI-powered crowd forecasting based on historical patterns and predictive analytics",
+    title: "Crowd predictions",
+    description: "Forecasting and trend analysis for expected crowd levels.",
+  },
+
+  "/admin": {
+    title: "Admin welcome",
+    description: "Trinetra admin entry: shortcuts to users, uploads, and settings.",
+  },
+  "/admin/settings": {
+    title: "Settings",
+    description: "Admin account and panel settings.",
+  },
+  "/admin/users": {
+    title: "Users",
+    description: "Manage users from the admin workspace.",
+  },
+  "/admin/upload": {
+    title: "Video upload",
+    description: "Upload videos from the admin workspace.",
+  },
+
+  /** Legacy / unused paths kept for bookmarks or old links */
+  "/dashboard/reports": {
+    title: "Reports",
+    description: "Security and operational reports (if enabled).",
+  },
+  "/dashboard/section-event": {
+    title: "Events",
+    description: "Legacy events section — use Add event or Edit events from the sidebar.",
   },
 };
 
+const HERITAGE_EDIT_PREFIX = "/dashboard/heritage-narratives/edit/";
+
 export const getRouteMetadata = (pathname: string): RouteMetadata => {
-  // Try to get exact match first
   if (routeMetadata[pathname]) {
     return routeMetadata[pathname];
   }
 
-  // Fallback for dynamic routes or unknown paths
+  if (pathname.startsWith(HERITAGE_EDIT_PREFIX)) {
+    return {
+      title: "Edit heritage narrative",
+      description:
+        "Edit this place’s heritage story: paragraphs, facts, hero image, display order, and publication to the mobile app.",
+    };
+  }
+
   return {
-    title: "Page Not Found",
-    description: "The page you're looking for doesn't exist",
+    title: "Page not found",
+    description: "This URL is not part of Trinetra. Use the menu or go back to the home page.",
   };
 };

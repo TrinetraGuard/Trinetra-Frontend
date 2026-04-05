@@ -11,6 +11,7 @@ import {
   doc,
   onSnapshot,
   updateDoc,
+  type QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { CheckCircle2, Edit, Filter, MapPin, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -75,8 +76,60 @@ type Place = {
   facilities: Facility[];
 };
 
+function toFiniteNumber(value: unknown): number {
+  if (value === undefined || value === null || value === "") return NaN;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const n = parseFloat(String(value).replace(",", "."));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/** Coerce Firestore shapes (strings for lat/lng, missing arrays, etc.) so the table never throws. */
+function normalizePlaceFromDoc(d: QueryDocumentSnapshot): Place {
+  const raw = d.data() as Record<string, unknown>;
+  return {
+    id: d.id,
+    name: String(raw.name ?? ""),
+    categories: Array.isArray(raw.categories) ? raw.categories.map((c) => String(c)) : [],
+    placeType: raw.placeType != null ? String(raw.placeType) : undefined,
+    latitude: toFiniteNumber(raw.latitude),
+    longitude: toFiniteNumber(raw.longitude),
+    urls: Array.isArray(raw.urls) ? raw.urls.map((u) => String(u)) : [],
+    description: String(raw.description ?? ""),
+    visitTime: String(raw.visitTime ?? ""),
+    crowd: String(raw.crowd ?? ""),
+    bestSeason: String(raw.bestSeason ?? ""),
+    entryType: Array.isArray(raw.entryType) ? raw.entryType.map(String) : [],
+    entryFee: String(raw.entryFee ?? ""),
+    openingHours: String(raw.openingHours ?? ""),
+    transportModes: Array.isArray(raw.transportModes)
+      ? raw.transportModes
+          .filter((t): t is Record<string, unknown> => t != null && typeof t === "object")
+          .map((t) => ({
+            mode: String(t.mode ?? ""),
+            minPrice: String(t.minPrice ?? ""),
+            maxPrice: String(t.maxPrice ?? ""),
+          }))
+      : [],
+    facilities: Array.isArray(raw.facilities)
+      ? raw.facilities
+          .filter((f): f is Record<string, unknown> => f != null && typeof f === "object")
+          .map((f) => ({
+            name: String(f.name ?? ""),
+            minPrice: String(f.minPrice ?? ""),
+            maxPrice: String(f.maxPrice ?? ""),
+            estimatedPrice: String(f.estimatedPrice ?? ""),
+          }))
+      : [],
+  };
+}
+
+function formatCoord(value: number): string {
+  return Number.isFinite(value) ? value.toFixed(4) : "—";
+}
+
 const UpdatePlacesAdmin = () => {
   const [places, setPlaces] = useState<Place[]>([]);
+  const [placesError, setPlacesError] = useState<string | null>(null);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   
@@ -102,19 +155,31 @@ const UpdatePlacesAdmin = () => {
   const [showOnlyComplete, setShowOnlyComplete] = useState(false);
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
-      setPlaces(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Place[]);
-    });
+    const unsub = onSnapshot(
+      collection(db, "places"),
+      (snapshot) => {
+        setPlacesError(null);
+        setPlaces(snapshot.docs.map((docSnap) => normalizePlaceFromDoc(docSnap)));
+      },
+      (err) => {
+        console.error("UpdatePlacesAdmin places listener:", err);
+        setPlacesError(err.message || "Could not load places.");
+        setPlaces([]);
+      }
+    );
     return () => unsub();
   }, []);
 
   const searchFilteredPlaces = places.filter((place) => {
     if (!searchPlace.trim()) return true;
     const term = searchPlace.toLowerCase();
+    const name = (place.name || "").toLowerCase();
+    const desc = (place.description || "").toLowerCase();
+    const cats = Array.isArray(place.categories) ? place.categories : [];
     return (
-      place.name.toLowerCase().includes(term) ||
-      place.description?.toLowerCase().includes(term) ||
-      place.categories?.some((cat) => cat.toLowerCase().includes(term))
+      name.includes(term) ||
+      desc.includes(term) ||
+      cats.some((cat) => String(cat).toLowerCase().includes(term))
     );
   });
 
@@ -127,8 +192,8 @@ const UpdatePlacesAdmin = () => {
     setIsEditing(true);
     setName(place.name || "");
     setCategories(place.categories || []);
-    setLatitude(place.latitude?.toString() || "");
-    setLongitude(place.longitude?.toString() || "");
+    setLatitude(Number.isFinite(place.latitude) ? String(place.latitude) : "");
+    setLongitude(Number.isFinite(place.longitude) ? String(place.longitude) : "");
     setUrls(place.urls || []);
     setDescription(place.description || "");
     setVisitTime(place.visitTime || "");
@@ -312,7 +377,15 @@ const UpdatePlacesAdmin = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-gray-900">
+      {placesError && (
+        <div
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
+          <strong>Could not load places.</strong> {placesError} Check Firestore rules and network, then refresh.
+        </div>
+      )}
       {/* Edit Form - Only show when editing */}
       {isEditing && selectedPlace && (
         <Card className="shadow-lg">
@@ -858,7 +931,9 @@ const UpdatePlacesAdmin = () => {
                             />
                           )}
                           <div className="min-w-0">
-                            <h4 className="font-bold text-gray-900 text-base mb-1">{place.name}</h4>
+                            <h4 className="font-bold text-gray-900 text-base mb-1">
+                              {place.name || "Untitled place"}
+                            </h4>
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               {place.categories?.slice(0, 3).map((cat, idx) => (
                                 <span
@@ -884,11 +959,11 @@ const UpdatePlacesAdmin = () => {
                         <div className="space-y-0.5 text-xs min-w-[100px]">
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-900 font-mono">{place.latitude?.toFixed(4) || "—"}</span>
+                            <span className="text-gray-900 font-mono">{formatCoord(place.latitude)}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <MapPin className="w-3 h-3 text-gray-400" />
-                            <span className="text-gray-900 font-mono">{place.longitude?.toFixed(4) || "—"}</span>
+                            <span className="text-gray-900 font-mono">{formatCoord(place.longitude)}</span>
                           </div>
                         </div>
                       </td>

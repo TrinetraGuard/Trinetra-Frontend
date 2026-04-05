@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import AccountDeletionRequest from "@/pages/account/AccountDeletionRequest";
 import AboutUsPage from "@/pages/home/page/aboutus_page";
@@ -27,7 +27,10 @@ import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
 import SosAlerts from "@/pages/component/SosAlerts";
-import PlaceStoriesAdmin from "@/pages/component/PlaceStoriesAdmin";
+import HeritageNarrativesAddPage from "@/pages/component/HeritageNarrativesAddPage";
+import HeritageNarrativesEditPage from "@/pages/component/HeritageNarrativesEditPage";
+import HeritageNarrativesManagePage from "@/pages/component/HeritageNarrativesManagePage";
+import ReplacePlaceImagesAdmin from "@/pages/component/ReplacePlaceImagesAdmin";
 import UpdatePlacesAdmin from "@/pages/component/UpdatePlacesAdmin";
 import UserPage from "@/pages/home/page/user_page";
 import UsersMap from "@/pages/users/users_map";
@@ -85,7 +88,11 @@ const AppRoutes = () => {
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="add-places-ai" element={<AddPlacesWithAI />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
-        <Route path="heritage-stories" element={<PlaceStoriesAdmin />} />
+        <Route path="replace-place-images" element={<ReplacePlaceImagesAdmin />} />
+        <Route path="heritage-stories" element={<Navigate to="/dashboard/heritage-narratives/manage" replace />} />
+        <Route path="heritage-narratives/add" element={<HeritageNarrativesAddPage />} />
+        <Route path="heritage-narratives/manage" element={<HeritageNarrativesManagePage />} />
+        <Route path="heritage-narratives/edit/:placeId" element={<HeritageNarrativesEditPage />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />

@@ -3,6 +3,7 @@ import {
   AlertCircle,
   BarChart3,
   BookOpen,
+  BookPlus,
   Brain,
   Calendar,
   Camera,
@@ -12,6 +13,7 @@ import {
   ChevronUp,
   FileText,
   Globe2,
+  ImageOff,
   Layers,
   LayoutDashboard,
   LogOut,
@@ -39,6 +41,8 @@ interface NavItem {
   name: string;
   path: string;
   icon: React.ComponentType<{ className?: string }>;
+  /** When set, used instead of `pathname === path` for active styling (e.g. nested edit routes). */
+  isActive?: (pathname: string) => boolean;
 }
 
 interface NavSubsection {
@@ -77,9 +81,28 @@ const navSections: NavSection[] = [
           { name: "Add Places with AI", path: "/dashboard/add-places-ai", icon: Sparkles },
           { name: "Update Places", path: "/dashboard/update-places", icon: MapPinned },
           {
-            name: "Heritage Narratives",
-            path: "/dashboard/heritage-stories",
+            name: "Add Heritage Narrative",
+            path: "/dashboard/heritage-narratives/add",
+            icon: BookPlus,
+            isActive: (pathname) => pathname === "/dashboard/heritage-narratives/add",
+          },
+          {
+            name: "Update Heritage Narratives",
+            path: "/dashboard/heritage-narratives/manage",
             icon: BookOpen,
+            isActive: (pathname) =>
+              pathname === "/dashboard/heritage-narratives/manage" ||
+              pathname.startsWith("/dashboard/heritage-narratives/edit/"),
+          },
+        ],
+      },
+      {
+        name: "Place images",
+        items: [
+          {
+            name: "Replace place images",
+            path: "/dashboard/replace-place-images",
+            icon: ImageOff,
           },
         ],
       },
@@ -333,7 +356,9 @@ export default function Sidebar() {
                           <div className={cn("space-y-0.5", collapsed && "space-y-1")}>
                             {subsection.items.map((item) => {
                               const Icon = item.icon;
-                              const isActive = location.pathname === item.path;
+                              const isActive = item.isActive
+                                ? item.isActive(location.pathname)
+                                : location.pathname === item.path;
                               return (
                                 <div
                                   className="relative group"

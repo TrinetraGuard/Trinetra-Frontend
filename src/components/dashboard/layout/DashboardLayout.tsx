@@ -10,7 +10,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Breadcrumbs />
         </div>
         <div className="p-6 flex-1 overflow-auto">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6 overflow-visible">
             {children}
           </div>
         </div>
