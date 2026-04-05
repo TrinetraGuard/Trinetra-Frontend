@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GEMINI_GENERATE_URL, getGeminiApiKey } from "@/lib/gemini";
 import { db } from "../../firebase/firebase";
 
 const ALL_CATEGORIES = [
@@ -91,9 +92,6 @@ export type GeneratedPlace = {
   facilities: Facility[];
 };
 
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
-
 // Nashik city/district bounds - only allow places within this region
 const NASHIK_LAT_MIN = 19.85;
 const NASHIK_LAT_MAX = 20.15;
@@ -111,10 +109,6 @@ function isPlaceInNashik(p: { latitude?: number; longitude?: number }): boolean 
     lng >= NASHIK_LNG_MIN &&
     lng <= NASHIK_LNG_MAX
   );
-}
-
-function getGeminiApiKey(): string {
-  return import.meta.env.VITE_GEMINI_API_KEY ?? "";
 }
 
 export default function AddPlacesWithAI() {
@@ -207,7 +201,7 @@ RULES:
 5. Output ONLY a valid JSON array of objects, no markdown, no code fence. Each object must have exactly these keys: name, categories, placeType, latitude, longitude, urls, description, visitTime, crowd, bestSeason, entryType, entryFee, openingHours, transportModes, facilities.`;
 
     try {
-      const response = await fetch(GEMINI_URL, {
+      const response = await fetch(GEMINI_GENERATE_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

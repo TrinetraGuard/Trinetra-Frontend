@@ -254,7 +254,7 @@ export default function ReplacePlaceImagesAdmin() {
                 <CardDescription className="mt-2 max-w-2xl text-base">
                   Every image URL in each place&apos;s list is checked. Places with <strong>any</strong> missing, empty,
                   or broken link appear below. <strong>All</strong> images for that place are shown so you can fix only
-                  what failed while seeing the rest.
+                  what failed while seeing the rest. Paste a working direct URL and save to update Firestore.
                 </CardDescription>
               </div>
             </div>
