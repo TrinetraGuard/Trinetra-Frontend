@@ -30,6 +30,7 @@ import SosAlerts from "@/pages/component/SosAlerts";
 import HeritageNarrativesAddPage from "@/pages/component/HeritageNarrativesAddPage";
 import HeritageNarrativesEditPage from "@/pages/component/HeritageNarrativesEditPage";
 import HeritageNarrativesManagePage from "@/pages/component/HeritageNarrativesManagePage";
+import PlaceClosureAdmin from "@/pages/component/PlaceClosureAdmin";
 import ReplacePlaceImagesAdmin from "@/pages/component/ReplacePlaceImagesAdmin";
 import UpdatePlacesAdmin from "@/pages/component/UpdatePlacesAdmin";
 import UserPage from "@/pages/home/page/user_page";
@@ -88,6 +89,7 @@ const AppRoutes = () => {
         <Route path="add-places" element={<AddPlacesAdmin />} />
         <Route path="add-places-ai" element={<AddPlacesWithAI />} />
         <Route path="update-places" element={<UpdatePlacesAdmin />} />
+        <Route path="place-closures" element={<PlaceClosureAdmin />} />
         <Route path="replace-place-images" element={<ReplacePlaceImagesAdmin />} />
         <Route path="heritage-stories" element={<Navigate to="/dashboard/heritage-narratives/manage" replace />} />
         <Route path="heritage-narratives/add" element={<HeritageNarrativesAddPage />} />

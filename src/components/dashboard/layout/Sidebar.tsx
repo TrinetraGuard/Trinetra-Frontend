@@ -11,6 +11,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  DoorClosed,
   FileText,
   Globe2,
   ImageOff,
@@ -81,6 +82,11 @@ const navSections: NavSection[] = [
           { name: "Add Places with AI", path: "/dashboard/add-places-ai", icon: Sparkles },
           { name: "Update Places", path: "/dashboard/update-places", icon: MapPinned },
           {
+            name: "Place closures",
+            path: "/dashboard/place-closures",
+            icon: DoorClosed,
+          },
+          {
             name: "Add Heritage Narrative",
             path: "/dashboard/heritage-narratives/add",
             icon: BookPlus,
@@ -100,7 +106,7 @@ const navSections: NavSection[] = [
         name: "Place images",
         items: [
           {
-            name: "Replace place images",
+            name: "Fix broken images",
             path: "/dashboard/replace-place-images",
             icon: ImageOff,
           },

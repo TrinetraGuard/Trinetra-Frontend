@@ -118,9 +118,15 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Update places",
     description: "Edit existing place details, coordinates, media, and metadata.",
   },
+  "/dashboard/place-closures": {
+    title: "Place closures",
+    description:
+      "Mark pilgrimage sites temporarily closed, set a clear visitor-facing reason, and reopen when appropriate. Syncs to the mobile app.",
+  },
   "/dashboard/replace-place-images": {
-    title: "Replace place images",
-    description: "Fix missing or broken image URLs for every slot in each place’s gallery list.",
+    title: "Fix broken images",
+    description:
+      "Repair broken or missing image URLs for places, heritage hero images, events, home feature slides, and category icons.",
   },
   "/dashboard/heritage-stories": {
     title: "Heritage narratives",
