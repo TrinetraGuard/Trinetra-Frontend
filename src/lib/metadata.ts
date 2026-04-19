@@ -103,8 +103,9 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     description: "Update or remove existing events and schedules.",
   },
   "/dashboard/section-features": {
-    title: "Features",
-    description: "Configure home-screen feature sections and highlighted content.",
+    title: "Home feature carousel",
+    description:
+      "Configure multiple home slides: each has its own headline and tagline, links a place, and uses a hero image. Discover opens the place for the slide shown.",
   },
   "/dashboard/add-places": {
     title: "Add places",

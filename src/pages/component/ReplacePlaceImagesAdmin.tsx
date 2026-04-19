@@ -35,7 +35,18 @@ type PlaceRow = { id: string; name: string; urls: string[] };
 type HeritageRow = { id: string; placeName: string; heroImageUrl: string };
 type EventRow = { id: string; eventName: string; imageUrl: string };
 type CategoryRow = { id: string; name: string; icon: string };
-type FeatureRow = { images: string[]; title: string };
+type FeatureSlideMeta = { headline: string; placeName: string };
+
+type FeatureRow = {
+  images: string[];
+  title: string;
+  placeId?: string;
+  placeName?: string;
+  /** Per slide (aligned with `images` indices) for labels and search. */
+  slideMeta: FeatureSlideMeta[];
+  /** Flattened strings for search (includes root title and each slide field). */
+  searchParts: string[];
+};
 
 function normalizePlace(d: QueryDocumentSnapshot): PlaceRow {
   const raw = d.data() as Record<string, unknown>;
@@ -378,12 +389,42 @@ export default function ReplacePlaceImagesAdmin() {
         setErrFeature(null);
         setFeatureDocExists(snap.exists());
         if (!snap.exists()) {
-          setFeature({ images: [], title: "" });
+          setFeature({
+            images: [],
+            title: "",
+            placeId: "",
+            placeName: "",
+            slideMeta: [],
+            searchParts: [],
+          });
           return;
         }
         const raw = snap.data() as Record<string, unknown>;
         const imgs = Array.isArray(raw.images) ? raw.images.map((u) => String(u)) : [];
-        setFeature({ images: imgs, title: String(raw.title ?? "") });
+        const searchParts: string[] = [String(raw.title ?? ""), String(raw.placeId ?? ""), String(raw.placeName ?? "")];
+        const slideMeta: FeatureSlideMeta[] = [];
+        const slidesRaw = raw.slides;
+        if (Array.isArray(slidesRaw)) {
+          for (const item of slidesRaw) {
+            if (item == null || typeof item !== "object") continue;
+            const x = item as Record<string, unknown>;
+            const headline = String(x.headline ?? "").trim();
+            const placeName = String(x.placeName ?? "").trim();
+            slideMeta.push({ headline, placeName });
+            searchParts.push(headline, placeName, String(x.placeId ?? ""));
+          }
+        }
+        while (slideMeta.length < imgs.length) {
+          slideMeta.push({ headline: "", placeName: "" });
+        }
+        setFeature({
+          images: imgs,
+          title: String(raw.title ?? ""),
+          placeId: String(raw.placeId ?? ""),
+          placeName: String(raw.placeName ?? ""),
+          slideMeta,
+          searchParts,
+        });
       },
       (err) => {
         console.error("ReplacePlaceImages feature:", err);
@@ -483,7 +524,7 @@ export default function ReplacePlaceImagesAdmin() {
 
   const displayFeature = useMemo(() => {
     if (!feature) return false;
-    if (!matchesSearch(term, feature.title, "feature", "highlight", "home")) return false;
+    if (!matchesSearch(term, ...feature.searchParts, "feature", "highlight", "home")) return false;
     return featureHasIssue(feature, goodKeys, brokenKeys);
   }, [feature, goodKeys, brokenKeys, term]);
 
@@ -760,7 +801,7 @@ export default function ReplacePlaceImagesAdmin() {
               <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Home feature carousel</h2>
               <div className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4">
                 <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
-                  {feature.title || "Feature highlight"}
+                  {feature.title || "Home feature carousel"}
                   <span className="ml-2 text-sm font-normal text-muted-foreground">
                     ({feature.images.length === 0 ? "no images" : `${feature.images.length} slide(s)`})
                   </span>
@@ -769,6 +810,11 @@ export default function ReplacePlaceImagesAdmin() {
                   {(feature.images.length === 0 ? [0] : feature.images.map((_, i) => i)).map((index) => {
                     const k = mediaSlotKey.feature(index);
                     const stored = feature.images[index] ?? "";
+                    const meta = feature.slideMeta[index];
+                    const slideLabel =
+                      meta?.headline || meta?.placeName
+                        ? `Slide ${index + 1}: ${[meta.headline, meta.placeName].filter(Boolean).join(" · ")}`
+                        : `Slide ${index + 1}`;
                     const st =
                       feature.images.length === 0
                         ? getSlotStatus("", k, goodKeys, brokenKeys)
@@ -777,7 +823,7 @@ export default function ReplacePlaceImagesAdmin() {
                       <SlotBlock
                         key={k}
                         slotKey={k}
-                        label={`Slide ${index + 1}`}
+                        label={slideLabel}
                         stored={stored}
                         status={st}
                         replaceUrlDrafts={replaceUrlDrafts}

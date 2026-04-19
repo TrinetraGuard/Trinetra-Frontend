@@ -80,6 +80,18 @@ export async function saveFeatureImageAtIndex(
   const ref = doc(db, "feature", "highlight");
   const snap = await getDoc(ref);
   const data = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+  const slidesRaw = data.slides;
+  if (Array.isArray(slidesRaw) && slidesRaw.length > 0) {
+    const slides = slidesRaw.map((s) =>
+      s != null && typeof s === "object" ? { ...(s as Record<string, unknown>) } : {}
+    );
+    while (slides.length <= index) slides.push({ placeId: "", placeName: "", imageUrl: "" });
+    const prev = slides[index] as Record<string, unknown>;
+    slides[index] = { ...prev, imageUrl: newUrl };
+    const images = slides.map((s) => String((s as Record<string, unknown>).imageUrl ?? ""));
+    await setDoc(ref, { ...data, slides, images }, { merge: true });
+    return;
+  }
   const raw = data.images;
   const imgs: string[] = Array.isArray(raw) ? raw.map((u) => String(u)) : [];
   while (imgs.length <= index) imgs.push("");

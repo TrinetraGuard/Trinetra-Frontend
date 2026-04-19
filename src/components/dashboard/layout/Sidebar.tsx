@@ -70,7 +70,7 @@ const navSections: NavSection[] = [
       {
         name: "Content Management",
         items: [
-          { name: "Features", path: "/dashboard/section-features", icon: Layers },
+          { name: "Home feature", path: "/dashboard/section-features", icon: Layers },
           { name: "Add Event", path: "/dashboard/add-event", icon: Calendar },
           { name: "Edit Event", path: "/dashboard/edit-event", icon: Calendar },
         ],
