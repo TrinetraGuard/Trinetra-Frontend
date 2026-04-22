@@ -93,22 +93,8 @@ function loadLeafletAssets(): Promise<void> {
   });
 }
 
-function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
-  const R = 6371;
-  const dLat = ((bLat - aLat) * Math.PI) / 180;
-  const dLng = ((bLng - aLng) * Math.PI) / 180;
-  const s1 =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((aLat * Math.PI) / 180) *
-      Math.cos((bLat * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(s1), Math.sqrt(1 - s1));
-  return R * c;
-}
-
-function formatFirestoreDate(value: unknown): string {
-  if (value == null || value === "") return "—";
-  let d: Date | null = null;
+function parseFirestoreDate(value: unknown): Date | null {
+  if (value == null || value === "") return null;
   if (
     typeof value === "object" &&
     value !== null &&
@@ -116,24 +102,47 @@ function formatFirestoreDate(value: unknown): string {
     typeof (value as { toDate: () => Date }).toDate === "function"
   ) {
     try {
-      d = (value as { toDate: () => Date }).toDate();
+      const d = (value as { toDate: () => Date }).toDate();
+      return Number.isNaN(d.getTime()) ? null : d;
     } catch {
-      return "—";
+      return null;
     }
-  } else if (value instanceof Date) {
-    d = value;
-  } else if (typeof value === "number" && Number.isFinite(value)) {
-    d = new Date(value);
-  } else if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    if (!Number.isNaN(parsed)) d = new Date(parsed);
   }
-  if (!d || Number.isNaN(d.getTime())) return "—";
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    if (!Number.isNaN(parsed)) {
+      const d = new Date(parsed);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+  }
+  return null;
+}
+
+function formatFirestoreDate(value: unknown): string {
+  const d = parseFirestoreDate(value);
+  if (!d) return "—";
   return d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+function formatRelativeTime(d: Date): string {
+  const diffMs = d.getTime() - Date.now();
+  const abs = Math.abs(diffMs);
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const minutes = Math.round(diffMs / (60 * 1000));
+  const hours = Math.round(diffMs / (60 * 60 * 1000));
+  const days = Math.round(diffMs / (24 * 60 * 60 * 1000));
+  if (abs < 60 * 60 * 1000) return rtf.format(minutes, "minute");
+  if (abs < 24 * 60 * 60 * 1000) return rtf.format(hours, "hour");
+  return rtf.format(days, "day");
+}
+
 /** Best-effort “last updated” from common Firestore field names. */
-function getLastUpdatedLabel(u: UserMapUser): { label: string; value: string } {
+function getLastUpdatedLabel(u: UserMapUser): { label: string; value: string; relative?: string } {
   const candidates: [string, unknown][] = [
     ["Updated (document)", u.updatedAt],
     ["Last seen", u.lastSeen],
@@ -142,7 +151,10 @@ function getLastUpdatedLabel(u: UserMapUser): { label: string; value: string } {
   ];
   for (const [label, v] of candidates) {
     const formatted = formatFirestoreDate(v);
-    if (formatted !== "—") return { label, value: formatted };
+    if (formatted !== "—") {
+      const d = parseFirestoreDate(v);
+      return { label, value: formatted, relative: d ? formatRelativeTime(d) : undefined };
+    }
   }
   return { label: "Last updated", value: "—" };
 }
@@ -178,12 +190,19 @@ function buildUserMarkerIconHtml(u: UserMapUser, selected: boolean): string {
   const ring = selected
     ? "0 0 0 4px rgba(59,130,246,.45), 0 6px 20px rgba(0,0,0,.35)"
     : "0 4px 14px rgba(0,0,0,.28), 0 0 0 1px rgba(0,0,0,.06)";
-  const scale = selected ? "1.12" : "1";
+  const scale = selected ? "1.08" : "1";
   const photo = typeof u.photoURL === "string" && u.photoURL.trim().startsWith("http");
   const inner = photo
     ? `<img src="${escapeHtml(u.photoURL!.trim())}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:9999px" />`
     : `<span style="font:700 13px/1 system-ui,-apple-system,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.25)">${ini}</span>`;
-  return `<div style="width:44px;height:44px;border-radius:9999px;background:linear-gradient(145deg,hsl(${hue} 72% 42%),hsl(${hue} 65% 32%));border:3px solid #fff;box-shadow:${ring};display:flex;align-items:center;justify-content:center;overflow:hidden;transform:scale(${scale});transform-origin:center bottom;transition:transform .18s ease,box-shadow .18s ease">${inner}</div>`;
+  return `
+  <div style="position:relative;transform:scale(${scale});transform-origin:center bottom;transition:transform .18s ease,box-shadow .18s ease">
+    <div style="width:34px;height:34px;border-radius:9999px;background:linear-gradient(145deg,hsl(${hue} 72% 42%),hsl(${hue} 65% 32%));border:3px solid #fff;box-shadow:${ring};display:flex;align-items:center;justify-content:center;overflow:hidden">
+      ${inner}
+    </div>
+    <div style="position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid #ffffff;filter:drop-shadow(0 4px 8px rgba(0,0,0,.22))"></div>
+    <div style="position:absolute;left:50%;bottom:-7px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid hsl(${hue} 65% 32%);"></div>
+  </div>`;
 }
 
 const UsersMap = () => {
@@ -244,84 +263,6 @@ const UsersMap = () => {
     };
   }, []);
 
-  const renderClusters = useCallback(
-    (clusters: { center: [number, number]; members: UserMapUser[] }[], L: typeof import("leaflet")) => {
-      if (!clustersLayerRef.current || clusters.length === 0) return;
-      const maxCluster = clusters.reduce(
-        (acc, c) => (acc && acc.members.length >= c.members.length ? acc : c),
-        clusters[0]
-      );
-      clusters.forEach((c) => {
-        const isMax =
-          maxCluster &&
-          maxCluster.center[0] === c.center[0] &&
-          maxCluster.center[1] === c.center[1];
-        L.circle(c.center, {
-          radius: 2000,
-          color: isMax ? "#f97316" : "#6366f1",
-          weight: 2,
-          fillColor: isMax ? "#ffedd5" : "#e0e7ff",
-          fillOpacity: 0.35,
-        }).addTo(clustersLayerRef.current!);
-        const labelHtml = `<div style="font:600 12px/1.2 system-ui,-apple-system,sans-serif;background:${
-          isMax ? "#c2410c" : "#4338ca"
-        };color:#fff;padding:6px 10px;border-radius:9999px;box-shadow:0 4px 12px rgba(0,0,0,.2);border:2px solid rgba(255,255,255,.9)">${c.members.length} nearby</div>`;
-        L.marker(c.center, {
-          icon: L.divIcon({
-            className: "users-map-cluster",
-            html: labelHtml,
-            iconSize: [88, 28],
-            iconAnchor: [44, 14],
-          }),
-        }).addTo(clustersLayerRef.current!);
-      });
-    },
-    []
-  );
-
-  const createClusters = useCallback((points: UserMapUser[], L: typeof import("leaflet")) => {
-    if (!clustersLayerRef.current) return;
-    const RADIUS_KM = 2;
-    const clusters: { center: [number, number]; members: UserMapUser[] }[] = [];
-    const visited = new Set<string>();
-
-    const processClustering = (startIndex: number) => {
-      const CHUNK_SIZE = 100;
-      const endIndex = Math.min(startIndex + CHUNK_SIZE, points.length);
-      for (let i = startIndex; i < endIndex; i += 1) {
-        const a = points[i];
-        if (!a || visited.has(a.uid)) continue;
-        const group: UserMapUser[] = [a];
-        visited.add(a.uid);
-        for (let j = i + 1; j < points.length; j += 1) {
-          const b = points[j];
-          if (!b || visited.has(b.uid)) continue;
-          const d = haversineKm(
-            a.latitude as number,
-            a.longitude as number,
-            b.latitude as number,
-            b.longitude as number
-          );
-          if (d <= RADIUS_KM) {
-            group.push(b);
-            visited.add(b.uid);
-          }
-        }
-        if (group.length > 1) {
-          const lat = group.reduce((s, g) => s + (g.latitude as number), 0) / group.length;
-          const lng = group.reduce((s, g) => s + (g.longitude as number), 0) / group.length;
-          clusters.push({ center: [lat, lng], members: group });
-        }
-      }
-      if (endIndex < points.length) {
-        requestAnimationFrame(() => processClustering(endIndex));
-      } else {
-        renderClusters(clusters, L);
-      }
-    };
-    processClustering(0);
-  }, [renderClusters]);
-
   const renderMarkers = useCallback(
     (points: UserMapUser[], L: typeof import("leaflet"), selectedId: string) => {
       if (!markersLayerRef.current || !clustersLayerRef.current) return;
@@ -347,13 +288,14 @@ const UsersMap = () => {
           const icon = L.divIcon({
             className: "users-map-pin-wrap",
             html: buildUserMarkerIconHtml(p, selected),
-            iconSize: [44, 44],
-            iconAnchor: [22, 44],
-            popupAnchor: [0, -44],
+            iconSize: [34, 44],
+            iconAnchor: [17, 44],
+            popupAnchor: [0, -40],
           });
           const m = L.marker([p.latitude, p.longitude], { icon }).addTo(markersLayerRef.current!);
           markersByIdRef.current[p.uid] = m;
-          m.bindTooltip(p.name || p.email || p.uid, {
+          const displayName = p.name || p.email || p.uid;
+          m.bindTooltip(`User: ${displayName}`, {
             permanent: false,
             direction: "top",
             opacity: 0.95,
@@ -385,15 +327,12 @@ const UsersMap = () => {
             map.fitBounds(b.pad(0.18));
             didInitialFitRef.current = true;
           }
-          window.setTimeout(() => {
-            createClusters(validPoints, L);
-          }, 80);
         }
       };
 
       processBatch();
     },
-    [createClusters]
+    []
   );
 
   useEffect(() => {
@@ -514,6 +453,8 @@ const UsersMap = () => {
 
   const isLoading = mapLoading || dataLoading;
   const lastUp = focusedUser ? getLastUpdatedLabel(focusedUser) : null;
+  const hasLocation =
+    focusedUser && typeof focusedUser.latitude === "number" && typeof focusedUser.longitude === "number";
 
   return (
     <div className="space-y-4">
@@ -638,6 +579,9 @@ const UsersMap = () => {
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-1">
+                  <Badge variant="default" className="font-normal">
+                    User
+                  </Badge>
                   {focusedUser.role && (
                     <Badge variant="secondary" className="font-normal">
                       {focusedUser.role}
@@ -648,6 +592,9 @@ const UsersMap = () => {
                       {focusedUser.appName}
                     </Badge>
                   )}
+                  <Badge variant={hasLocation ? "default" : "secondary"} className="font-normal">
+                    {hasLocation ? "Location available" : "No location"}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto">
@@ -658,7 +605,16 @@ const UsersMap = () => {
                       background: `linear-gradient(145deg, hsl(${hueFromUid(focusedUser.uid)} 72% 42%), hsl(${hueFromUid(focusedUser.uid)} 60% 30%))`,
                     }}
                   >
-                    {initialsForUser(focusedUser)}
+                    {typeof focusedUser.photoURL === "string" && focusedUser.photoURL.trim().startsWith("http") ? (
+                      <img
+                        src={focusedUser.photoURL.trim()}
+                        alt=""
+                        className="h-full w-full rounded-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      initialsForUser(focusedUser)
+                    )}
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last updated</p>
@@ -668,7 +624,10 @@ const UsersMap = () => {
                         {lastUp.value}
                       </p>
                     )}
-                    <p className="text-xs text-muted-foreground">{lastUp?.label}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {lastUp?.label}
+                      {lastUp?.relative ? ` • ${lastUp.relative}` : ""}
+                    </p>
                   </div>
                 </div>
 

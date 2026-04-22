@@ -8,11 +8,13 @@ import {
   Clock,
   FileText,
   MapPin,
+  ShieldCheck,
   TrendingUp,
   UserCheck,
   Users,
   Video
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Timestamp, collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -75,7 +77,8 @@ interface ActivityItem {
   type: "alert" | "user" | "volunteer" | "event" | "place";
   title: string;
   description: string;
-  time: string;
+  timestamp: number;
+  timeLabel: string;
   status?: "active" | "resolved" | "pending";
 }
 
@@ -131,18 +134,22 @@ const DashboardPage = () => {
       // Add recent alerts to activities
       const recentAlerts = alerts
         .slice(0, 5)
-        .map((alert) => ({
-          id: alert.id,
-          type: "alert" as const,
-          title: `SOS Alert from ${alert.userName || "User"}`,
-          description: alert.status === "active" ? "Active emergency alert" : "Alert resolved",
-          time: alert.activatedAt?.toDate?.().toLocaleString() || new Date().toLocaleString(),
-          status: alert.status,
-        }));
+        .map((alert) => {
+          const ts = alert.activatedAt?.toDate?.()?.getTime?.() ?? Date.now();
+          return {
+            id: alert.id,
+            type: "alert" as const,
+            title: `SOS Alert from ${alert.userName || "User"}`,
+            description: alert.status === "active" ? "Active emergency alert" : "Alert resolved",
+            timestamp: ts,
+            timeLabel: new Date(ts).toLocaleString(),
+            status: alert.status,
+          };
+        });
       
       setRecentActivities((prev) => {
         const newActivities = [...recentAlerts, ...prev.filter((a) => a.type !== "alert")];
-        return newActivities.slice(0, 10).sort((a, b) => b.time.localeCompare(a.time));
+        return newActivities.slice(0, 10).sort((a, b) => b.timestamp - a.timestamp);
       });
     });
     unsubscribers.push(alertsUnsub);
@@ -225,23 +232,23 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
           <p className="text-gray-500 mt-1">Welcome back! Here's what's happening with your system.</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium text-green-700">System Operational</span>
+        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2">
+          <ShieldCheck className="h-4 w-4 text-green-700" />
+          <span className="text-sm font-medium text-green-700">System operational</span>
+          <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-green-500 animate-pulse" />
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Users"
           value={stats.totalUsers}
-          change="+12% from last month"
           icon={Users}
           iconColor="text-blue-600"
           bgColor="bg-blue-50"
@@ -250,7 +257,6 @@ const DashboardPage = () => {
         <StatCard
           title="Active Volunteers"
           value={stats.totalVolunteers}
-          change="+5 new this week"
           icon={UserCheck}
           iconColor="text-green-600"
           bgColor="bg-green-50"
@@ -259,7 +265,6 @@ const DashboardPage = () => {
         <StatCard
           title="Active SOS Alerts"
           value={stats.activeAlerts}
-          change={`${stats.resolvedAlerts} resolved`}
           icon={AlertCircle}
           iconColor="text-red-600"
           bgColor="bg-red-50"
@@ -275,7 +280,7 @@ const DashboardPage = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Places Managed"
           value={stats.totalPlaces}
@@ -307,14 +312,6 @@ const DashboardPage = () => {
           iconColor="text-emerald-600"
           bgColor="bg-emerald-50"
           description="Last 30 days"
-        />
-        <StatCard
-          title="Crowd Monitoring"
-          value="Active"
-          icon={Video}
-          iconColor="text-cyan-600"
-          bgColor="bg-cyan-50"
-          description="Real-time monitoring enabled"
         />
       </div>
 
@@ -354,22 +351,15 @@ const DashboardPage = () => {
                         <div className="flex items-center justify-between">
                           <p className="text-sm font-medium text-gray-900">{activity.title}</p>
                           {activity.status && (
-                            <span
-                              className={cn(
-                                "text-xs px-2 py-0.5 rounded-full",
-                                activity.status === "active"
-                                  ? "bg-red-100 text-red-700"
-                                  : "bg-green-100 text-green-700"
-                              )}
-                            >
+                            <Badge variant={activity.status === "active" ? "destructive" : "secondary"}>
                               {activity.status}
-                            </span>
+                            </Badge>
                           )}
                         </div>
                         <p className="text-xs text-gray-500 mt-1">{activity.description}</p>
                         <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {activity.time}
+                          {activity.timeLabel}
                         </p>
                       </div>
                     </div>
@@ -404,6 +394,11 @@ const DashboardPage = () => {
                   <p className="text-sm font-medium text-gray-900">View SOS Alerts</p>
                   <p className="text-xs text-gray-500">Manage emergency alerts</p>
                 </div>
+                {stats.activeAlerts > 0 && (
+                  <Badge variant="destructive" className="mr-1">
+                    {stats.activeAlerts}
+                  </Badge>
+                )}
                 <ArrowRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
               </Link>
 
