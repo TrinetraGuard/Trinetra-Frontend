@@ -31,6 +31,7 @@ import HeritageNarrativesAddPage from "@/pages/component/HeritageNarrativesAddPa
 import HeritageNarrativesEditPage from "@/pages/component/HeritageNarrativesEditPage";
 import HeritageNarrativesManagePage from "@/pages/component/HeritageNarrativesManagePage";
 import PlaceClosureAdmin from "@/pages/component/PlaceClosureAdmin";
+import NotificationsAdmin from "@/pages/component/NotificationsAdmin";
 import ReplacePlaceImagesAdmin from "@/pages/component/ReplacePlaceImagesAdmin";
 import UpdatePlacesAdmin from "@/pages/component/UpdatePlacesAdmin";
 import UserPage from "@/pages/home/page/user_page";
@@ -96,6 +97,7 @@ const AppRoutes = () => {
         <Route path="heritage-narratives/manage" element={<HeritageNarrativesManagePage />} />
         <Route path="heritage-narratives/edit/:placeId" element={<HeritageNarrativesEditPage />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
+        <Route path="notifications" element={<NotificationsAdmin />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
         <Route path="live-analytics" element={<LiveAnalytics />} />

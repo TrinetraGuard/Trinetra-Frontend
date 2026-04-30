@@ -2,6 +2,7 @@ import {
   Activity,
   AlertCircle,
   BarChart3,
+  BellRing,
   BookOpen,
   BookPlus,
   Brain,
@@ -123,6 +124,7 @@ const navSections: NavSection[] = [
         name: "Emergency",
         items: [
           { name: "SOS Alerts", path: "/dashboard/sos-alerts", icon: AlertCircle },
+          { name: "Notifications", path: "/dashboard/notifications", icon: BellRing },
         ],
       },
     ],
