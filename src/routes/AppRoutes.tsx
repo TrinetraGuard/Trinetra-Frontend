@@ -23,6 +23,7 @@ import LiveAnalytics from "@/pages/component/LiveAnalytics";
 import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
 import Lostperson from "@/pages/lost/lostperson";
+import AiChatMonitorAdmin from "@/pages/component/AiChatMonitorAdmin";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
@@ -98,6 +99,7 @@ const AppRoutes = () => {
         <Route path="heritage-narratives/edit/:placeId" element={<HeritageNarrativesEditPage />} />
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="notifications" element={<NotificationsAdmin />} />
+        <Route path="ai-chat-monitor" element={<AiChatMonitorAdmin />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
         <Route path="live-analytics" element={<LiveAnalytics />} />

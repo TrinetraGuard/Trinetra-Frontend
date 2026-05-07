@@ -26,6 +26,8 @@ interface FormState {
   targetUserIdsText: string;
   targetGroupId: string;
   type: string;
+  deliveryMode: "tokens" | "topic";
+  topic: string;
   scheduledAt: string;
 }
 
@@ -37,6 +39,8 @@ const defaultFormState: FormState = {
   targetUserIdsText: "",
   targetGroupId: "",
   type: "alert",
+  deliveryMode: "tokens",
+  topic: "trinetra_all_users",
   scheduledAt: "",
 };
 
@@ -75,6 +79,9 @@ function mapDocToNotificationRecord(id: string, raw: Record<string, unknown>): N
     scheduledAt: raw.scheduledAt as Timestamp | undefined,
     errorMessage: raw.errorMessage ? String(raw.errorMessage) : undefined,
     createdBy: raw.createdBy ? String(raw.createdBy) : undefined,
+    deliveryMode: raw.deliveryMode ? String(raw.deliveryMode) as NotificationRecord["deliveryMode"] : "tokens",
+    topic: raw.topic ? String(raw.topic) : undefined,
+    deliveryStats: raw.deliveryStats ? raw.deliveryStats as NotificationRecord["deliveryStats"] : undefined,
   };
 }
 
@@ -106,6 +113,34 @@ const NotificationsAdmin = () => {
     () => allNotifications.filter((n) => n.status === "sent"),
     [allNotifications],
   );
+  const deliverySummary = useMemo(() => {
+    const withStats = sentNotifications
+      .map((item) => item.deliveryStats)
+      .filter((stats): stats is NonNullable<NotificationRecord["deliveryStats"]> => !!stats);
+
+    const totalNotifications = withStats.length;
+    const totals = withStats.reduce(
+      (acc, stats) => {
+        acc.targets += stats.totalTargets ?? 0;
+        acc.tokens += stats.totalTokens ?? 0;
+        acc.success += stats.successCount ?? 0;
+        acc.failure += stats.failureCount ?? 0;
+        acc.invalid += stats.invalidTokenCount ?? 0;
+        acc.retries += stats.retriedTokenCount ?? 0;
+        return acc;
+      },
+      {targets: 0, tokens: 0, success: 0, failure: 0, invalid: 0, retries: 0},
+    );
+
+    const attempts = totals.success + totals.failure;
+    const successRate = attempts > 0 ? (totals.success / attempts) * 100 : 0;
+
+    return {
+      totalNotifications,
+      ...totals,
+      successRate,
+    };
+  }, [sentNotifications]);
 
   const resetForm = () => {
     setForm(defaultFormState);
@@ -125,6 +160,12 @@ const NotificationsAdmin = () => {
     if (form.targetAudience === "group" && !form.targetGroupId.trim()) {
       throw new Error("Group ID is required for Group audience.");
     }
+    if (form.deliveryMode === "topic" && form.targetAudience !== "all") {
+      throw new Error("Topic delivery currently supports only All Users audience.");
+    }
+    if (form.deliveryMode === "topic" && !form.topic.trim()) {
+      throw new Error("Topic is required when delivery mode is Topic Broadcast.");
+    }
     return {
       title: form.title.trim(),
       body: form.body.trim(),
@@ -133,6 +174,8 @@ const NotificationsAdmin = () => {
       targetUserIds: form.targetAudience === "users" ? parseTargetUsers(form.targetUserIdsText) : undefined,
       targetGroupId: form.targetAudience === "group" ? form.targetGroupId.trim() : undefined,
       type: form.type.trim() || "alert",
+      deliveryMode: form.deliveryMode,
+      topic: form.deliveryMode === "topic" ? form.topic.trim() : undefined,
     };
   };
 
@@ -217,6 +260,8 @@ const NotificationsAdmin = () => {
       targetUserIdsText: (record.targetUserIds ?? []).join(", "),
       targetGroupId: record.targetGroupId ?? "",
       type: "alert",
+      deliveryMode: record.deliveryMode ?? "tokens",
+      topic: record.topic ?? "trinetra_all_users",
       scheduledAt: toDateTimeInputValue(record.scheduledAt),
     });
     window.scrollTo({top: 0, behavior: "smooth"});
@@ -314,6 +359,31 @@ const NotificationsAdmin = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="deliveryMode">Delivery Mode</Label>
+              <select
+                id="deliveryMode"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                value={form.deliveryMode}
+                onChange={(event) => setField("deliveryMode", event.target.value as FormState["deliveryMode"])}
+              >
+                <option value="tokens">Direct Device Tokens</option>
+                <option value="topic">FCM Topic Broadcast</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic (required for topic mode)</Label>
+              <Input
+                id="topic"
+                value={form.topic}
+                onChange={(event) => setField("topic", event.target.value)}
+                placeholder="trinetra_all_users"
+                disabled={form.deliveryMode !== "topic"}
+              />
+            </div>
+          </div>
+
           {form.targetAudience === "users" && (
             <div className="space-y-2">
               <Label htmlFor="targetUsers">Target User IDs</Label>
@@ -397,6 +467,37 @@ const NotificationsAdmin = () => {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Delivery Analytics</CardTitle>
+          <CardDescription>
+            Overall delivery health across sent notifications with recorded FCM stats.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-md border p-3">
+            <p className="text-xs text-gray-500">Tracked Notifications</p>
+            <p className="mt-1 text-xl font-semibold">{deliverySummary.totalNotifications}</p>
+          </div>
+          <div className="rounded-md border p-3">
+            <p className="text-xs text-gray-500">Success Rate</p>
+            <p className="mt-1 text-xl font-semibold">{deliverySummary.successRate.toFixed(1)}%</p>
+          </div>
+          <div className="rounded-md border p-3">
+            <p className="text-xs text-gray-500">Deliveries (ok / failed)</p>
+            <p className="mt-1 text-xl font-semibold">
+              {deliverySummary.success} / {deliverySummary.failure}
+            </p>
+          </div>
+          <div className="rounded-md border p-3">
+            <p className="text-xs text-gray-500">Invalid Tokens / Retries</p>
+            <p className="mt-1 text-xl font-semibold">
+              {deliverySummary.invalid} / {deliverySummary.retries}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader>
@@ -415,6 +516,9 @@ const NotificationsAdmin = () => {
                 </div>
                 <p className="mt-1 text-sm text-gray-700">{record.body}</p>
                 <p className="mt-2 text-xs text-gray-500">Scheduled: {toDisplayDate(record.scheduledAt)}</p>
+                <p className="mt-1 text-xs text-gray-500">
+                  Mode: {record.deliveryMode ?? "tokens"}{record.topic ? ` • Topic: ${record.topic}` : ""}
+                </p>
                 <div className="mt-3 flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEditScheduled(record)}>
                     Edit
@@ -450,6 +554,21 @@ const NotificationsAdmin = () => {
                 </div>
                 <p className="mt-1 text-sm text-gray-700">{record.body}</p>
                 <p className="mt-2 text-xs text-gray-500">Sent: {toDisplayDate(record.sentAt ?? record.updatedAt)}</p>
+                {record.deliveryStats && (
+                  <div className="mt-2 grid grid-cols-2 gap-1 text-xs text-gray-600 md:grid-cols-3">
+                    <span>Targets: {record.deliveryStats.totalTargets}</span>
+                    <span>Tokens: {record.deliveryStats.totalTokens}</span>
+                    <span>Success: {record.deliveryStats.successCount}</span>
+                    <span>Failures: {record.deliveryStats.failureCount}</span>
+                    <span>Invalid: {record.deliveryStats.invalidTokenCount}</span>
+                    <span>Retries: {record.deliveryStats.retriedTokenCount}</span>
+                  </div>
+                )}
+                {(record.deliveryMode || record.topic) && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Mode: {record.deliveryMode ?? "tokens"}{record.topic ? ` • Topic: ${record.topic}` : ""}
+                  </p>
+                )}
               </div>
             ))}
           </CardContent>

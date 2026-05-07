@@ -22,6 +22,7 @@ import {
   Map,
   MapPin,
   MapPinned,
+  MessageSquare,
   Sparkles,
   UserCheck,
   UserCircle,
@@ -66,6 +67,7 @@ const navSections: NavSection[] = [
         items: [
           { name: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
           { name: "Users", path: "/dashboard/users", icon: Users },
+          { name: "AI Chat Monitor", path: "/dashboard/ai-chat-monitor", icon: MessageSquare },
         ],
       },
       {

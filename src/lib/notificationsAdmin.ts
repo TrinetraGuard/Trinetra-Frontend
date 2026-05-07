@@ -3,6 +3,19 @@ import {Timestamp} from "firebase/firestore";
 
 export type TargetAudience = "all" | "users" | "group";
 export type NotificationStatus = "sent" | "scheduled" | "processing" | "failed" | "draft";
+export type DeliveryMode = "tokens" | "topic";
+
+export interface NotificationDeliveryStats {
+  totalTargets: number;
+  totalTokens: number;
+  successCount: number;
+  failureCount: number;
+  invalidTokenCount: number;
+  retriedTokenCount: number;
+  deliveryMode: DeliveryMode;
+  topic?: string;
+  topicMessageId?: string;
+}
 
 export interface NotificationRecord {
   id: string;
@@ -19,6 +32,9 @@ export interface NotificationRecord {
   sentAt?: Timestamp;
   errorMessage?: string;
   createdBy?: string;
+  deliveryMode?: DeliveryMode;
+  topic?: string;
+  deliveryStats?: NotificationDeliveryStats;
 }
 
 export interface NotificationPayload {
@@ -29,6 +45,8 @@ export interface NotificationPayload {
   targetUserIds?: string[];
   targetGroupId?: string;
   type?: string;
+  deliveryMode?: DeliveryMode;
+  topic?: string;
 }
 
 export interface ScheduledNotificationPayload extends NotificationPayload {

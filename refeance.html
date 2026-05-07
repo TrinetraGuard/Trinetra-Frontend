@@ -1,0 +1,1781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Railway API — Test Console</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="" />
+  <style>
+    :root {
+      --bg: #0c1017;
+      --surface: #141b26;
+      --surface-2: #1c2635;
+      --border: #2a3648;
+      --text: #e8edf5;
+      --muted: #8b9bb4;
+      --accent: #e8b44d;
+      --ok: #34d399;
+      --err: #f87171;
+      --info: #38bdf8;
+      --radius: 10px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font);
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2740 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #1e2a22 0%, transparent 50%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    a { color: var(--info); }
+    header {
+      border-bottom: 1px solid var(--border);
+      background: rgba(20, 27, 38, 0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 1rem;
+      justify-content: space-between;
+    }
+    .brand { display: flex; flex-direction: column; gap: 0.15rem; }
+    .brand h1 {
+      margin: 0;
+      font-size: 1.15rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+    }
+    .brand p { margin: 0; font-size: 0.8rem; color: var(--muted); }
+    .base-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .base-row label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .base-row input {
+      width: min(420px, 100%);
+      padding: 0.45rem 0.65rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+    main {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.25rem;
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 960px) {
+      main { grid-template-columns: 1fr 1fr; align-items: start; }
+      .panel-wide { grid-column: 1 / -1; }
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .panel h2 {
+      margin: 0;
+      padding: 0.75rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .panel h2.panel-head-split {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .panel-meta {
+      font-size: 0.72rem;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .panel-body { padding: 1rem; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; margin-bottom: 0.75rem; }
+    .row:last-child { margin-bottom: 0; }
+    .field { display: flex; flex-direction: column; gap: 0.25rem; min-width: 120px; flex: 1; }
+    .field label { font-size: 0.72rem; color: var(--muted); }
+    .field input, .field select {
+      padding: 0.45rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.875rem;
+    }
+    button {
+      font-family: var(--font);
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: linear-gradient(180deg, #f0c65c 0%, var(--accent) 100%);
+      color: #1a1204;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.25) inset, 0 2px 8px rgba(0,0,0,0.35);
+    }
+    button:hover { filter: brightness(1.06); }
+    button:active { transform: translateY(1px); }
+    button.secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+    button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; transform: none; }
+    .response-panel h2 { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap; }
+    .badges { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.2rem 0.45rem;
+      border-radius: 999px;
+      font-family: var(--mono);
+    }
+    .badge.ok { background: rgba(52, 211, 153, 0.15); color: var(--ok); }
+    .badge.err { background: rgba(248, 113, 113, 0.15); color: var(--err); }
+    .badge.neutral { background: rgba(139, 155, 180, 0.12); color: var(--muted); }
+    pre {
+      margin: 0;
+      padding: 1rem;
+      max-height: min(520px, 55vh);
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      line-height: 1.45;
+      background: #080b10;
+      border-top: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 8px; margin-top: 0.75rem; }
+    .table-wrap.compact { max-height: 280px; }
+    .table-wrap.tall { max-height: min(520px, 48vh); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    th, td { padding: 0.4rem 0.55rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface-2); color: var(--muted); font-weight: 600; position: sticky; top: 0; z-index: 1; }
+    tr:nth-child(even) td { background: rgba(0,0,0,0.12); }
+    td.mono { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+    .empty { color: var(--muted); font-size: 0.8rem; padding: 0.5rem; }
+    footer {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 2rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .map-layout {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 960px) {
+      .map-layout { grid-template-columns: 1.25fr 1fr; align-items: start; }
+    }
+    #stationMap {
+      height: min(480px, 52vh);
+      min-height: 300px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #080b10;
+    }
+    .dir-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: flex-end;
+      margin-bottom: 0.5rem;
+    }
+    .dir-stats {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      line-height: 1.4;
+    }
+    .leaflet-popup-content-wrapper {
+      background: var(--surface);
+      color: var(--text);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    }
+    .leaflet-popup-tip { background: var(--surface); }
+    .leaflet-popup-content { margin: 0.65rem 0.85rem; font-size: 0.8rem; line-height: 1.45; }
+    .map-popup .code { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: 0.95rem; }
+    .map-popup .name { font-weight: 600; margin: 0.15rem 0 0.35rem; }
+    .map-popup .meta { color: var(--muted); font-size: 0.72rem; }
+    .marker-cluster-small { background: rgba(232, 180, 77, 0.35); }
+    .marker-cluster-small div { background: rgba(232, 180, 77, 0.65); color: #1a1204; font-weight: 700; }
+    .marker-cluster-medium { background: rgba(56, 189, 248, 0.35); }
+    .marker-cluster-medium div { background: rgba(56, 189, 248, 0.65); color: #0c1017; font-weight: 700; }
+    .marker-cluster-large { background: rgba(52, 211, 153, 0.3); }
+    .marker-cluster-large div { background: rgba(52, 211, 153, 0.55); color: #0c1017; font-weight: 700; }
+    .train-summary {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+      line-height: 1.45;
+    }
+    .train-summary strong { color: var(--text); }
+    .train-table-wrap {
+      overflow: auto;
+      max-height: min(72vh, 760px);
+      margin-top: 0.35rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #080b10;
+    }
+    .train-results-table {
+      width: 100%;
+      min-width: 1240px;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    .train-results-table caption {
+      caption-side: top;
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      line-height: 1.45;
+    }
+    .train-results-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding: 0.55rem 0.5rem;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: #141c28;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+    .train-results-table thead th.th-time {
+      border-bottom-color: rgba(232, 180, 77, 0.45);
+      color: #fcd34d;
+    }
+    .train-results-table tbody td {
+      padding: 0.5rem 0.5rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .train-results-table tbody tr:nth-child(even) td { background: rgba(0,0,0,0.18); }
+    .train-results-table tbody tr:hover td { background: rgba(232, 180, 77, 0.06); }
+    .train-results-table .col-num {
+      width: 2.25rem;
+      text-align: right;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+    .train-results-table .col-trainno {
+      font-family: var(--mono);
+      font-weight: 800;
+      color: var(--accent);
+      font-size: 0.82rem;
+      white-space: nowrap;
+    }
+    .train-results-table .col-name {
+      max-width: 200px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .train-results-table .col-route {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+    .train-results-table td.time-cell {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.88rem;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+      color: #f1f5f9;
+      white-space: nowrap;
+    }
+    .train-results-table .col-duration {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: #bae6fd;
+      white-space: nowrap;
+    }
+    .train-results-table .col-dist {
+      font-family: var(--mono);
+      font-variant-numeric: tabular-nums;
+      color: var(--muted);
+    }
+    .train-results-table .col-days {
+      max-width: 160px;
+      font-size: 0.74rem;
+      line-height: 1.35;
+      color: #7dd3fc;
+      font-weight: 600;
+    }
+    .train-results-table .col-classes,
+    .train-results-table .col-types {
+      max-width: 200px;
+    }
+    .train-results-table .td-fare {
+      min-width: 200px;
+      white-space: nowrap;
+    }
+    .train-results-table .td-fare .tf-class-sel {
+      max-width: 130px;
+      margin-right: 0.35rem;
+      vertical-align: middle;
+    }
+    .train-results-table .tf-fare-btn {
+      padding: 0.35rem 0.55rem;
+      font-size: 0.72rem;
+      vertical-align: middle;
+    }
+    .train-fare-panel {
+      margin-top: 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .train-fare-panel__head {
+      padding: 0.65rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .train-fare-panel__body { padding: 0.85rem 1rem; font-size: 0.8rem; }
+    .fare-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem 1rem;
+      margin-bottom: 1rem;
+    }
+    .fare-grid div { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .fare-grid strong { display: block; font-size: 0.95rem; color: var(--text); font-family: var(--mono); margin-top: 0.15rem; }
+    .fare-avl-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 0.5rem; }
+    .fare-avl-table th, .fare-avl-table td { padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; }
+    .fare-avl-table th { background: #141c28; color: var(--muted); font-size: 0.68rem; text-transform: uppercase; }
+    .fare-kind {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 0.12rem 0.4rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .fare-kind-available { background: rgba(52, 211, 153, 0.2); color: #6ee7b7; }
+    .fare-kind-waiting { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+    .fare-kind-rac { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; }
+    .fare-kind-regret, .fare-kind-not_available { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+    .fare-kind-current_booking { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; }
+    .fare-kind-other { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; }
+    .conn-wrap { margin-top: 0.75rem; max-height: min(480px, 52vh); }
+    .conn-table { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+    .conn-table caption {
+      text-align: left;
+      font-size: 0.72rem;
+      color: var(--muted);
+      padding: 0.35rem 0 0.5rem;
+      line-height: 1.45;
+    }
+    .conn-table th, .conn-table td { padding: 0.4rem 0.45rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .conn-table th { background: var(--surface-2); color: var(--muted); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .conn-table .mono { font-family: var(--mono); font-weight: 700; color: var(--accent); }
+    .conn-table .via-cell { font-weight: 600; color: #bae6fd; }
+    .conn-table .time-cell { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 0.8rem; color: #f1f5f9; }
+    .train-results-table .pill-row { display: flex; flex-wrap: wrap; gap: 0.25rem; margin: 0; }
+    .pill {
+      font-size: 0.62rem;
+      font-weight: 600;
+      padding: 0.18rem 0.42rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      font-family: var(--mono);
+    }
+    .pill-class { border-color: rgba(232, 180, 77, 0.35); color: #fde68a; }
+    .pill-type { border-color: rgba(56, 189, 248, 0.35); color: #bae6fd; }
+    .pill-quota { border-color: rgba(52, 211, 153, 0.35); color: #a7f3d0; }
+    .pill-tip { font-size: 0.62rem; color: var(--muted); margin-top: 0.25rem; }
+    .train-search-rows { display: flex; flex-direction: column; gap: 0.75rem; }
+    .train-search-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; }
+    .station-picker { position: relative; min-width: min(100%, 280px); flex: 1.2; }
+    .station-picker__wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .station-picker__wrap input[type="search"] {
+      flex: 1;
+      min-width: 0;
+      padding: 0.45rem 0.55rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.875rem;
+    }
+    .station-picker__wrap input[type="search"]::-webkit-search-cancel-button { display: none; }
+    .station-picker__clear {
+      flex: 0 0 auto;
+      width: 2rem;
+      height: 2rem;
+      padding: 0;
+      border-radius: 6px;
+      font-size: 1.1rem;
+      line-height: 1;
+      background: var(--surface-2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      box-shadow: none;
+      font-weight: 600;
+    }
+    .station-picker__clear:hover { color: var(--text); border-color: var(--accent); }
+    .station-picker__drop {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: calc(100% + 4px);
+      z-index: 2000;
+      max-height: 280px;
+      overflow-y: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .station-picker__drop[hidden] { display: none !important; }
+    .station-picker__item {
+      padding: 0.55rem 0.65rem;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      width: 100%;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      display: block;
+    }
+    .station-picker__item:last-child { border-bottom: none; }
+    .station-picker__item:hover, .station-picker__item:focus {
+      background: rgba(232, 180, 77, 0.08);
+      outline: none;
+    }
+    .station-picker__item-name { font-weight: 650; font-size: 0.85rem; line-height: 1.3; }
+    .station-picker__item-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.15rem;
+      font-family: var(--mono);
+    }
+    .station-picker__sel {
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      min-height: 1.35rem;
+      line-height: 1.4;
+    }
+    .station-picker__sel .station-picker__name { color: var(--text); font-weight: 600; }
+    .station-picker__sel .station-picker__code-chip {
+      display: inline-block;
+      margin-left: 0.35rem;
+      padding: 0.08rem 0.35rem;
+      border-radius: 4px;
+      background: rgba(232, 180, 77, 0.15);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+    .station-picker__sel .station-picker__meta { margin-left: 0.35rem; color: var(--muted); font-size: 0.72rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <h1>Indian Railways — API test console</h1>
+        <p>Health checks, stations map, IRCTC train-between-stations search, and API tools.</p>
+      </div>
+      <div class="base-row">
+        <label for="baseUrl">API base</label>
+        <input id="baseUrl" type="text" spellcheck="false" autocomplete="off" placeholder="http://localhost:8080" />
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Quick checks</h2>
+      <div class="panel-body">
+        <div class="row">
+          <button type="button" id="btnHealth">GET /health</button>
+          <button type="button" id="btnHealthV1" class="secondary">GET /api/v1/health</button>
+          <button type="button" id="btnMeta" class="secondary">GET /api/v1/meta</button>
+        </div>
+        <p class="hint">Same payload from <code>/health</code> and <code>/api/v1/health</code>. Meta shows the upstream feed URL your server uses.</p>
+      </div>
+    </section>
+
+    <section class="panel panel-wide">
+      <h2 class="panel-head-split">
+        <span>Stations map &amp; directory</span>
+        <span class="panel-meta" id="mapPanelMeta">Map: OpenStreetMap · Carto Dark</span>
+      </h2>
+      <div class="panel-body">
+        <div class="map-layout">
+          <div class="map-col">
+            <div class="row">
+              <button type="button" id="btnLoadAll">Load all stations</button>
+              <button type="button" id="btnClearAll" class="secondary">Clear map &amp; directory</button>
+            </div>
+            <p id="loadProgress" class="hint"></p>
+            <div id="stationMap" aria-label="Stations map"></div>
+            <p class="hint">Clusters group nearby stations; zoom in to see individual markers. Popups show code, name, and location context.</p>
+          </div>
+          <div class="dir-col">
+            <div class="dir-stats" id="dirStats">Directory is empty until you load stations.</div>
+            <div class="field" style="margin-bottom:0.5rem;">
+              <label for="dirFilter">Filter directory (code, name, state, district)</label>
+              <input id="dirFilter" type="text" placeholder="Narrow the sorted list…" disabled autocomplete="off" />
+            </div>
+            <div class="dir-toolbar">
+              <div class="field" style="max-width:110px; flex:0;">
+                <label for="dirPageSize">Rows / page</label>
+                <select id="dirPageSize" disabled>
+                  <option value="50">50</option>
+                  <option value="100" selected>100</option>
+                  <option value="200">200</option>
+                </select>
+              </div>
+              <button type="button" id="dirPrev" class="secondary" disabled>Prev</button>
+              <button type="button" id="dirNext" class="secondary" disabled>Next</button>
+            </div>
+            <div id="directoryMount"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-wide">
+      <h2 class="panel-head-split">
+        <span>Train search (between stations)</span>
+        <span class="panel-meta">POST /api/v1/trains/search → IRCTC altAvlEnq</span>
+      </h2>
+      <div class="panel-body">
+        <p class="hint" style="margin-top:0;">
+          Search stations by name or code, pick <strong>From</strong> and <strong>To</strong> from the suggestions (names shown as in the directory).
+          Your server calls IRCTC with the selected codes. <strong>All</strong> under quota uses General (GN) for the enquiry.
+          From cloud hosts (e.g. Render) IRCTC can be slow: this UI sends <code class="mono">X-IRCTC-Timeout-Seconds: 180</code> (max 240) so the server waits longer for upstream.
+        </p>
+        <div class="train-search-rows">
+          <div class="train-search-row">
+            <div class="field station-picker">
+              <label for="tsFromSearch">From station</label>
+              <div class="station-picker__wrap">
+                <input type="search" id="tsFromSearch" autocomplete="off" placeholder="Type name or code (e.g. Mumbai, NDLS)…" spellcheck="false" />
+                <button type="button" class="station-picker__clear" id="tsFromClear" title="Clear selection" aria-label="Clear">×</button>
+                <div class="station-picker__drop" id="tsFromDrop" hidden role="listbox"></div>
+              </div>
+              <input type="hidden" id="tsFromCode" value="" />
+              <div class="station-picker__sel" id="tsFromSel">No station selected — search and pick one.</div>
+            </div>
+            <div class="field station-picker">
+              <label for="tsToSearch">To station</label>
+              <div class="station-picker__wrap">
+                <input type="search" id="tsToSearch" autocomplete="off" placeholder="Destination name or code…" spellcheck="false" />
+                <button type="button" class="station-picker__clear" id="tsToClear" title="Clear selection" aria-label="Clear">×</button>
+                <div class="station-picker__drop" id="tsToDrop" hidden role="listbox"></div>
+              </div>
+              <input type="hidden" id="tsToCode" value="" />
+              <div class="station-picker__sel" id="tsToSel">No station selected — search and pick one.</div>
+            </div>
+          </div>
+          <div class="train-search-row">
+            <div class="field" style="max-width:200px;">
+              <label for="tsDate">Journey date</label>
+              <input id="tsDate" type="date" />
+            </div>
+            <div class="field" style="max-width:260px;">
+              <label for="tsQuota">Quota</label>
+              <select id="tsQuota">
+                <option value="" selected>All — General (GN)</option>
+                <option value="GN">GN — General</option>
+                <option value="TQ">TQ — Tatkal</option>
+                <option value="LD">LD — Ladies</option>
+                <option value="SS">SS — Senior Citizen</option>
+                <option value="HP">HP — Divyang</option>
+                <option value="PH">PH — Divyang</option>
+                <option value="DP">DP — Duty Pass</option>
+                <option value="PT">PT — Premium Tatkal</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:120px;">
+              <label for="tsClass">Class (opt.)</label>
+              <input id="tsClass" type="text" maxlength="4" placeholder="Any" autocomplete="off" style="text-transform:uppercase" />
+            </div>
+            <button type="button" id="btnTrainSearch">Search trains</button>
+          </div>
+        </div>
+        <div id="trainSummary" class="train-summary"></div>
+        <div id="trainResults"></div>
+        <div id="trainFarePanel" class="train-fare-panel" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Station by code</h2>
+      <div class="panel-body">
+        <div class="row">
+          <div class="field" style="flex:2; min-width:160px;">
+            <label for="stationCode">Station code</label>
+            <input id="stationCode" type="text" placeholder="e.g. NDLS, MA, BCT" maxlength="10" />
+          </div>
+          <button type="button" id="btnStation">GET /api/v1/stations/code/{code}</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel panel-wide">
+      <h2>List stations</h2>
+      <div class="panel-body">
+        <div class="row">
+          <div class="field" style="flex:2;">
+            <label for="q">Search (q)</label>
+            <input id="q" type="text" placeholder="Name, code, address, utterance…" />
+          </div>
+          <div class="field">
+            <label for="state">State</label>
+            <input id="state" type="text" placeholder="Exact match" />
+          </div>
+          <div class="field">
+            <label for="district">District</label>
+            <input id="district" type="text" placeholder="Exact match" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field" style="max-width:100px;">
+            <label for="page">Page</label>
+            <input id="page" type="number" min="1" value="1" />
+          </div>
+          <div class="field" style="max-width:100px;">
+            <label for="limit">Limit</label>
+            <input id="limit" type="number" min="1" max="500" value="25" />
+          </div>
+          <button type="button" id="btnList">GET /api/v1/stations</button>
+          <button type="button" id="btnPrev" class="secondary">Prev page</button>
+          <button type="button" id="btnNext" class="secondary">Next page</button>
+        </div>
+        <div id="tableMount"></div>
+      </div>
+    </section>
+
+    <section class="panel panel-wide response-panel">
+      <h2>
+        Response
+        <span class="badges">
+          <span id="badgeStatus" class="badge neutral">—</span>
+          <span id="badgeTime" class="badge neutral">—</span>
+        </span>
+      </h2>
+      <pre id="out">// Run a request to see JSON here.</pre>
+    </section>
+  </main>
+
+  <footer>
+    Open <strong>/ui/</strong> on the same server for same-origin requests, or set API base to your server URL (CORS is enabled for read-only testing). Map tiles © OpenStreetMap contributors, © CARTO.
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+  <script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const baseInput = $("baseUrl");
+  const out = $("out");
+  const badgeStatus = $("badgeStatus");
+  const badgeTime = $("badgeTime");
+  const tableMount = $("tableMount");
+  const loadProgress = $("loadProgress");
+  const dirStats = $("dirStats");
+  const directoryMount = $("directoryMount");
+  const dirFilter = $("dirFilter");
+  const dirPageSize = $("dirPageSize");
+  const dirPrev = $("dirPrev");
+  const dirNext = $("dirNext");
+  const trainSummary = $("trainSummary");
+  const trainResults = $("trainResults");
+  const trainFarePanel = $("trainFarePanel");
+
+  /** Outbound IRCTC wait cap (seconds); server clamps 20–240. Sent on train + fare POSTs. */
+  const irctcFetchHeaders = {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+    "X-IRCTC-Timeout-Seconds": "180",
+  };
+
+  let map = null;
+  let tileLayer = null;
+  let clusterGroup = null;
+  let allStations = [];
+  let sortedStations = [];
+  let dirPage = 1;
+  let filterText = "";
+  let loadAbort = false;
+
+  function defaultBase() {
+    if (window.location.protocol === "file:") return "http://localhost:8080";
+    const p = window.location.pathname || "";
+    if (p.startsWith("/ui")) return window.location.origin;
+    return window.location.origin;
+  }
+  baseInput.value = defaultBase();
+
+  function ymdToday() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+  const tsDateEl = $("tsDate");
+  if (tsDateEl && !tsDateEl.value) tsDateEl.value = ymdToday();
+
+  function base() {
+    let u = (baseInput.value || "").trim().replace(/\/$/, "");
+    if (!u) u = defaultBase().replace(/\/$/, "");
+    return u;
+  }
+
+  function setBadges(status, ms, ok) {
+    badgeStatus.textContent = status != null ? String(status) : "—";
+    let cls = "neutral";
+    if (ok === true) cls = "ok";
+    else if (ok === false) cls = "err";
+    badgeStatus.className = "badge " + cls;
+    badgeTime.textContent = ms != null ? ms + " ms" : "—";
+    badgeTime.className = "badge neutral";
+  }
+
+  function prettyJSON(obj) {
+    return JSON.stringify(obj, null, 2);
+  }
+
+  async function request(path) {
+    const url = base() + path;
+    const t0 = performance.now();
+    setBadges("…", null, null);
+    out.textContent = "// Loading…\n" + url;
+    try {
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      const ms = Math.round(performance.now() - t0);
+      const bodyText = await res.text();
+      let parsed = null;
+      try { parsed = JSON.parse(bodyText); } catch (_) {}
+      setBadges(res.status, ms, res.ok);
+      out.textContent = parsed != null ? prettyJSON(parsed) : bodyText;
+      return { ok: res.ok, status: res.status, data: parsed, raw: bodyText };
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      setBadges("ERR", ms, false);
+      out.textContent = String(e);
+      return { ok: false, status: 0, data: null, raw: String(e) };
+    }
+  }
+
+  async function fetchJSON(path) {
+    const url = base() + path;
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const bodyText = await res.text();
+    let data = null;
+    try { data = JSON.parse(bodyText); } catch (_) {}
+    return { ok: res.ok, status: res.status, data, raw: bodyText };
+  }
+
+  function esc(s) {
+    return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+  }
+
+  function stationSortKey(a, b) {
+    const sa = (a.state || "").toLowerCase();
+    const sb = (b.state || "").toLowerCase();
+    if (sa !== sb) return sa.localeCompare(sb);
+    const na = (a.name || "").toLowerCase();
+    const nb = (b.name || "").toLowerCase();
+    if (na !== nb) return na.localeCompare(nb);
+    return (a.code || "").localeCompare(b.code || "");
+  }
+
+  function dedupeByCode(rows) {
+    const seen = new Set();
+    const outArr = [];
+    for (const r of rows) {
+      const k = (r.code || "").toUpperCase().trim();
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      outArr.push(r);
+    }
+    return outArr;
+  }
+
+  function validCoord(lat, lon) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+    if (Math.abs(lat) < 1e-6 && Math.abs(lon) < 1e-6) return false;
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+    return true;
+  }
+
+  function ensureMap() {
+    if (map) return;
+    map = L.map("stationMap", { zoomControl: true, scrollWheelZoom: true }).setView([22.5, 79], 5);
+    tileLayer = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+        subdomains: "abcd",
+        maxZoom: 19,
+      }
+    );
+    tileLayer.addTo(map);
+    setTimeout(function () { map.invalidateSize(); }, 100);
+  }
+
+  function clearMapLayers() {
+    if (clusterGroup && map) {
+      map.removeLayer(clusterGroup);
+      clusterGroup = null;
+    }
+  }
+
+  function buildPopups(stations) {
+    ensureMap();
+    clearMapLayers();
+    clusterGroup = L.markerClusterGroup({
+      chunkedLoading: true,
+      chunkDelay: 25,
+      maxClusterRadius: 55,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+    });
+    let plotted = 0;
+    for (let i = 0; i < stations.length; i++) {
+      const st = stations[i];
+      const lat = Number(st.latitude);
+      const lon = Number(st.longitude);
+      if (!validCoord(lat, lon)) continue;
+      const m = L.marker([lat, lon]);
+      const html =
+        '<div class="map-popup">' +
+        '<div class="code">' + esc(st.code) + "</div>" +
+        '<div class="name">' + esc(st.name) + "</div>" +
+        '<div class="meta">' + esc(st.state) + " · " + esc(st.district) + "</div>" +
+        '<div class="meta">Trains: ' + esc(st.trainCount) + "</div>" +
+        '<div class="meta">' + esc(st.address) + "</div>" +
+        "</div>";
+      m.bindPopup(html, { maxWidth: 280 });
+      clusterGroup.addLayer(m);
+      plotted++;
+    }
+    map.addLayer(clusterGroup);
+    if (plotted > 0) {
+      try {
+        map.fitBounds(clusterGroup.getBounds(), { padding: [28, 28], maxZoom: 12 });
+      } catch (_) {
+        map.setView([22.5, 79], 5);
+      }
+    } else {
+      map.setView([22.5, 79], 5);
+    }
+    return plotted;
+  }
+
+  function filteredList() {
+    const q = filterText.trim().toLowerCase();
+    if (!q) return sortedStations;
+    return sortedStations.filter(function (st) {
+      const blob = [
+        st.code, st.name, st.state, st.district, st.address,
+        Array.isArray(st.utterances) ? st.utterances.join(" ") : "",
+      ]
+        .join(" ")
+        .toLowerCase();
+      return blob.indexOf(q) !== -1;
+    });
+  }
+
+  function renderDirectoryPage() {
+    const pageSize = parseInt(dirPageSize.value, 10) || 100;
+    const list = filteredList();
+    const total = list.length;
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    if (dirPage > pages) dirPage = pages;
+    if (dirPage < 1) dirPage = 1;
+    const start = (dirPage - 1) * pageSize;
+    const slice = list.slice(start, start + pageSize);
+
+    if (!total) {
+      directoryMount.innerHTML = '<p class="empty">No rows match the filter.</p>';
+      dirStats.textContent = sortedStations.length
+        ? "0 matches for current filter · " + sortedStations.length + " loaded overall."
+        : "Directory is empty until you load stations.";
+      dirPrev.disabled = true;
+      dirNext.disabled = true;
+      return;
+    }
+
+    dirStats.textContent =
+      "Showing " + (start + 1) + "–" + (start + slice.length) + " of " + total +
+      " in view · Page " + dirPage + "/" + pages +
+      " · " + sortedStations.length + " stations loaded (sorted: state → name → code).";
+
+    let html = '<div class="table-wrap tall"><table><thead><tr>';
+    ["Code", "Name", "State", "District", "Trains"].forEach(function (h) {
+      html += "<th>" + esc(h) + "</th>";
+    });
+    html += "</tr></thead><tbody>";
+    for (let i = 0; i < slice.length; i++) {
+      const r = slice[i];
+      html += "<tr>";
+      html += '<td class="mono">' + esc(r.code) + "</td>";
+      html += "<td>" + esc(r.name) + "</td>";
+      html += "<td>" + esc(r.state) + "</td>";
+      html += "<td>" + esc(r.district) + "</td>";
+      html += "<td>" + esc(r.trainCount) + "</td>";
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+    directoryMount.innerHTML = html;
+
+    dirPrev.disabled = dirPage <= 1;
+    dirNext.disabled = dirPage >= pages;
+  }
+
+  function setDirectoryEnabled(on) {
+    dirFilter.disabled = !on;
+    dirPageSize.disabled = !on;
+    dirPrev.disabled = !on;
+    dirNext.disabled = !on;
+  }
+
+  $("btnLoadAll").onclick = async function () {
+    if (typeof L === "undefined" || typeof L.markerClusterGroup !== "function") {
+      loadProgress.textContent = "Map libraries failed to load. Check your network and refresh.";
+      return;
+    }
+    loadAbort = false;
+    $("btnLoadAll").disabled = true;
+    loadProgress.textContent = "";
+    const t0 = performance.now();
+    const limit = 500;
+    const merged = [];
+    let page = 1;
+    let totalExpected = null;
+    try {
+      for (;;) {
+        if (loadAbort) throw new Error("Aborted");
+        loadProgress.textContent = "Downloading page " + page + " (up to " + limit + " rows per request)…";
+        const path = "/api/v1/stations?page=" + page + "&limit=" + limit;
+        const r = await fetchJSON(path);
+        if (!r.ok || !r.data || !Array.isArray(r.data.stations)) {
+          throw new Error("Bad response on page " + page + " (HTTP " + (r.status || "?") + ")");
+        }
+        totalExpected = r.data.total;
+        merged.push.apply(merged, r.data.stations);
+        loadProgress.textContent = "Fetched " + merged.length + (totalExpected != null ? " / " + totalExpected : "") + " stations…";
+        const lastPage = r.data.pages != null ? r.data.pages : Math.ceil((totalExpected || merged.length) / limit);
+        if (r.data.stations.length < limit || page >= lastPage) break;
+        page++;
+      }
+      allStations = dedupeByCode(merged);
+      sortedStations = allStations.slice().sort(stationSortKey);
+      dirPage = 1;
+      filterText = dirFilter.value = "";
+      setDirectoryEnabled(true);
+
+      const withGeo = sortedStations.filter(function (s) {
+        return validCoord(Number(s.latitude), Number(s.longitude));
+      }).length;
+
+      const plotted = buildPopups(sortedStations);
+      const ms = Math.round(performance.now() - t0);
+      loadProgress.textContent =
+        "Loaded " + sortedStations.length + " unique stations in " + ms + " ms. " +
+        "Map: " + plotted + " with coordinates; " + (sortedStations.length - withGeo) + " without usable coordinates (omitted from map).";
+
+      setBadges(200, ms, true);
+      out.textContent = prettyJSON({
+        summary: "Bulk load complete",
+        unique_stations: sortedStations.length,
+        map_markers: plotted,
+        with_coordinates: withGeo,
+        pages_fetched: page,
+      });
+
+      renderDirectoryPage();
+      setTimeout(function () { if (map) map.invalidateSize(); }, 200);
+    } catch (e) {
+      const msg = String(e && e.message ? e.message : e);
+      loadProgress.textContent = msg === "Aborted" ? "Load cancelled." : msg;
+      setBadges("ERR", Math.round(performance.now() - t0), false);
+      out.textContent = "// " + msg;
+    } finally {
+      $("btnLoadAll").disabled = false;
+    }
+  };
+
+  $("btnClearAll").onclick = function () {
+    loadAbort = true;
+    allStations = [];
+    sortedStations = [];
+    dirPage = 1;
+    filterText = "";
+    dirFilter.value = "";
+    loadProgress.textContent = "";
+    clearMapLayers();
+    if (map) map.setView([22.5, 79], 5);
+    directoryMount.innerHTML = "";
+    dirStats.textContent = "Directory is empty until you load stations.";
+    setDirectoryEnabled(false);
+    out.textContent = "// Map and directory cleared.";
+    setBadges(null, null, null);
+  };
+
+  dirFilter.addEventListener("input", function () {
+    filterText = dirFilter.value || "";
+    dirPage = 1;
+    renderDirectoryPage();
+  });
+  dirPageSize.addEventListener("change", function () {
+    dirPage = 1;
+    renderDirectoryPage();
+  });
+  dirPrev.onclick = function () {
+    dirPage = Math.max(1, dirPage - 1);
+    renderDirectoryPage();
+  };
+  dirNext.onclick = function () {
+    dirPage = dirPage + 1;
+    renderDirectoryPage();
+  };
+
+  function renderStationsTable(data) {
+    tableMount.innerHTML = "";
+    if (!data) return;
+    if (data.error) {
+      tableMount.innerHTML =
+        '<p class="empty" style="color:var(--err)">' + esc(data.error) + (data.code ? " (" + esc(data.code) + ")" : "") + "</p>";
+      return;
+    }
+    if (!Array.isArray(data.stations)) return;
+    const rows = data.stations;
+    if (!rows.length) {
+      tableMount.innerHTML = '<p class="empty">No rows on this page.</p>';
+      return;
+    }
+    const cols = ["code", "name", "state", "district", "trainCount"];
+    let html = '<div class="table-wrap compact"><table><thead><tr>';
+    cols.forEach(function (c) { html += "<th>" + esc(c) + "</th>"; });
+    html += "</tr></thead><tbody>";
+    rows.forEach(function (r) {
+      html += "<tr>";
+      cols.forEach(function (c) {
+        const cell = c === "code" ? '<td class="mono">' + esc(r[c]) + "</td>" : "<td>" + esc(r[c]) + "</td>";
+        html += cell;
+      });
+      html += "</tr>";
+    });
+    html += "</tbody></table></div>";
+    html += '<p class="hint">Page ' + esc(data.page) + " of " + esc(data.pages) + " — " + esc(data.total) + " matches.</p>";
+    tableMount.innerHTML = html;
+  }
+
+  $("btnHealth").onclick = function () { request("/health"); };
+  $("btnHealthV1").onclick = function () { request("/api/v1/health"); };
+  $("btnMeta").onclick = function () { request("/api/v1/meta"); };
+
+  $("btnStation").onclick = async function () {
+    const code = ($("stationCode").value || "").trim();
+    if (!code) {
+      setBadges("—", null, null);
+      out.textContent = "// Enter a station code.";
+      return;
+    }
+    const enc = encodeURIComponent(code);
+    await request("/api/v1/stations/code/" + enc);
+  };
+
+  async function fetchList() {
+    const q = new URLSearchParams();
+    const qq = ($("q").value || "").trim();
+    const st = ($("state").value || "").trim();
+    const di = ($("district").value || "").trim();
+    const page = ($("page").value || "1").trim();
+    const limit = ($("limit").value || "25").trim();
+    if (qq) q.set("q", qq);
+    if (st) q.set("state", st);
+    if (di) q.set("district", di);
+    if (page) q.set("page", page);
+    if (limit) q.set("limit", limit);
+    const qs = q.toString();
+    const path = "/api/v1/stations" + (qs ? "?" + qs : "");
+    const r = await request(path);
+    if (r.data) renderStationsTable(r.data);
+    else tableMount.innerHTML = "";
+  }
+
+  const stationSuggest = { fromTimer: null, toTimer: null, fromCtrl: null, toCtrl: null };
+
+  function closeStationDrops() {
+    $("tsFromDrop").hidden = true;
+    $("tsToDrop").hidden = true;
+  }
+
+  function setStationSelection(prefix, st) {
+    const sel = $(prefix + "Sel");
+    if (!st || !st.code) {
+      $(prefix + "Code").value = "";
+      sel.innerHTML = '<span style="color:var(--muted)">No station selected — search and pick one.</span>';
+      return;
+    }
+    const code = String(st.code).toUpperCase().trim();
+    const name = String(st.name || "");
+    const state = String(st.state || "");
+    $(prefix + "Code").value = code;
+    sel.innerHTML =
+      '<span class="station-picker__name">' + esc(name) + '</span>' +
+      '<span class="station-picker__code-chip">' + esc(code) + "</span>" +
+      '<span class="station-picker__meta">' + esc(state) + "</span>";
+  }
+
+  async function suggestStations(q, signal) {
+    const qs = new URLSearchParams({ limit: "16", page: "1" });
+    if (q) qs.set("q", q);
+    const url = base() + "/api/v1/stations?" + qs.toString();
+    const res = await fetch(url, { headers: { Accept: "application/json" }, signal: signal });
+    const text = await res.text();
+    let data = null;
+    try { data = JSON.parse(text); } catch (_) {}
+    if (!res.ok || !data || !Array.isArray(data.stations)) return [];
+    const list = data.stations.slice();
+    list.sort(function (a, b) {
+      return String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
+    });
+    return list;
+  }
+
+  function fillStationDropdown(dropEl, stations, onPick) {
+    dropEl.innerHTML = "";
+    if (!stations.length) {
+      const empty = document.createElement("button");
+      empty.type = "button";
+      empty.className = "station-picker__item";
+      empty.disabled = true;
+      empty.textContent = "No matches — try another spelling or code.";
+      dropEl.appendChild(empty);
+      dropEl.hidden = false;
+      return;
+    }
+    for (let i = 0; i < stations.length; i++) {
+      const s = stations[i];
+      const code = String(s.code || "").toUpperCase().trim();
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "station-picker__item";
+      btn.innerHTML =
+        '<div class="station-picker__item-name">' + esc(s.name || "") + "</div>" +
+        '<div class="station-picker__item-sub">' +
+        esc(code) +
+        (s.state ? " · " + esc(s.state) : "") +
+        (s.district ? " · " + esc(s.district) : "") +
+        "</div>";
+      btn.onclick = function () {
+        onPick({ code: code, name: s.name || "", state: s.state || "" });
+        dropEl.hidden = true;
+      };
+      dropEl.appendChild(btn);
+    }
+    dropEl.hidden = false;
+  }
+
+  function bindStationPicker(prefix) {
+    const searchEl = $(prefix + "Search");
+    const dropEl = $(prefix + "Drop");
+    const clearEl = $(prefix + "Clear");
+    const isFrom = prefix === "tsFrom";
+    const otherDrop = isFrom ? $("tsToDrop") : $("tsFromDrop");
+
+    function abortInFlight() {
+      if (isFrom) {
+        if (stationSuggest.fromCtrl) stationSuggest.fromCtrl.abort();
+        stationSuggest.fromCtrl = new AbortController();
+        return stationSuggest.fromCtrl.signal;
+      }
+      if (stationSuggest.toCtrl) stationSuggest.toCtrl.abort();
+      stationSuggest.toCtrl = new AbortController();
+      return stationSuggest.toCtrl.signal;
+    }
+
+    async function runSuggest() {
+      const q = (searchEl.value || "").trim();
+      otherDrop.hidden = true;
+      if (q.length < 2) {
+        dropEl.innerHTML = "";
+        dropEl.hidden = true;
+        return;
+      }
+      const signal = abortInFlight();
+      try {
+        const list = await suggestStations(q, signal);
+        fillStationDropdown(dropEl, list, function (st) {
+          setStationSelection(prefix, st);
+          searchEl.value = st.name + " (" + st.code + ")";
+        });
+      } catch (e) {
+        if (e && e.name === "AbortError") return;
+        dropEl.innerHTML = "";
+        const errBtn = document.createElement("button");
+        errBtn.type = "button";
+        errBtn.className = "station-picker__item";
+        errBtn.disabled = true;
+        errBtn.textContent = "Could not load suggestions — check API base and network.";
+        dropEl.appendChild(errBtn);
+        dropEl.hidden = false;
+      }
+    }
+
+    function scheduleSuggest() {
+      const key = isFrom ? "fromTimer" : "toTimer";
+      if (stationSuggest[key]) clearTimeout(stationSuggest[key]);
+      stationSuggest[key] = setTimeout(runSuggest, 280);
+    }
+
+    searchEl.addEventListener("input", function () {
+      const had = !!$(prefix + "Code").value;
+      $(prefix + "Code").value = "";
+      if (had) {
+        $(prefix + "Sel").innerHTML = '<span style="color:var(--muted)">Selection cleared — pick a station from the list again.</span>';
+      }
+      scheduleSuggest();
+    });
+    searchEl.addEventListener("focus", function () {
+      const q = (searchEl.value || "").trim();
+      if (q.length >= 2) runSuggest();
+    });
+    clearEl.onclick = function () {
+      searchEl.value = "";
+      $(prefix + "Code").value = "";
+      setStationSelection(prefix, null);
+      dropEl.innerHTML = "";
+      dropEl.hidden = true;
+    };
+  }
+
+  bindStationPicker("tsFrom");
+  bindStationPicker("tsTo");
+
+  document.addEventListener("click", function (ev) {
+    if (!ev.target.closest(".station-picker")) closeStationDrops();
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") closeStationDrops();
+  });
+
+  function sortTrainsByNumber(arr) {
+    return arr.slice().sort(function (a, b) {
+      return String(a.trainNumber || "").localeCompare(String(b.trainNumber || ""), undefined, { numeric: true });
+    });
+  }
+
+  /** True when body matches POST /api/v1/trains/search envelope (including 502 with trains: null). */
+  function isTrainSearchResponse(d) {
+    return !!(d && typeof d === "object" && d.request && typeof d.request === "object");
+  }
+
+  function formatDurationMinutes(m) {
+    if (m == null || m < 0 || !Number.isFinite(m)) return "—";
+    const h = Math.floor(m / 60);
+    const mm = Math.round(m % 60);
+    if (h <= 0) return String(mm) + "m";
+    return String(h) + "h " + String(mm).padStart(2, "0") + "m";
+  }
+
+  function renderTrainResults(data) {
+    if (!trainResults) return;
+    data = data || {};
+    trainResults.innerHTML = "";
+    if (trainFarePanel) {
+      trainFarePanel.hidden = true;
+      trainFarePanel.innerHTML = "";
+    }
+    const rawTrains = data.trains;
+    const trains = sortTrainsByNumber(Array.isArray(rawTrains) ? rawTrains : []);
+    const conns = Array.isArray(data.connections) ? data.connections : [];
+    const connNote = data.connectionSearchNote || "";
+    const msg = data.upstreamMessage || "";
+    const up = data.upstreamHttpStatus != null ? data.upstreamHttpStatus : "—";
+    const greq = data.greqSent ? " · greq: " + esc(data.greqSent) : "";
+
+    if (trains.length) {
+      const toCap =
+        data.irctcTimeoutSeconds != null
+          ? " · upstream wait cap <strong>" + esc(String(data.irctcTimeoutSeconds)) + "s</strong>"
+          : "";
+      trainSummary.innerHTML =
+        "<strong>" + esc(String(trains.length)) + "</strong> direct train(s) · upstream HTTP <strong>" + esc(String(up)) + "</strong>" +
+        (data.journeyDatePacked ? " · IRCTC date <strong>" + esc(data.journeyDatePacked) + "</strong>" : "") +
+        toCap +
+        (msg ? "<br/><span style=\"color:var(--err)\">" + esc(msg) + "</span>" : "") +
+        (greq ? "<br/><span class=\"pill-tip\">" + greq + "</span>" : "");
+    } else if (conns.length) {
+      trainSummary.innerHTML =
+        "<strong>0</strong> direct train(s) · <strong>" + esc(String(conns.length)) + "</strong> one-change option(s) · upstream HTTP <strong>" +
+        esc(String(up)) + "</strong>" +
+        (data.journeyDatePacked ? " · IRCTC date <strong>" + esc(data.journeyDatePacked) + "</strong>" : "") +
+        (msg ? "<br/><span style=\"color:var(--muted)\">" + esc(msg) + "</span>" : "") +
+        (greq ? "<br/><span class=\"pill-tip\">" + greq + "</span>" : "") +
+        '<br/><span style="font-size:0.75rem;color:var(--muted)">Connections use major junctions near your route (geo + station size). Layover ' +
+        "45 min–8 h. Verify on IRCTC before booking.</span>";
+    } else {
+      trainSummary.innerHTML =
+        "<strong>0</strong> direct train(s) · upstream HTTP <strong>" + esc(String(up)) + "</strong>" +
+        (data.journeyDatePacked ? " · IRCTC date <strong>" + esc(data.journeyDatePacked) + "</strong>" : "") +
+        (msg ? "<br/><span style=\"color:var(--err)\">" + esc(msg) + "</span>" : "") +
+        (greq ? "<br/><span class=\"pill-tip\">" + greq + "</span>" : "");
+    }
+
+    if (!trains.length) {
+      let block = "";
+      if (conns.length) {
+        block +=
+          '<p class="hint" style="margin:0 0 0.5rem;">No direct train listed. Showing <strong>one-change</strong> combinations (shortest overall journey first).</p>';
+        if (connNote) {
+          block += '<p class="pill-tip" style="margin-bottom:0.65rem;">' + esc(connNote) + "</p>";
+        }
+        block += '<div class="table-wrap conn-wrap"><table class="conn-table">';
+        block +=
+          "<caption>Leg 1: origin → change station · Leg 2: change station → destination. Times are as returned by IRCTC for each segment.</caption>";
+        block += "<thead><tr>";
+        block += "<th>#</th><th>Change at</th><th>Layover</th><th>1st train</th><th>Dep (origin)</th><th>Arr (change)</th>";
+        block += "<th>2nd train</th><th>Dep (change)</th><th>Arr (dest)</th><th>Total</th>";
+        block += "</tr></thead><tbody>";
+        for (let i = 0; i < conns.length; i++) {
+          const c = conns[i] || {};
+          const a = c.firstLeg || {};
+          const b = c.secondLeg || {};
+          const via =
+            esc(c.viaStationName || c.viaStationCode || "—") +
+            (c.viaStationCode ? ' <span class="mono">(' + esc(c.viaStationCode) + ")</span>" : "");
+          block += "<tr>";
+          block += '<td class="col-num">' + esc(String(i + 1)) + "</td>";
+          block += '<td class="via-cell">' + via + "</td>";
+          block += "<td>" + esc(String(c.layoverMinutes != null ? c.layoverMinutes : "—")) + " min</td>";
+          block += '<td class="mono">' + esc(a.trainNumber || "—") + "</td>";
+          block += '<td class="time-cell">' + esc(a.departureTime || "—") + "</td>";
+          block += '<td class="time-cell">' + esc(a.arrivalTime || "—") + "</td>";
+          block += '<td class="mono">' + esc(b.trainNumber || "—") + "</td>";
+          block += '<td class="time-cell">' + esc(b.departureTime || "—") + "</td>";
+          block += '<td class="time-cell">' + esc(b.arrivalTime || "—") + "</td>";
+          block += "<td>" + esc(formatDurationMinutes(c.totalEndToEndMinutes)) + "</td>";
+          block += "</tr>";
+        }
+        block += "</tbody></table></div>";
+      } else {
+        block +=
+          '<p class="empty">No direct trains and no qualifying one-change option for this date (or IRCTC blocked the enquiry).</p>';
+        if (connNote) {
+          block += '<p class="pill-tip">' + esc(connNote) + "</p>";
+        }
+      }
+      trainResults.innerHTML = block;
+      return;
+    }
+
+    function fareClassSelectHtml(classes) {
+      const cls = Array.isArray(classes) ? classes : [];
+      if (cls.length) {
+        let h = '<select class="tf-class-sel">';
+        for (let j = 0; j < cls.length; j++) {
+          const c = cls[j] || {};
+          const code = String(c.code || "").toUpperCase().trim();
+          if (!code) continue;
+          const lab = String(c.label || "").trim();
+          h += '<option value="' + esc(code) + '">' + esc(code) + (lab && lab.toUpperCase() !== code ? " — " + esc(lab) : "") + "</option>";
+        }
+        h += "</select>";
+        return h;
+      }
+      const g = ($("tsClass") && $("tsClass").value) ? $("tsClass").value.trim().toUpperCase() : "";
+      if (g.length >= 1 && g.length <= 4) {
+        return '<select class="tf-class-sel"><option value="' + esc(g) + '">' + esc(g) + " (form)</option></select>";
+      }
+      return '<select class="tf-class-sel" disabled title="Set optional Class in the search form or pick a train that lists classes"><option value="">—</option></select>';
+    }
+
+    function classPills(classes) {
+      const cls = Array.isArray(classes) ? classes : [];
+      if (!cls.length) return "—";
+      let h = '<div class="pill-row">';
+      for (let j = 0; j < cls.length; j++) {
+        const c = cls[j] || {};
+        const tip = esc((c.code || "") + " — " + (c.label || ""));
+        h += '<span class="pill pill-class" title="' + tip + '">' + esc(c.code || "") + "</span>";
+      }
+      h += "</div>";
+      return h;
+    }
+
+    function typePills(types) {
+      const tty = Array.isArray(types) ? types : [];
+      if (!tty.length) return "—";
+      let h = '<div class="pill-row">';
+      for (let k = 0; k < tty.length; k++) {
+        const ty = tty[k] || {};
+        const tip = esc((ty.code || "") + " — " + (ty.label || ""));
+        h += '<span class="pill pill-type" title="' + tip + '">' + esc(ty.code || "") + "</span>";
+      }
+      h += "</div>";
+      return h;
+    }
+
+    let html = '<div class="train-table-wrap">';
+    html += '<table class="train-results-table">';
+    html += "<caption>Trains sorted by train number. <strong>Departure / Arrival</strong> are station times for this route segment; <strong>Duration</strong> is end-to-end run time. Use <strong>Fare / seats</strong> to query IRCTC fare and availability for the selected coach class (uses journey date and quota from the form above).</caption>";
+    html += "<thead><tr>";
+    html += '<th class="col-num">#</th>';
+    html += "<th>Train №</th>";
+    html += "<th>Train name</th>";
+    html += "<th>Route</th>";
+    html += '<th class="th-time">Departs</th>';
+    html += '<th class="th-time">Arrives</th>';
+    html += '<th class="th-time">Duration</th>';
+    html += "<th>Distance</th>";
+    html += "<th>Operating days</th>";
+    html += "<th>Classes</th>";
+    html += "<th>Category</th>";
+    html += "<th>Quota</th>";
+    html += "<th>Fare / seats</th>";
+    html += "<th>Flexi</th>";
+    html += "</tr></thead><tbody>";
+
+    for (let i = 0; i < trains.length; i++) {
+      const t = trains[i];
+      const flexi = String(t.flexiFlag || "").toLowerCase() === "true" ? "Yes" : "—";
+      html += '<tr data-train="' + esc(t.trainNumber) + '" data-from="' + esc(t.fromStnCode) + '" data-to="' + esc(t.toStnCode) + '">';
+      html += '<td class="col-num">' + esc(String(i + 1)) + "</td>";
+      html += '<td class="col-trainno">' + esc(t.trainNumber) + "</td>";
+      html += '<td class="col-name">' + esc(t.trainName) + "</td>";
+      html += '<td class="col-route">' + esc(t.fromStnCode) + " → " + esc(t.toStnCode) + "</td>";
+      html += '<td class="time-cell">' + esc(t.departureTime || "—") + "</td>";
+      html += '<td class="time-cell">' + esc(t.arrivalTime || "—") + "</td>";
+      html += '<td class="col-duration">' + esc(t.duration || "—") + "</td>";
+      html += '<td class="col-dist">' + esc(t.distance != null && t.distance !== "" ? String(t.distance) + " km" : "—") + "</td>";
+      html += '<td class="col-days">' + esc(t.runningDaysLabel || "—") + "</td>";
+      html += '<td class="col-classes">' + classPills(t.classes) + "</td>";
+      html += '<td class="col-types">' + typePills(t.trainTypes) + "</td>";
+      html += "<td>";
+      html += '<span class="pill pill-quota" title="' + esc(t.quotaLabel || "") + '">' + esc(t.quotaCode || "") + "</span>";
+      html += "</td>";
+      const fareSel = fareClassSelectHtml(t.classes);
+      const fareBtnDis = fareSel.indexOf("disabled") !== -1 ? " disabled" : "";
+      html +=
+        "<td class=\"td-fare\">" +
+        fareSel +
+        ' <button type="button" class="tf-fare-btn secondary"' +
+        fareBtnDis +
+        ">Check fare</button></td>";
+      html += "<td>" + esc(flexi) + "</td>";
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+    trainResults.innerHTML = html;
+  }
+
+  function fareKindClass(kind) {
+    const m = {
+      available: "fare-kind-available",
+      waiting: "fare-kind-waiting",
+      rac: "fare-kind-rac",
+      regret: "fare-kind-regret",
+      not_available: "fare-kind-not_available",
+      current_booking: "fare-kind-current_booking",
+    };
+    return m[kind] || "fare-kind-other";
+  }
+
+  function renderFareAvailability(resp) {
+    if (!trainFarePanel) return;
+    trainFarePanel.hidden = false;
+    const r = resp && resp.result;
+    const head = "Fare & seat availability (IRCTC)";
+    if (!r) {
+      let msg = "";
+      if (resp && resp.upstreamMessage) msg = String(resp.upstreamMessage);
+      else if (resp && resp.error) {
+        msg = String(resp.error);
+        if (resp.code) msg += " (" + String(resp.code) + ")";
+      } else if (resp && resp.code) msg = String(resp.code);
+      else msg = "No fare data returned.";
+      trainFarePanel.innerHTML =
+        '<div class="train-fare-panel__head">' + esc(head) + "</div>" +
+        '<div class="train-fare-panel__body"><p class="empty">' + esc(msg) + "</p></div>";
+      return;
+    }
+    const f = r.fare || {};
+    let body = '<div class="train-fare-panel__body">';
+    body += "<p><strong>" + esc(r.trainName) + "</strong> · <span style=\"font-family:var(--mono);color:var(--accent);font-weight:700\">" + esc(r.trainNumber) + "</span> · " +
+      esc(r.from) + " → " + esc(r.to) + " · class <strong>" + esc(r.class) + "</strong> · quota <strong>" + esc(r.quota) + "</strong>";
+    if (r.distance) body += " · " + esc(r.distance) + " km";
+    body += "</p>";
+    body += '<div class="fare-grid">';
+    body += "<div>Base fare<strong>" + esc(f.baseFare || "—") + "</strong></div>";
+    body += "<div>Reservation<strong>" + esc(f.reservationCharge || "—") + "</strong></div>";
+    body += "<div>Superfast<strong>" + esc(f.superfastCharge || "—") + "</strong></div>";
+    body += "<div>Tax / GST<strong>" + esc(f.serviceTax || "—") + "</strong></div>";
+    body += "<div>Total fare<strong>" + esc(f.totalFare || "—") + "</strong></div>";
+    body += "<div>Payable<strong>" + esc(f.totalCollectibleAmount || "—") + "</strong></div>";
+    body += "</div>";
+    body += '<p style="margin:0.75rem 0 0.25rem;font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Availability by date</p>';
+    body += '<div class="table-wrap" style="max-height:320px;"><table class="fare-avl-table"><thead><tr>';
+    body += "<th>Date</th><th>Kind</th><th>IRCTC status</th><th>Summary</th><th>Curr. bkg</th><th>Delay</th>";
+    body += "</tr></thead><tbody>";
+    const av = r.availability || [];
+    if (!av.length) {
+      body += '<tr><td colspan="6" class="empty">No day-wise rows.</td></tr>';
+    } else {
+      for (let i = 0; i < av.length; i++) {
+        const d = av[i] || {};
+        const k = esc(d.statusKind || "other");
+        body += "<tr>";
+        body += "<td>" + esc(d.dateDisplay || "—") + "</td>";
+        body += "<td><span class=\"fare-kind " + fareKindClass(d.statusKind) + "\">" + k + "</span></td>";
+        body += '<td style="font-family:var(--mono);font-size:0.74rem;">' + esc(d.statusRaw || "—") + "</td>";
+        body += "<td>" + esc(d.statusSummary || "—") + "</td>";
+        body += "<td>" + (d.currentBooking ? "Yes" : "—") + "</td>";
+        body += "<td>" + (d.delayed ? esc(String(d.delay || "")) : "—") + "</td>";
+        body += "</tr>";
+      }
+    }
+    body += "</tbody></table></div>";
+    if (resp && resp.greqSent) {
+      body += '<p class="pill-tip" style="margin-top:0.65rem;">greq: ' + esc(resp.greqSent) + "</p>";
+    }
+    body += "</div>";
+    trainFarePanel.innerHTML = '<div class="train-fare-panel__head">' + esc(head) + "</div>" + body;
+  }
+
+  trainResults.addEventListener("click", async function (ev) {
+    const btn = ev.target.closest(".tf-fare-btn");
+    if (!btn || btn.disabled) return;
+    const tr = btn.closest("tr");
+    if (!tr) return;
+    const trainNo = (tr.getAttribute("data-train") || "").trim();
+    const from = (tr.getAttribute("data-from") || "").trim().toUpperCase();
+    const to = (tr.getAttribute("data-to") || "").trim().toUpperCase();
+    const sel = tr.querySelector(".tf-class-sel");
+    const classCode = sel && !sel.disabled ? String(sel.value || "").trim().toUpperCase() : "";
+    if (!classCode) {
+      if (trainSummary) {
+        trainSummary.innerHTML =
+          '<span style="color:var(--err)">' +
+          esc("Pick a coach class in the row (or set the optional Class field above).") +
+          "</span>";
+      }
+      return;
+    }
+    const journeyDate = ($("tsDate").value || "").trim();
+    if (!journeyDate) {
+      if (trainSummary) {
+        trainSummary.innerHTML =
+          '<span style="color:var(--err)">' + esc("Pick a journey date before checking fare.") + "</span>";
+      }
+      return;
+    }
+    const quotaRaw = ($("tsQuota").value || "").trim();
+    const payload = {
+      trainNumber: trainNo,
+      journeyDate: journeyDate,
+      fromStation: from,
+      toStation: to,
+      classCode: classCode,
+      quotaCode: quotaRaw || "",
+    };
+    if (payload.quotaCode === "") delete payload.quotaCode;
+    btn.disabled = true;
+    const t0 = performance.now();
+    try {
+      const res = await fetch(base() + "/api/v1/trains/fare-availability", {
+        method: "POST",
+        headers: irctcFetchHeaders,
+        body: JSON.stringify(payload),
+      });
+      const ms = Math.round(performance.now() - t0);
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) {}
+      setBadges(res.status, ms, res.ok);
+      out.textContent = data != null ? prettyJSON(data) : text;
+      renderFareAvailability(data);
+      if (trainFarePanel) trainFarePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      setBadges("ERR", ms, false);
+      out.textContent = String(e);
+      if (trainFarePanel) {
+        trainFarePanel.hidden = false;
+        trainFarePanel.innerHTML =
+          '<div class="train-fare-panel__head">Fare & seat availability (IRCTC)</div>' +
+          '<div class="train-fare-panel__body"><p class="empty">' + esc(String(e)) + "</p></div>";
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $("btnTrainSearch").onclick = async function () {
+    const from = ($("tsFromCode").value || "").trim().toUpperCase();
+    const to = ($("tsToCode").value || "").trim().toUpperCase();
+    const journeyDate = ($("tsDate").value || "").trim();
+    const quotaRaw = ($("tsQuota").value || "").trim();
+    const quotaCode = quotaRaw === "" ? "" : quotaRaw;
+    const journeyClass = ($("tsClass").value || "").trim().toUpperCase();
+    if (!from || !to) {
+      trainSummary.textContent = "Search and select both origin and destination stations from the dropdown suggestions.";
+      trainResults.innerHTML = "";
+      return;
+    }
+    if (!journeyDate) {
+      trainSummary.textContent = "Pick a journey date.";
+      trainResults.innerHTML = "";
+      return;
+    }
+    $("btnTrainSearch").disabled = true;
+    trainSummary.textContent = "Searching…";
+    trainResults.innerHTML = "";
+    const t0 = performance.now();
+    const url = base() + "/api/v1/trains/search";
+    const body = {
+      fromStation: from,
+      toStation: to,
+      journeyDate: journeyDate,
+      quotaCode: quotaCode,
+      journeyClass: journeyClass,
+    };
+    if (quotaCode === "") delete body.quotaCode;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: irctcFetchHeaders,
+        body: JSON.stringify(body),
+      });
+      const ms = Math.round(performance.now() - t0);
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) {}
+      setBadges(res.status, ms, res.ok);
+      out.textContent = data != null ? prettyJSON(data) : text;
+      if (isTrainSearchResponse(data)) {
+        renderTrainResults(data);
+      } else if (data && data.error) {
+        trainSummary.innerHTML =
+          '<span style="color:var(--err)">' +
+          esc(data.error) +
+          (data.code ? ' <span style="font-family:var(--mono);font-size:0.85em">(' + esc(data.code) + ")</span>" : "") +
+          "</span>";
+        trainResults.innerHTML = "";
+        if (trainFarePanel) {
+          trainFarePanel.hidden = true;
+          trainFarePanel.innerHTML = "";
+        }
+      } else if (data) {
+        trainSummary.textContent = "Unexpected response shape — see Response panel.";
+        trainResults.innerHTML = "";
+        if (trainFarePanel) {
+          trainFarePanel.hidden = true;
+          trainFarePanel.innerHTML = "";
+        }
+      } else {
+        trainSummary.textContent = "Non-JSON response (" + res.status + ").";
+        if (trainFarePanel) {
+          trainFarePanel.hidden = true;
+          trainFarePanel.innerHTML = "";
+        }
+      }
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      setBadges("ERR", ms, false);
+      out.textContent = String(e);
+      trainSummary.textContent = String(e);
+    } finally {
+      $("btnTrainSearch").disabled = false;
+    }
+  };
+
+  $("btnList").onclick = fetchList;
+  $("btnPrev").onclick = function () {
+    const p = $("page");
+    const n = Math.max(1, (parseInt(p.value, 10) || 1) - 1);
+    p.value = String(n);
+    fetchList();
+  };
+  $("btnNext").onclick = function () {
+    const p = $("page");
+    p.value = String((parseInt(p.value, 10) || 1) + 1);
+    fetchList();
+  };
+
+  window.addEventListener("resize", function () {
+    if (map) map.invalidateSize();
+  });
+})();
+  </script>
+</body>
+</html>
