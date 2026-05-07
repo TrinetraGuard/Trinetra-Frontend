@@ -447,6 +447,78 @@
     .pill-tip { font-size: 0.62rem; color: var(--muted); margin-top: 0.25rem; }
     .train-search-rows { display: flex; flex-direction: column; gap: 0.75rem; }
     .train-search-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-end; }
+    .train-mode-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.25rem 0.35rem;
+      background: var(--surface-2);
+    }
+    .train-mode-toggle label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.76rem;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 0.25rem 0.4rem;
+      border-radius: 999px;
+    }
+    .train-mode-toggle input { accent-color: var(--accent); }
+    .train-mode-toggle label:has(input:checked) {
+      color: var(--text);
+      background: rgba(232, 180, 77, 0.15);
+      border: 1px solid rgba(232, 180, 77, 0.35);
+    }
+    .location-grid {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      width: 100%;
+    }
+    .journey-meta {
+      margin-top: 0.6rem;
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    }
+    .journey-meta-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.6rem 0.7rem;
+      background: var(--surface);
+    }
+    .journey-meta-card h4 {
+      margin: 0 0 0.45rem;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+    .journey-meta-card ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.78rem;
+    }
+    .journey-mode-pill {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .journey-mode-pill.direct { color: #86efac; border-color: rgba(134, 239, 172, 0.35); }
+    .journey-mode-pill.connecting { color: #7dd3fc; border-color: rgba(125, 211, 252, 0.35); }
+    .journey-mode-pill.none { color: #fca5a5; border-color: rgba(252, 165, 165, 0.35); }
     .station-picker { position: relative; min-width: min(100%, 280px); flex: 1.2; }
     .station-picker__wrap {
       position: relative;
@@ -608,17 +680,26 @@
 
     <section class="panel panel-wide">
       <h2 class="panel-head-split">
-        <span>Train search (between stations)</span>
-        <span class="panel-meta">POST /api/v1/trains/search → IRCTC altAvlEnq</span>
+        <span>Train search &amp; journey planner</span>
+        <span class="panel-meta">POST /api/v1/trains/search or /api/v1/trains/journey-plan</span>
       </h2>
       <div class="panel-body">
         <p class="hint" style="margin-top:0;">
-          Search stations by name or code, pick <strong>From</strong> and <strong>To</strong> from the suggestions (names shown as in the directory).
-          Your server calls IRCTC with the selected codes. <strong>All</strong> under quota uses General (GN) for the enquiry.
+          Use <strong>Station to Station</strong> for code-based search, or <strong>Location to Location</strong> to auto-resolve nearest stations and get direct-first journey planning.
+          <strong>All</strong> under quota uses General (GN) for the enquiry.
           From cloud hosts (e.g. Render) IRCTC can be slow: this UI sends <code class="mono">X-IRCTC-Timeout-Seconds: 180</code> (max 240) so the server waits longer for upstream.
         </p>
         <div class="train-search-rows">
           <div class="train-search-row">
+            <div class="field">
+              <label>Search mode</label>
+              <div class="train-mode-toggle">
+                <label><input type="radio" name="trainSearchMode" id="tsModeStations" value="stations" checked /> Station to Station</label>
+                <label><input type="radio" name="trainSearchMode" id="tsModeLocation" value="location" /> Location to Location</label>
+              </div>
+            </div>
+          </div>
+          <div class="train-search-row" id="stationModeRows">
             <div class="field station-picker">
               <label for="tsFromSearch">From station</label>
               <div class="station-picker__wrap">
@@ -639,6 +720,27 @@
               <input type="hidden" id="tsToCode" value="" />
               <div class="station-picker__sel" id="tsToSel">No station selected — search and pick one.</div>
             </div>
+          </div>
+          <div class="train-search-row" id="locationModeRows" hidden>
+            <div class="location-grid">
+              <div class="field">
+                <label for="jpOriginLat">Origin latitude</label>
+                <input id="jpOriginLat" type="number" step="any" placeholder="e.g. 19.0760" />
+              </div>
+              <div class="field">
+                <label for="jpOriginLng">Origin longitude</label>
+                <input id="jpOriginLng" type="number" step="any" placeholder="e.g. 72.8777" />
+              </div>
+              <div class="field">
+                <label for="jpDestLat">Destination latitude</label>
+                <input id="jpDestLat" type="number" step="any" placeholder="e.g. 18.5204" />
+              </div>
+              <div class="field">
+                <label for="jpDestLng">Destination longitude</label>
+                <input id="jpDestLng" type="number" step="any" placeholder="e.g. 73.8567" />
+              </div>
+            </div>
+            <p class="hint" style="margin:0;">Enter decimal latitude/longitude. Example: Mumbai <code>19.0760, 72.8777</code>.</p>
           </div>
           <div class="train-search-row">
             <div class="field" style="max-width:200px;">
@@ -669,6 +771,21 @@
         <div id="trainSummary" class="train-summary"></div>
         <div id="trainResults"></div>
         <div id="trainFarePanel" class="train-fare-panel" hidden></div>
+      </div>
+    </section>
+
+    <section class="panel panel-wide">
+      <h2 class="panel-head-split">
+        <span>IRCTC train directory</span>
+        <span class="panel-meta">GET /api/v1/trains/list</span>
+      </h2>
+      <div class="panel-body">
+        <div class="row">
+          <button type="button" id="btnTrainList">Load all train numbers and names</button>
+        </div>
+        <p class="hint" style="margin-top:0.2rem;">Use this to fetch the complete train directory and verify train number + train name formatting in one place.</p>
+        <div id="trainListSummary" class="train-summary"></div>
+        <div id="trainListResults"></div>
       </div>
     </section>
 
@@ -755,6 +872,14 @@
   const trainSummary = $("trainSummary");
   const trainResults = $("trainResults");
   const trainFarePanel = $("trainFarePanel");
+  const btnTrainSearch = $("btnTrainSearch");
+  const btnTrainList = $("btnTrainList");
+  const trainListSummary = $("trainListSummary");
+  const trainListResults = $("trainListResults");
+  const tsModeStations = $("tsModeStations");
+  const tsModeLocation = $("tsModeLocation");
+  const stationModeRows = $("stationModeRows");
+  const locationModeRows = $("locationModeRows");
 
   /** Outbound IRCTC wait cap (seconds); server clamps 20–240. Sent on train + fare POSTs. */
   const irctcFetchHeaders = {
@@ -788,6 +913,28 @@
   }
   const tsDateEl = $("tsDate");
   if (tsDateEl && !tsDateEl.value) tsDateEl.value = ymdToday();
+
+  function currentTrainMode() {
+    return tsModeLocation && tsModeLocation.checked ? "location" : "stations";
+  }
+
+  function applyTrainModeUI() {
+    const mode = currentTrainMode();
+    const stationOn = mode === "stations";
+    if (stationModeRows) stationModeRows.hidden = !stationOn;
+    if (locationModeRows) locationModeRows.hidden = stationOn;
+    if (btnTrainSearch) btnTrainSearch.textContent = stationOn ? "Search trains" : "Plan journey";
+    if (trainFarePanel) {
+      trainFarePanel.hidden = true;
+      trainFarePanel.innerHTML = "";
+    }
+    if (trainSummary) trainSummary.textContent = "";
+    if (trainResults) trainResults.innerHTML = "";
+  }
+
+  if (tsModeStations) tsModeStations.addEventListener("change", applyTrainModeUI);
+  if (tsModeLocation) tsModeLocation.addEventListener("change", applyTrainModeUI);
+  applyTrainModeUI();
 
   function base() {
     let u = (baseInput.value || "").trim().replace(/\/$/, "");
@@ -1340,12 +1487,103 @@
     return !!(d && typeof d === "object" && d.request && typeof d.request === "object");
   }
 
+  /** True when body matches POST /api/v1/trains/journey-plan envelope. */
+  function isJourneyPlanResponse(d) {
+    return !!(d && typeof d === "object" && d.request && typeof d.request === "object" && typeof d.searchMode === "string");
+  }
+
   function formatDurationMinutes(m) {
     if (m == null || m < 0 || !Number.isFinite(m)) return "—";
     const h = Math.floor(m / 60);
     const mm = Math.round(m % 60);
     if (h <= 0) return String(mm) + "m";
     return String(h) + "h " + String(mm).padStart(2, "0") + "m";
+  }
+
+  function renderJourneyPlanResults(data) {
+    if (!trainResults) return;
+    data = data || {};
+    trainResults.innerHTML = "";
+    if (trainFarePanel) {
+      trainFarePanel.hidden = true;
+      trainFarePanel.innerHTML = "";
+    }
+
+    const mode = String(data.searchMode || "none").toLowerCase();
+    const direct = Array.isArray(data.directJourneys) ? data.directJourneys : [];
+    const connecting = Array.isArray(data.connectingJourneys) ? data.connectingJourneys : [];
+    const origins = Array.isArray(data.originCandidates) ? data.originCandidates : [];
+    const dests = Array.isArray(data.destinationCandidates) ? data.destinationCandidates : [];
+    const note = data.note ? String(data.note) : "";
+
+    const modeCls = mode === "direct" || mode === "connecting" ? mode : "none";
+    trainSummary.innerHTML =
+      'Mode: <span class="journey-mode-pill ' + esc(modeCls) + '">' + esc(modeCls) + "</span>" +
+      " · origin candidates <strong>" + esc(String(origins.length)) + "</strong>" +
+      " · destination candidates <strong>" + esc(String(dests.length)) + "</strong>" +
+      (data.journeyDatePacked ? " · IRCTC date <strong>" + esc(data.journeyDatePacked) + "</strong>" : "") +
+      (note ? '<br/><span class="pill-tip">' + esc(note) + "</span>" : "");
+
+    function candidateList(items) {
+      if (!items.length) return '<li style="color:var(--muted)">No candidates.</li>';
+      let html = "";
+      for (let i = 0; i < items.length; i++) {
+        const c = items[i] || {};
+        const label = String(c.name || c.code || "—");
+        const code = c.code ? " (" + String(c.code) + ")" : "";
+        const dist = Number.isFinite(c.distanceKm) ? Number(c.distanceKm).toFixed(1) + " km" : "—";
+        html += "<li>" + esc(label + code) + " · " + esc(dist) + "</li>";
+      }
+      return html;
+    }
+
+    let block = '<div class="journey-meta">';
+    block += '<div class="journey-meta-card"><h4>Nearest Origin Stations</h4><ul>' + candidateList(origins) + "</ul></div>";
+    block += '<div class="journey-meta-card"><h4>Nearest Destination Stations</h4><ul>' + candidateList(dests) + "</ul></div>";
+    block += "</div>";
+
+    if (mode === "direct" && direct.length) {
+      block += '<div class="table-wrap conn-wrap"><table class="conn-table">';
+      block += "<caption>Direct journeys from nearest station candidates. Sorted by total journey time, then departure.</caption>";
+      block += "<thead><tr><th>#</th><th>From</th><th>To</th><th>Train</th><th>Dep</th><th>Arr</th><th>Duration</th></tr></thead><tbody>";
+      for (let i = 0; i < direct.length; i++) {
+        const r = direct[i] || {};
+        const t = r.train || {};
+        block += "<tr>";
+        block += "<td>" + esc(String(i + 1)) + "</td>";
+        block += "<td>" + esc((r.fromStationName || r.fromStationCode || "—") + (r.fromStationCode ? " (" + r.fromStationCode + ")" : "")) + "</td>";
+        block += "<td>" + esc((r.toStationName || r.toStationCode || "—") + (r.toStationCode ? " (" + r.toStationCode + ")" : "")) + "</td>";
+        block += '<td class="mono">' + esc(t.trainNumber || "—") + " · " + esc(t.trainName || "—") + "</td>";
+        block += '<td class="time-cell">' + esc(t.departureTime || "—") + "</td>";
+        block += '<td class="time-cell">' + esc(t.arrivalTime || "—") + "</td>";
+        block += "<td>" + esc(formatDurationMinutes(r.totalJourneyMinutes)) + "</td>";
+        block += "</tr>";
+      }
+      block += "</tbody></table></div>";
+    } else if (mode === "connecting" && connecting.length) {
+      block += '<div class="table-wrap conn-wrap"><table class="conn-table">';
+      block += "<caption>No direct train found. Showing one-change journeys from nearest station candidates.</caption>";
+      block += "<thead><tr><th>#</th><th>From</th><th>Change at</th><th>To</th><th>Leg 1</th><th>Leg 2</th><th>Layover</th><th>Total</th></tr></thead><tbody>";
+      for (let i = 0; i < connecting.length; i++) {
+        const c = connecting[i] || {};
+        const a = c.firstLeg || {};
+        const b = c.secondLeg || {};
+        block += "<tr>";
+        block += "<td>" + esc(String(i + 1)) + "</td>";
+        block += "<td>" + esc((c.fromStationName || c.fromStationCode || "—") + (c.fromStationCode ? " (" + c.fromStationCode + ")" : "")) + "</td>";
+        block += "<td>" + esc((c.viaStationName || c.viaStationCode || "—") + (c.viaStationCode ? " (" + c.viaStationCode + ")" : "")) + "</td>";
+        block += "<td>" + esc((c.toStationName || c.toStationCode || "—") + (c.toStationCode ? " (" + c.toStationCode + ")" : "")) + "</td>";
+        block += '<td class="mono">' + esc((a.trainNumber || "—") + " · " + (a.departureTime || "—") + " → " + (a.arrivalTime || "—")) + "</td>";
+        block += '<td class="mono">' + esc((b.trainNumber || "—") + " · " + (b.departureTime || "—") + " → " + (b.arrivalTime || "—")) + "</td>";
+        block += "<td>" + esc(String(c.layoverMinutes != null ? c.layoverMinutes : "—")) + " min</td>";
+        block += "<td>" + esc(formatDurationMinutes(c.totalJourneyMinutes)) + "</td>";
+        block += "</tr>";
+      }
+      block += "</tbody></table></div>";
+    } else {
+      block += '<p class="empty" style="margin-top:0.75rem;">No journey options found for these nearby station combinations on selected date.</p>';
+    }
+    trainResults.innerHTML = block;
   }
 
   function renderTrainResults(data) {
@@ -1359,6 +1597,9 @@
     const rawTrains = data.trains;
     const trains = sortTrainsByNumber(Array.isArray(rawTrains) ? rawTrains : []);
     const conns = Array.isArray(data.connections) ? data.connections : [];
+    const travel = data.travelSuggestions || {};
+    const nearbyDirect = Array.isArray(travel.bestNearbyDirect) ? travel.bestNearbyDirect : [];
+    const travelNote = travel.note || "";
     const connNote = data.connectionSearchNote || "";
     const msg = data.upstreamMessage || "";
     const up = data.upstreamHttpStatus != null ? data.upstreamHttpStatus : "—";
@@ -1428,11 +1669,65 @@
           block += "</tr>";
         }
         block += "</tbody></table></div>";
+        if (nearbyDirect.length) {
+          block += '<p class="hint" style="margin:0.85rem 0 0.5rem;">Also found <strong>nearby-station direct trains</strong> (fastest first).</p>';
+          if (travelNote) {
+            block += '<p class="pill-tip" style="margin-bottom:0.65rem;">' + esc(travelNote) + "</p>";
+          }
+          block += '<div class="table-wrap conn-wrap"><table class="conn-table">';
+          block += "<caption>Nearby direct alternatives from stations close to your selected source/destination.</caption>";
+          block += "<thead><tr><th>#</th><th>From</th><th>To</th><th>Train</th><th>Dep</th><th>Arr</th><th>Total</th><th>Source</th></tr></thead><tbody>";
+          for (let i = 0; i < nearbyDirect.length; i++) {
+            const r = nearbyDirect[i] || {};
+            const t = r.train || {};
+            const fromLbl = (r.fromStationName || r.fromStationCode || "—") + (r.fromStationCode ? " (" + r.fromStationCode + ")" : "");
+            const toLbl = (r.toStationName || r.toStationCode || "—") + (r.toStationCode ? " (" + r.toStationCode + ")" : "");
+            block += "<tr>";
+            block += "<td>" + esc(String(i + 1)) + "</td>";
+            block += "<td>" + esc(fromLbl) + "</td>";
+            block += "<td>" + esc(toLbl) + "</td>";
+            block += '<td class="mono">' + esc((t.trainNumber || "—") + " · " + (t.trainName || "—")) + "</td>";
+            block += '<td class="time-cell">' + esc(t.departureTime || "—") + "</td>";
+            block += '<td class="time-cell">' + esc(t.arrivalTime || "—") + "</td>";
+            block += "<td>" + esc(formatDurationMinutes(r.totalJourneyMinutes)) + "</td>";
+            block += "<td>" + esc(r.source || "irctc") + "</td>";
+            block += "</tr>";
+          }
+          block += "</tbody></table></div>";
+        }
       } else {
         block +=
           '<p class="empty">No direct trains and no qualifying one-change option for this date (or IRCTC blocked the enquiry).</p>';
         if (connNote) {
           block += '<p class="pill-tip">' + esc(connNote) + "</p>";
+        }
+        if (nearbyDirect.length) {
+          block += '<p class="hint" style="margin:0.85rem 0 0.5rem;">Nearby-station direct alternatives (fastest first):</p>';
+          if (travelNote) {
+            block += '<p class="pill-tip" style="margin-bottom:0.65rem;">' + esc(travelNote) + "</p>";
+          }
+          block += '<div class="table-wrap conn-wrap"><table class="conn-table">';
+          block += "<caption>Use nearby origin/destination stations for faster practical options.</caption>";
+          block += "<thead><tr><th>#</th><th>From</th><th>To</th><th>Train</th><th>Dep</th><th>Arr</th><th>Total</th><th>Source</th></tr></thead><tbody>";
+          for (let i = 0; i < nearbyDirect.length; i++) {
+            const r = nearbyDirect[i] || {};
+            const t = r.train || {};
+            const fromLbl = (r.fromStationName || r.fromStationCode || "—") + (r.fromStationCode ? " (" + r.fromStationCode + ")" : "");
+            const toLbl = (r.toStationName || r.toStationCode || "—") + (r.toStationCode ? " (" + r.toStationCode + ")" : "");
+            block += "<tr>";
+            block += "<td>" + esc(String(i + 1)) + "</td>";
+            block += "<td>" + esc(fromLbl) + "</td>";
+            block += "<td>" + esc(toLbl) + "</td>";
+            block += '<td class="mono">' + esc((t.trainNumber || "—") + " · " + (t.trainName || "—")) + "</td>";
+            block += '<td class="time-cell">' + esc(t.departureTime || "—") + "</td>";
+            block += '<td class="time-cell">' + esc(t.arrivalTime || "—") + "</td>";
+            block += "<td>" + esc(formatDurationMinutes(r.totalJourneyMinutes)) + "</td>";
+            block += "<td>" + esc(r.source || "irctc") + "</td>";
+            block += "</tr>";
+          }
+          block += "</tbody></table></div>";
+        } else if (travelNote) {
+          block += '<p class="pill-tip" style="margin-top:0.65rem;">' + esc(travelNote) + "</p>";
         }
       }
       trainResults.innerHTML = block;
@@ -1537,6 +1832,31 @@
     }
     html += "</tbody></table></div>";
     trainResults.innerHTML = html;
+  }
+
+  function renderTrainDirectory(data) {
+    const rows = sortTrainsByNumber(Array.isArray(data && data.trains) ? data.trains : []);
+    if (!rows.length) {
+      trainListSummary.innerHTML = '<span style="color:var(--muted)">No trains returned from upstream.</span>';
+      trainListResults.innerHTML = '<p class="empty">Train directory is empty for this request.</p>';
+      return;
+    }
+
+    trainListSummary.innerHTML =
+      "<strong>" + esc(String(rows.length)) + "</strong> train(s) fetched from IRCTC." +
+      (data && data.source ? " Source: <strong>" + esc(String(data.source)) + "</strong>." : "");
+
+    let html = '<div class="table-wrap tall"><table>';
+    html += "<thead><tr><th style=\"max-width:130px;\">Train number</th><th>Train name</th></tr></thead><tbody>";
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i] || {};
+      html += "<tr>";
+      html += '<td class="mono">' + esc(r.trainNumber || "—") + "</td>";
+      html += "<td>" + esc(r.trainName || "—") + "</td>";
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+    trainListResults.innerHTML = html;
   }
 
   function fareKindClass(kind) {
@@ -1680,36 +2000,97 @@
     }
   });
 
-  $("btnTrainSearch").onclick = async function () {
+  btnTrainList.onclick = async function () {
+    btnTrainList.disabled = true;
+    trainListSummary.textContent = "Fetching train directory from IRCTC…";
+    trainListResults.innerHTML = "";
+    const t0 = performance.now();
+    try {
+      const res = await fetch(base() + "/api/v1/trains/list", { headers: { Accept: "application/json" } });
+      const ms = Math.round(performance.now() - t0);
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (_) {}
+      setBadges(res.status, ms, res.ok);
+      out.textContent = data != null ? prettyJSON(data) : text;
+      if (data && data.error) {
+        trainListSummary.innerHTML =
+          '<span style="color:var(--err)">' + esc(String(data.error)) +
+          (data.code ? ' <span style="font-family:var(--mono);font-size:0.85em">(' + esc(data.code) + ")</span>" : "") +
+          "</span>";
+        trainListResults.innerHTML = "";
+        return;
+      }
+      renderTrainDirectory(data || {});
+    } catch (e) {
+      const ms = Math.round(performance.now() - t0);
+      setBadges("ERR", ms, false);
+      out.textContent = String(e);
+      trainListSummary.innerHTML = '<span style="color:var(--err)">' + esc(String(e)) + "</span>";
+      trainListResults.innerHTML = "";
+    } finally {
+      btnTrainList.disabled = false;
+    }
+  };
+
+  btnTrainSearch.onclick = async function () {
+    const mode = currentTrainMode();
     const from = ($("tsFromCode").value || "").trim().toUpperCase();
     const to = ($("tsToCode").value || "").trim().toUpperCase();
     const journeyDate = ($("tsDate").value || "").trim();
     const quotaRaw = ($("tsQuota").value || "").trim();
     const quotaCode = quotaRaw === "" ? "" : quotaRaw;
     const journeyClass = ($("tsClass").value || "").trim().toUpperCase();
-    if (!from || !to) {
-      trainSummary.textContent = "Search and select both origin and destination stations from the dropdown suggestions.";
-      trainResults.innerHTML = "";
-      return;
-    }
     if (!journeyDate) {
       trainSummary.textContent = "Pick a journey date.";
       trainResults.innerHTML = "";
       return;
     }
-    $("btnTrainSearch").disabled = true;
-    trainSummary.textContent = "Searching…";
+    let url = "";
+    let body = null;
+
+    if (mode === "stations") {
+      if (!from || !to) {
+        trainSummary.textContent = "Search and select both origin and destination stations from the dropdown suggestions.";
+        trainResults.innerHTML = "";
+        return;
+      }
+      url = base() + "/api/v1/trains/search";
+      body = {
+        fromStation: from,
+        toStation: to,
+        journeyDate: journeyDate,
+        quotaCode: quotaCode,
+        journeyClass: journeyClass,
+      };
+      if (quotaCode === "") delete body.quotaCode;
+    } else {
+      const originLat = parseFloat(($("jpOriginLat").value || "").trim());
+      const originLng = parseFloat(($("jpOriginLng").value || "").trim());
+      const destinationLat = parseFloat(($("jpDestLat").value || "").trim());
+      const destinationLng = parseFloat(($("jpDestLng").value || "").trim());
+      if (![originLat, originLng, destinationLat, destinationLng].every(Number.isFinite)) {
+        trainSummary.textContent = "Enter valid numeric origin and destination coordinates.";
+        trainResults.innerHTML = "";
+        return;
+      }
+      url = base() + "/api/v1/trains/journey-plan";
+      body = {
+        originLat: originLat,
+        originLng: originLng,
+        destinationLat: destinationLat,
+        destinationLng: destinationLng,
+        journeyDate: journeyDate,
+        quotaCode: quotaCode,
+        journeyClass: journeyClass,
+      };
+      if (quotaCode === "") delete body.quotaCode;
+    }
+
+    btnTrainSearch.disabled = true;
+    trainSummary.textContent = mode === "stations" ? "Searching…" : "Planning journey…";
     trainResults.innerHTML = "";
     const t0 = performance.now();
-    const url = base() + "/api/v1/trains/search";
-    const body = {
-      fromStation: from,
-      toStation: to,
-      journeyDate: journeyDate,
-      quotaCode: quotaCode,
-      journeyClass: journeyClass,
-    };
-    if (quotaCode === "") delete body.quotaCode;
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -1722,15 +2103,22 @@
       try { data = JSON.parse(text); } catch (_) {}
       setBadges(res.status, ms, res.ok);
       out.textContent = data != null ? prettyJSON(data) : text;
-      if (isTrainSearchResponse(data)) {
+      if (mode === "stations" && isTrainSearchResponse(data)) {
         renderTrainResults(data);
+      } else if (mode === "location" && isJourneyPlanResponse(data)) {
+        renderJourneyPlanResults(data);
       } else if (data && data.error) {
+        let uiErr = String(data.error || "");
+        if (String(data.code || "") === "upstream_forbidden") {
+          uiErr = "Live IRCTC is temporarily restricted from this host. We are trying compatibility/cache fallback; if no cached trains exist yet, retry in a moment or search a nearby date.";
+        }
         trainSummary.innerHTML =
           '<span style="color:var(--err)">' +
-          esc(data.error) +
+          esc(uiErr) +
           (data.code ? ' <span style="font-family:var(--mono);font-size:0.85em">(' + esc(data.code) + ")</span>" : "") +
           "</span>";
-        trainResults.innerHTML = "";
+        trainResults.innerHTML =
+          '<p class="empty" style="margin-top:0.75rem;">No train list is available yet for this route/date from fallback sources. Please retry shortly.</p>';
         if (trainFarePanel) {
           trainFarePanel.hidden = true;
           trainFarePanel.innerHTML = "";
@@ -1755,7 +2143,7 @@
       out.textContent = String(e);
       trainSummary.textContent = String(e);
     } finally {
-      $("btnTrainSearch").disabled = false;
+      btnTrainSearch.disabled = false;
     }
   };
 

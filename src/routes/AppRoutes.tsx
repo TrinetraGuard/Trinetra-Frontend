@@ -24,6 +24,7 @@ import Login from "@/pages/auth/Loginpage";
 import LostFoundPage from "@/pages/home/page/lost_found_page";
 import Lostperson from "@/pages/lost/lostperson";
 import AiChatMonitorAdmin from "@/pages/component/AiChatMonitorAdmin";
+import UserRoutesToNashikAdmin from "@/pages/component/UserRoutesToNashikAdmin";
 import ProtectedRoute from "@/routes/ProtectedRoute";
 import SettingsPage from "@/pages/dashboard/settings";
 import Signup from "@/pages/auth/Signuppage";
@@ -100,6 +101,7 @@ const AppRoutes = () => {
         <Route path="sos-alerts" element={<SosAlerts />} />
         <Route path="notifications" element={<NotificationsAdmin />} />
         <Route path="ai-chat-monitor" element={<AiChatMonitorAdmin />} />
+        <Route path="user-routes-nashik" element={<UserRoutesToNashikAdmin />} />
         <Route path="cctv-management" element={<CCTVManagement />} />
         <Route path="crowd-control" element={<CrowdControl />} />
         <Route path="live-analytics" element={<LiveAnalytics />} />

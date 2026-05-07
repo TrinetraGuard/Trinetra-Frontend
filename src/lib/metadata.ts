@@ -86,6 +86,11 @@ export const routeMetadata: Record<string, RouteMetadata> = {
     title: "Users map",
     description: "Geographic view of app users and activity (where enabled).",
   },
+  "/dashboard/user-routes-nashik": {
+    title: "User routes to Nashik",
+    description:
+      "Admin planner: nearest railway stations per user, direct trains to Nashik Road (NK), optional fare from IRCTC.",
+  },
   "/dashboard/feature-post": {
     title: "Feature post map",
     description: "Map view for featured posts and user-generated location content.",
