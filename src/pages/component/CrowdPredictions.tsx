@@ -13,185 +13,34 @@ import {
     Zap
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
+import { useCrowdLogHistory } from '@/hooks/useCrowdLogHistory';
+import { useCctvCameras } from '@/hooks/useCctvCameras';
+import { useLiveCrowdAnalytics } from '@/hooks/useLiveCrowdAnalytics';
 import { admin, densityStyles, type DensityLevel } from '@/lib/adminTheme';
-import { db } from '@/firebase/firebase';
-
-interface CCTV {
-  id?: string;
-  placeName: string;
-  rtspLink: string;
-  latitude: number;
-  longitude: number;
-  status: 'active' | 'inactive';
-}
-
-interface PredictionData {
-  cameraId: string;
-  placeName: string;
-  predictedPeople: number;
-  predictedDensity: number;
-  densityLevel: 'low' | 'medium' | 'high' | 'critical';
-  confidence: number;
-  timeSlot: string;
-  date: Date;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  riskLevel: 'low' | 'medium' | 'high';
-  recommendation: string;
-  coordinates: { lat: number; lng: number };
-  historicalAverage: number;
-  predictedChange: number;
-}
+import { buildCrowdPredictions } from '@/lib/crowdReports';
+import type { PredictionTimeframe } from '@/types/crowdReports';
 
 const CrowdPredictions = () => {
-  const [cameras, setCameras] = useState<CCTV[]>([]);
-  const [predictions, setPredictions] = useState<Map<string, PredictionData[]>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [predictionTimeframe, setPredictionTimeframe] = useState<'today' | 'tomorrow' | 'week'>('today');
+  const { cameras, loading } = useCctvCameras();
+  const [predictionTimeframe, setPredictionTimeframe] = useState<PredictionTimeframe>('today');
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Real-time listener for CCTV cameras
-  useEffect(() => {
-    const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const camerasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as CCTV[];
-      
-      setCameras(camerasData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error listening to CCTV cameras:', error);
-      setLoading(false);
-    });
+  const { analytics, scanning, lastScanAt, configError, rescan } = useLiveCrowdAnalytics(
+    cameras,
+    autoRefresh
+  );
+  const logs = useCrowdLogHistory();
 
-    return () => unsubscribe();
-  }, []);
-
-  // Generate predictions based on historical patterns (In production, this would use ML models)
-  useEffect(() => {
-    if (cameras.length === 0) return;
-
-    const generatePredictions = () => {
-      const predictionsMap = new Map<string, PredictionData[]>();
-      
-      cameras.forEach(camera => {
-        if (camera.id && camera.status === 'active') {
-          const cameraPredictions: PredictionData[] = [];
-          
-          // Generate predictions for different time slots
-          const timeSlots = [
-            { hour: 8, label: '8:00 AM - 10:00 AM' },
-            { hour: 10, label: '10:00 AM - 12:00 PM' },
-            { hour: 12, label: '12:00 PM - 2:00 PM' },
-            { hour: 14, label: '2:00 PM - 4:00 PM' },
-            { hour: 16, label: '4:00 PM - 6:00 PM' },
-            { hour: 18, label: '6:00 PM - 8:00 PM' },
-            { hour: 20, label: '8:00 PM - 10:00 PM' }
-          ];
-
-          timeSlots.forEach(slot => {
-            // Base prediction on historical patterns
-            let basePeople = 100;
-            if (slot.hour >= 10 && slot.hour < 12) basePeople = 300 + Math.random() * 150;
-            else if (slot.hour >= 14 && slot.hour < 16) basePeople = 400 + Math.random() * 200;
-            else if (slot.hour >= 18 && slot.hour < 20) basePeople = 500 + Math.random() * 250;
-            else if (slot.hour >= 6 && slot.hour < 8) basePeople = 50 + Math.random() * 30;
-            else if (slot.hour >= 20) basePeople = 150 + Math.random() * 100;
-            else basePeople = 200 + Math.random() * 100;
-
-            // Add some variance for prediction
-            const variance = basePeople * 0.15; // 15% variance
-            const predictedPeople = Math.max(0, basePeople + (Math.random() - 0.5) * variance * 2);
-            const historicalAverage = basePeople * 0.9; // Slightly lower than prediction
-            const predictedChange = ((predictedPeople - historicalAverage) / historicalAverage) * 100;
-
-            const maxCapacity = 1000;
-            const predictedDensity = Math.min(100, (predictedPeople / maxCapacity) * 100);
-            
-            let densityLevel: 'low' | 'medium' | 'high' | 'critical';
-            if (predictedDensity < 30) densityLevel = 'low';
-            else if (predictedDensity < 60) densityLevel = 'medium';
-            else if (predictedDensity < 85) densityLevel = 'high';
-            else densityLevel = 'critical';
-
-            // Confidence based on historical data availability
-            const confidence = 75 + Math.random() * 20; // 75-95%
-
-            // Determine trend
-            const trends: ('increasing' | 'decreasing' | 'stable')[] = ['increasing', 'decreasing', 'stable'];
-            const trend = trends[Math.floor(Math.random() * trends.length)];
-
-            // Risk level
-            let riskLevel: 'low' | 'medium' | 'high';
-            if (predictedDensity >= 85) riskLevel = 'high';
-            else if (predictedDensity >= 60) riskLevel = 'medium';
-            else riskLevel = 'low';
-
-            // Recommendations
-            let recommendation = '';
-            if (predictedDensity >= 85) {
-              recommendation = 'Consider crowd control measures. High density expected.';
-            } else if (predictedDensity >= 60) {
-              recommendation = 'Monitor closely. Moderate crowd expected.';
-            } else {
-              recommendation = 'Normal operations. Low to moderate crowd expected.';
-            }
-
-            const predictionDate = new Date();
-            if (predictionTimeframe === 'tomorrow') {
-              predictionDate.setDate(predictionDate.getDate() + 1);
-            } else if (predictionTimeframe === 'week') {
-              predictionDate.setDate(predictionDate.getDate() + 7);
-            }
-
-            cameraPredictions.push({
-              cameraId: camera.id!,
-              placeName: camera.placeName,
-              predictedPeople: Math.round(predictedPeople),
-              predictedDensity: Math.round(predictedDensity),
-              densityLevel,
-              confidence: Math.round(confidence),
-              timeSlot: slot.label,
-              date: predictionDate,
-              trend,
-              riskLevel,
-              recommendation,
-              coordinates: {
-                lat: camera.latitude,
-                lng: camera.longitude
-              },
-              historicalAverage: Math.round(historicalAverage),
-              predictedChange: Math.round(predictedChange)
-            });
-          });
-
-          predictionsMap.set(camera.id, cameraPredictions);
-        }
-      });
-
-      setPredictions(predictionsMap);
-    };
-
-    generatePredictions();
-
-    // Auto-refresh every 30 seconds if enabled
-    let interval: NodeJS.Timeout | null = null;
-    if (autoRefresh) {
-      interval = setInterval(generatePredictions, 30000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [cameras, predictionTimeframe, autoRefresh]);
+  const predictions = useMemo(
+    () => buildCrowdPredictions(cameras, analytics, logs, predictionTimeframe),
+    [analytics, cameras, logs, predictionTimeframe]
+  );
 
   const getDensityColor = (level: DensityLevel) => densityStyles(level);
 
@@ -231,22 +80,40 @@ const CrowdPredictions = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Predictions</h1>
-              <p className="text-gray-500 mt-1">AI-powered crowd forecasting based on historical patterns</p>
+              <p className="text-gray-500 mt-1">Forecasts from recorded scan history and current live trends</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => void rescan()} disabled={scanning}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? 'animate-spin' : ''}`} />
+            {scanning ? 'Scanning…' : 'Scan now'}
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={autoRefresh ? 'bg-gray-100 border-gray-300 text-gray-800' : ''}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
+            {autoRefresh ? 'Auto refresh ON' : 'Auto refresh OFF'}
           </Button>
         </div>
       </div>
+
+      <CctvStreamRelayBanner />
+
+      {configError && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="py-4 text-sm text-amber-900">{configError}</CardContent>
+        </Card>
+      )}
+
+      {lastScanAt && (
+        <p className="text-xs text-gray-500">
+          Last live scan: {lastScanAt.toLocaleTimeString()}
+          {scanning ? ' · scan in progress…' : ''}
+        </p>
+      )}
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -349,9 +216,14 @@ const CrowdPredictions = () => {
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               >
                 <option value="all">All Cameras</option>
-                {cameras.map(camera => (
-                  <option key={camera.id} value={camera.id}>{camera.placeName}</option>
-                ))}
+                {cameras.map((camera) => {
+                  const key = camera.id ?? camera.placeName;
+                  return (
+                    <option key={key} value={key}>
+                      {camera.placeName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
@@ -366,7 +238,7 @@ const CrowdPredictions = () => {
               <Brain className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 font-medium text-lg">No predictions available</p>
               <p className="text-sm text-gray-400 mt-2">
-                Predictions will be generated based on historical data
+                Predictions improve as more live scans are recorded. Run a scan from Live Analytics or here.
               </p>
             </div>
           </CardContent>
@@ -376,7 +248,9 @@ const CrowdPredictions = () => {
           {Array.from(predictions.entries()).map(([cameraId, cameraPredictions]) => {
             if (selectedCamera && cameraId !== selectedCamera) return null;
             
-            const camera = cameras.find(c => c.id === cameraId);
+            const camera = cameras.find(
+              (item) => (item.id ?? item.placeName) === cameraId
+            );
             if (!camera) return null;
 
             return (

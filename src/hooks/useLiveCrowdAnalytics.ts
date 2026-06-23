@@ -10,6 +10,7 @@ import {
   getGo2RtcStreamName,
   isAnalyticsConfigured,
 } from '@/lib/cctvAnalytics';
+import { appendCrowdLog } from '@/lib/crowdAnalyticsStore';
 import { sortCamerasByChannel } from '@/lib/cctv';
 import type { CameraAnalytics } from '@/types/cctvAnalytics';
 import type { CCTV } from '@/types/cctv';
@@ -89,6 +90,11 @@ export function useLiveCrowdAnalytics(cameras: CCTV[], autoRefresh: boolean) {
           cameraKey,
           buildAnalyticsFromAnalysis(camera, analysis, history, maxCapacity)
         );
+        appendCrowdLog({
+          cameraId: cameraKey,
+          placeName: camera.placeName,
+          peopleCount: analysis.people,
+        });
       } catch (error) {
         console.error('[live-analytics] scan failed for', camera.placeName, error);
         nextAnalytics.set(cameraKey, {

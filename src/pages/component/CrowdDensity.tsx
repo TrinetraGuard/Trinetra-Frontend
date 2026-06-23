@@ -12,129 +12,34 @@ import {
     Zap
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
+import { useCrowdLogHistory } from '@/hooks/useCrowdLogHistory';
+import { useCctvCameras } from '@/hooks/useCctvCameras';
+import { useLiveCrowdAnalytics } from '@/hooks/useLiveCrowdAnalytics';
 import { admin, densityStyles, type DensityLevel } from '@/lib/adminTheme';
-import { db } from '@/firebase/firebase';
-
-interface CCTV {
-  id?: string;
-  placeName: string;
-  rtspLink: string;
-  latitude: number;
-  longitude: number;
-  status: 'active' | 'inactive';
-  lastStatusCheck?: Date | { toDate: () => Date };
-}
-
-interface DensityData {
-  cameraId: string;
-  placeName: string;
-  currentDensity: number;
-  densityLevel: 'low' | 'medium' | 'high' | 'critical';
-  densityPercentage: number;
-  peopleCount: number;
-  maxCapacity: number;
-  peakDensity: number;
-  averageDensity: number;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  lastHourChange: number;
-  status: 'active' | 'inactive';
-  coordinates: { lat: number; lng: number };
-}
+import { buildDensityReports } from '@/lib/crowdReports';
+import type { CrowdTimeWindow } from '@/types/crowdReports';
 
 const CrowdDensity = () => {
-  const [cameras, setCameras] = useState<CCTV[]>([]);
-  const [densityData, setDensityData] = useState<Map<string, DensityData>>(new Map());
-  const [loading, setLoading] = useState(true);
-  const [selectedTimeRange, setSelectedTimeRange] = useState<'1h' | '6h' | '24h' | '7d'>('24h');
+  const { cameras, loading } = useCctvCameras();
+  const [selectedTimeRange, setSelectedTimeRange] = useState<CrowdTimeWindow>('24h');
   const [filterDensity, setFilterDensity] = useState<'all' | 'low' | 'medium' | 'high' | 'critical'>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  // Real-time listener for CCTV cameras
-  useEffect(() => {
-    const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const camerasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as CCTV[];
-      
-      setCameras(camerasData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error listening to CCTV cameras:', error);
-      setLoading(false);
-    });
+  const { analytics, scanning, lastScanAt, configError, rescan } = useLiveCrowdAnalytics(
+    cameras,
+    autoRefresh
+  );
+  const logs = useCrowdLogHistory();
 
-    return () => unsubscribe();
-  }, []);
-
-  // Generate density data (In production, this would come from your AI/ML backend)
-  useEffect(() => {
-    if (cameras.length === 0) return;
-
-    const updateDensityData = () => {
-      const newDensityData = new Map<string, DensityData>();
-      
-      cameras.forEach(camera => {
-        if (camera.id && camera.status === 'active') {
-          // Simulate density data - In production, fetch from your analytics API
-          const peopleCount = Math.floor(Math.random() * 800) + 50;
-          const maxCapacity = 1000;
-          const densityPercentage = Math.min(100, (peopleCount / maxCapacity) * 100);
-          
-          let densityLevel: 'low' | 'medium' | 'high' | 'critical';
-          if (densityPercentage < 30) densityLevel = 'low';
-          else if (densityPercentage < 60) densityLevel = 'medium';
-          else if (densityPercentage < 85) densityLevel = 'high';
-          else densityLevel = 'critical';
-
-          const trends: ('increasing' | 'decreasing' | 'stable')[] = ['increasing', 'decreasing', 'stable'];
-          const trend = trends[Math.floor(Math.random() * trends.length)];
-          const lastHourChange = Math.floor(Math.random() * 20) - 10; // -10 to +10
-
-          newDensityData.set(camera.id, {
-            cameraId: camera.id,
-            placeName: camera.placeName,
-            currentDensity: densityPercentage,
-            densityLevel,
-            densityPercentage,
-            peopleCount,
-            maxCapacity,
-            peakDensity: Math.min(100, densityPercentage + Math.random() * 15),
-            averageDensity: Math.max(0, densityPercentage - Math.random() * 20),
-            trend,
-            lastHourChange,
-            status: camera.status,
-            coordinates: {
-              lat: camera.latitude,
-              lng: camera.longitude
-            }
-          });
-        }
-      });
-
-      setDensityData(newDensityData);
-    };
-
-    // Initial update
-    updateDensityData();
-
-    // Auto-refresh every 5 seconds if enabled
-    let interval: NodeJS.Timeout | null = null;
-    if (autoRefresh) {
-      interval = setInterval(updateDensityData, 5000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [cameras, autoRefresh]);
+  const densityData = useMemo(
+    () => buildDensityReports(cameras, analytics, logs, selectedTimeRange),
+    [analytics, cameras, logs, selectedTimeRange]
+  );
 
   const getDensityColor = (level: DensityLevel) => densityStyles(level);
 
@@ -155,17 +60,21 @@ const CrowdDensity = () => {
     }
   };
 
-  const filteredDensityData = Array.from(densityData.values()).filter(data => {
+  const filteredDensityData = densityData.filter((data) => {
     if (filterDensity === 'all') return true;
     return data.densityLevel === filterDensity;
   });
 
-  const totalPeople = Array.from(densityData.values()).reduce((sum, d) => sum + d.peopleCount, 0);
-  const averageDensity = densityData.size > 0 
-    ? Array.from(densityData.values()).reduce((sum, d) => sum + d.densityPercentage, 0) / densityData.size 
-    : 0;
-  const criticalAreas = Array.from(densityData.values()).filter(d => d.densityLevel === 'critical').length;
-  const highDensityAreas = Array.from(densityData.values()).filter(d => d.densityLevel === 'high' || d.densityLevel === 'critical').length;
+  const detectedRows = densityData.filter((item) => item.detectionAvailable);
+  const totalPeople = detectedRows.reduce((sum, item) => sum + item.peopleCount, 0);
+  const averageDensity =
+    detectedRows.length > 0
+      ? detectedRows.reduce((sum, item) => sum + item.densityPercentage, 0) / detectedRows.length
+      : 0;
+  const criticalAreas = detectedRows.filter((item) => item.densityLevel === 'critical').length;
+  const highDensityAreas = detectedRows.filter(
+    (item) => item.densityLevel === 'high' || item.densityLevel === 'critical'
+  ).length;
 
   if (loading) {
     return (
@@ -186,22 +95,40 @@ const CrowdDensity = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Density Analysis</h1>
-              <p className="text-gray-500 mt-1">Comprehensive crowd density monitoring and analysis</p>
+              <p className="text-gray-500 mt-1">Live density from CCTV snapshots and recorded scan history</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => void rescan()} disabled={scanning}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? 'animate-spin' : ''}`} />
+            {scanning ? 'Scanning…' : 'Scan now'}
+          </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
             className={autoRefresh ? 'bg-gray-100 border-gray-300 text-gray-800' : ''}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-            {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
+            {autoRefresh ? 'Auto refresh ON' : 'Auto refresh OFF'}
           </Button>
         </div>
       </div>
+
+      <CctvStreamRelayBanner />
+
+      {configError && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="py-4 text-sm text-amber-900">{configError}</CardContent>
+        </Card>
+      )}
+
+      {lastScanAt && (
+        <p className="text-xs text-gray-500">
+          Last live scan: {lastScanAt.toLocaleTimeString()}
+          {scanning ? ' · scan in progress…' : ''}
+        </p>
+      )}
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -400,7 +327,9 @@ const CrowdDensity = () => {
                         <Users className="w-5 h-5 text-gray-700" />
                         <div>
                           <p className="text-xs font-medium text-gray-600">People Count</p>
-                          <p className="text-2xl font-bold text-gray-900">{data.peopleCount}</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                        {data.detectionAvailable ? data.peopleCount : '—'}
+                      </p>
                         </div>
                       </div>
                       <div className="text-right">
@@ -479,7 +408,7 @@ const CrowdDensity = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      <span>Updated: {new Date().toLocaleTimeString()}</span>
+                      <span>Updated: {data.lastUpdate.toLocaleTimeString()}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -490,7 +419,7 @@ const CrowdDensity = () => {
       )}
 
       {/* Density Distribution Chart */}
-      {densityData.size > 0 && (
+      {densityData.length > 0 && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -502,8 +431,8 @@ const CrowdDensity = () => {
           <CardContent>
             <div className="space-y-4">
               {(['low', 'medium', 'high', 'critical'] as const).map((level) => {
-                const count = Array.from(densityData.values()).filter(d => d.densityLevel === level).length;
-                const percentage = densityData.size > 0 ? (count / densityData.size) * 100 : 0;
+                const count = densityData.filter((item) => item.densityLevel === level).length;
+                const percentage = densityData.length > 0 ? (count / densityData.length) * 100 : 0;
                 const colors = getDensityColor(level);
                 
                 return (

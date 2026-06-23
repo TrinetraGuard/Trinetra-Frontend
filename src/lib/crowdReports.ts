@@ -245,7 +245,10 @@ export function buildCrowdPredictions(
         (sampleLogs.length > 0 ? historicalAverage : currentPeople) * trendFactor
       );
 
-      if (timeframe === 'tomorrow' && targetDayName === 'Saturday' || targetDayName === 'Sunday') {
+      if (
+        (timeframe === 'tomorrow' || timeframe === 'week') &&
+        (targetDayName === 'Saturday' || targetDayName === 'Sunday')
+      ) {
         predictedPeople = Math.round(predictedPeople * 1.1);
       }
 

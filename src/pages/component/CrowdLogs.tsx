@@ -1,274 +1,69 @@
 import {
-    BarChart3,
-    Calendar,
-    Clock,
-    Download,
-    FileText,
-    Filter,
-    MapPin,
-    Users
+  BarChart3,
+  Calendar,
+  Clock,
+  Download,
+  FileText,
+  Filter,
+  MapPin,
+  RefreshCw,
+  Users,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
+import { useCrowdLogHistory } from '@/hooks/useCrowdLogHistory';
+import { useCctvCameras } from '@/hooks/useCctvCameras';
+import { useLiveCrowdAnalytics } from '@/hooks/useLiveCrowdAnalytics';
 import { admin } from '@/lib/adminTheme';
-import { db } from '@/firebase/firebase';
-
-interface CCTV {
-  id?: string;
-  placeName: string;
-  rtspLink: string;
-  latitude: number;
-  longitude: number;
-  status: 'active' | 'inactive';
-}
-
-interface CrowdLogEntry {
-  cameraId: string;
-  placeName: string;
-  timestamp: Date;
-  peopleCount: number;
-  densityPercentage: number;
-  densityLevel: 'low' | 'medium' | 'high' | 'critical';
-  hour: number;
-  dayOfWeek: string;
-}
-
-interface TimeSlotAnalysis {
-  hour: number;
-  averagePeople: number;
-  peakPeople: number;
-  averageDensity: number;
-  occurrences: number;
-  label: string;
-}
-
-interface CameraLogSummary {
-  cameraId: string;
-  placeName: string;
-  totalVisits: number;
-  averagePeople: number;
-  peakPeople: number;
-  peakTime: string;
-  quietTime: string;
-  busiestDay: string;
-  coordinates: { lat: number; lng: number };
-  timeSlots: TimeSlotAnalysis[];
-}
+import { filterLogsByDateRange } from '@/lib/crowdAnalyticsStore';
+import { buildCameraLogSummaries, exportCrowdLogsCsv } from '@/lib/crowdReports';
+import type { CrowdDateRange } from '@/types/crowdReports';
 
 const CrowdLogs = () => {
-  const [cameras, setCameras] = useState<CCTV[]>([]);
-  const [logs, setLogs] = useState<CrowdLogEntry[]>([]);
-  const [summaries, setSummaries] = useState<Map<string, CameraLogSummary>>(new Map());
-  const [loading, setLoading] = useState(true);
+  const { cameras, loading } = useCctvCameras();
   const [selectedCamera, setSelectedCamera] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('week');
+  const [dateRange, setDateRange] = useState<CrowdDateRange>('week');
 
-  // Real-time listener for CCTV cameras
-  useEffect(() => {
-    const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const camerasData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as CCTV[];
-      
-      setCameras(camerasData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error listening to CCTV cameras:', error);
-      setLoading(false);
-    });
+  const { scanning, lastScanAt, configError, rescan } = useLiveCrowdAnalytics(cameras, true);
+  const allLogs = useCrowdLogHistory();
 
-    return () => unsubscribe();
-  }, []);
+  const filteredLogs = useMemo(() => {
+    const ranged = filterLogsByDateRange(allLogs, dateRange);
+    if (!selectedCamera) return ranged;
+    return ranged.filter((entry) => entry.cameraId === selectedCamera);
+  }, [allLogs, dateRange, selectedCamera]);
 
-  // Generate historical log data (In production, this would come from your database)
-  useEffect(() => {
-    if (cameras.length === 0) return;
+  const summaries = useMemo(
+    () => buildCameraLogSummaries(cameras, allLogs, dateRange),
+    [allLogs, cameras, dateRange]
+  );
 
-    const generateLogs = () => {
-      const newLogs: CrowdLogEntry[] = [];
-      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      
-      // Generate logs for the selected date range
-      const daysToGenerate = dateRange === 'today' ? 1 : dateRange === 'week' ? 7 : dateRange === 'month' ? 30 : 90;
-      
-      cameras.forEach(camera => {
-        if (camera.id && camera.status === 'active') {
-          for (let day = 0; day < daysToGenerate; day++) {
-            const date = new Date();
-            date.setDate(date.getDate() - day);
-            const dayOfWeek = daysOfWeek[date.getDay()];
-            
-            // Generate hourly data (every 2 hours for performance)
-            for (let hour = 6; hour < 22; hour += 2) {
-              // Simulate realistic crowd patterns
-              // Peak hours: 10-12, 14-16, 18-20
-              // Quiet hours: 6-8, 20-22
-              let basePeople = 50;
-              if (hour >= 10 && hour < 12) basePeople = 300 + Math.random() * 200; // Morning peak
-              else if (hour >= 14 && hour < 16) basePeople = 400 + Math.random() * 300; // Afternoon peak
-              else if (hour >= 18 && hour < 20) basePeople = 500 + Math.random() * 400; // Evening peak
-              else if (hour >= 6 && hour < 8) basePeople = 30 + Math.random() * 20; // Early morning
-              else if (hour >= 20) basePeople = 100 + Math.random() * 50; // Late evening
-              else basePeople = 150 + Math.random() * 100; // Normal hours
-              
-              // Weekend adjustments
-              if (dayOfWeek === 'Saturday' || dayOfWeek === 'Sunday') {
-                basePeople *= 1.3; // 30% more on weekends
-              }
-              
-              const peopleCount = Math.floor(basePeople);
-              const densityPercentage = Math.min(100, (peopleCount / 1000) * 100);
-              
-              let densityLevel: 'low' | 'medium' | 'high' | 'critical';
-              if (densityPercentage < 30) densityLevel = 'low';
-              else if (densityPercentage < 60) densityLevel = 'medium';
-              else if (densityPercentage < 85) densityLevel = 'high';
-              else densityLevel = 'critical';
+  const filteredSummaries = selectedCamera
+    ? summaries.filter((summary) => summary.cameraId === selectedCamera)
+    : summaries;
 
-              const logTime = new Date(date);
-              logTime.setHours(hour, 0, 0, 0);
+  const totalLogs = filteredLogs.length;
+  const totalVisits = filteredSummaries.reduce((sum, summary) => sum + summary.totalVisits, 0);
+  const averagePeople =
+    filteredSummaries.length > 0
+      ? filteredSummaries.reduce((sum, summary) => sum + summary.averagePeople, 0) /
+        filteredSummaries.length
+      : 0;
 
-              newLogs.push({
-                cameraId: camera.id,
-                placeName: camera.placeName,
-                timestamp: logTime,
-                peopleCount,
-                densityPercentage,
-                densityLevel,
-                hour,
-                dayOfWeek
-              });
-            }
-          }
-        }
-      });
-
-      setLogs(newLogs);
-      generateSummaries(newLogs);
-    };
-
-    const generateSummaries = (logEntries: CrowdLogEntry[]) => {
-      const summariesMap = new Map<string, CameraLogSummary>();
-      
-      cameras.forEach(camera => {
-        if (camera.id) {
-          const cameraLogs = logEntries.filter(log => log.cameraId === camera.id);
-          
-          if (cameraLogs.length === 0) return;
-
-          const totalVisits = cameraLogs.length;
-          const averagePeople = cameraLogs.reduce((sum, log) => sum + log.peopleCount, 0) / totalVisits;
-          const peakPeople = Math.max(...cameraLogs.map(log => log.peopleCount));
-          
-          // Find peak time
-          const hourGroups = new Map<number, number[]>();
-          cameraLogs.forEach(log => {
-            if (!hourGroups.has(log.hour)) {
-              hourGroups.set(log.hour, []);
-            }
-            hourGroups.get(log.hour)!.push(log.peopleCount);
-          });
-          
-          let peakHour = 12;
-          let peakAvg = 0;
-          hourGroups.forEach((counts, hour) => {
-            const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
-            if (avg > peakAvg) {
-              peakAvg = avg;
-              peakHour = hour;
-            }
-          });
-          
-          // Find quiet time
-          let quietHour = 6;
-          let quietAvg = Infinity;
-          hourGroups.forEach((counts, hour) => {
-            const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
-            if (avg < quietAvg) {
-              quietAvg = avg;
-              quietHour = hour;
-            }
-          });
-
-          // Find busiest day
-          const dayGroups = new Map<string, number[]>();
-          cameraLogs.forEach(log => {
-            if (!dayGroups.has(log.dayOfWeek)) {
-              dayGroups.set(log.dayOfWeek, []);
-            }
-            dayGroups.get(log.dayOfWeek)!.push(log.peopleCount);
-          });
-          
-          let busiestDay = 'Monday';
-          let busiestAvg = 0;
-          dayGroups.forEach((counts, day) => {
-            const avg = counts.reduce((a, b) => a + b, 0) / counts.length;
-            if (avg > busiestAvg) {
-              busiestAvg = avg;
-              busiestDay = day;
-            }
-          });
-
-          // Generate time slot analysis
-          const timeSlots: TimeSlotAnalysis[] = [];
-          for (let h = 6; h < 22; h += 2) {
-            const slotLogs = cameraLogs.filter(log => log.hour === h);
-            if (slotLogs.length > 0) {
-              const avgPeople = slotLogs.reduce((sum, log) => sum + log.peopleCount, 0) / slotLogs.length;
-              const peakPeople = Math.max(...slotLogs.map(log => log.peopleCount));
-              const avgDensity = slotLogs.reduce((sum, log) => sum + log.densityPercentage, 0) / slotLogs.length;
-              
-              timeSlots.push({
-                hour: h,
-                averagePeople: Math.round(avgPeople),
-                peakPeople,
-                averageDensity: Math.round(avgDensity),
-                occurrences: slotLogs.length,
-                label: `${h}:00 - ${h + 2}:00`
-              });
-            }
-          }
-
-          summariesMap.set(camera.id, {
-            cameraId: camera.id,
-            placeName: camera.placeName,
-            totalVisits,
-            averagePeople: Math.round(averagePeople),
-            peakPeople,
-            peakTime: `${peakHour}:00`,
-            quietTime: `${quietHour}:00`,
-            busiestDay,
-            coordinates: {
-              lat: camera.latitude,
-              lng: camera.longitude
-            },
-            timeSlots
-          });
-        }
-      });
-
-      setSummaries(summariesMap);
-    };
-
-    generateLogs();
-  }, [cameras, dateRange]);
-
-  const filteredSummaries = selectedCamera 
-    ? Array.from(summaries.values()).filter(s => s.cameraId === selectedCamera)
-    : Array.from(summaries.values());
-
-  const totalLogs = logs.length;
-  const totalVisits = Array.from(summaries.values()).reduce((sum, s) => sum + s.totalVisits, 0);
-  const averagePeople = summaries.size > 0
-    ? Array.from(summaries.values()).reduce((sum, s) => sum + s.averagePeople, 0) / summaries.size
-    : 0;
+  const handleExport = () => {
+    const csv = exportCrowdLogsCsv(filteredLogs);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `crowd-logs-${dateRange}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
     return (
@@ -289,17 +84,36 @@ const CrowdLogs = () => {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Logs</h1>
-              <p className="text-gray-500 mt-1">Historical crowd data and time-based analysis</p>
+              <p className="text-gray-500 mt-1">Recorded crowd scans from live CCTV analytics</p>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => void rescan()} disabled={scanning}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${scanning ? 'animate-spin' : ''}`} />
+            {scanning ? 'Scanning…' : 'Scan now'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={filteredLogs.length === 0}>
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
         </div>
       </div>
+
+      <CctvStreamRelayBanner />
+
+      {configError && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="py-4 text-sm text-amber-900">{configError}</CardContent>
+        </Card>
+      )}
+
+      {lastScanAt && (
+        <p className="text-xs text-gray-500">
+          Last live scan: {lastScanAt.toLocaleTimeString()}
+          {scanning ? ' · scan in progress…' : ''}
+        </p>
+      )}
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -383,9 +197,14 @@ const CrowdLogs = () => {
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               >
                 <option value="all">All Cameras</option>
-                {cameras.map(camera => (
-                  <option key={camera.id} value={camera.id}>{camera.placeName}</option>
-                ))}
+                {cameras.map((camera) => {
+                  const key = camera.id ?? camera.placeName;
+                  return (
+                    <option key={key} value={key}>
+                      {camera.placeName}
+                    </option>
+                  );
+                })}
               </select>
             </div>
           </div>
@@ -400,7 +219,7 @@ const CrowdLogs = () => {
               <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 font-medium text-lg">No log data available</p>
               <p className="text-sm text-gray-400 mt-2">
-                Historical data will appear here once cameras start recording
+                Logs are created automatically each time live analytics scans a camera. Run a scan and check back shortly.
               </p>
             </div>
           </CardContent>
