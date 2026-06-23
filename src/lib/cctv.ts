@@ -305,7 +305,7 @@ export async function probeCctvNvr(rtspSource: string): Promise<CctvNvrHealth> {
     const response = await fetchWithTimeout(
       `${apiBase}/v1/cctv/nvr/health?${params.toString()}`,
       { method: 'GET' },
-      8000
+      30000
     );
     if (response.ok) {
       return (await response.json()) as CctvNvrHealth;

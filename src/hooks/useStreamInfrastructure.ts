@@ -55,7 +55,7 @@ export function useStreamInfrastructure(cameras: CCTV[]) {
       ? 'ready'
       : 'degraded';
 
-  const streamsEnabled = relay.online && nvr.online;
+  const streamsEnabled = relay.online;
 
   return { relay, nvr, checking, state, streamsEnabled, sampleRtsp };
 }

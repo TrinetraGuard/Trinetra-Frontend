@@ -48,14 +48,9 @@ export function CctvStreamRelayBanner({ relay, nvr, checking = false }: CctvStre
           <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
             <strong>
-              NVR unreachable{nvr.host ? ` at ${nvr.host}${nvr.port ? `:${nvr.port}` : ''}` : ''}.
+              Camera stream still connecting{nvr.host ? ` (${nvr.host}${nvr.port ? `:${nvr.port}` : ''})` : ''}.
             </strong>{' '}
-            Live video cannot load until the NVR responds on your network.
-            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
-              <li>Confirm the NVR is powered on and connected to the LAN.</li>
-              <li>Your Mac must be on the same network (currently 192.168.1.x).</li>
-              <li>Verify the NVR IP in CCTV Management matches the device (default 192.168.1.30).</li>
-            </ul>
+            Live feeds will still attempt to play. ffmpeg may need a few seconds to connect (same as ffplay).
             {nvr.message && (
               <p className="mt-2 text-xs text-gray-600">{nvr.message}</p>
             )}
