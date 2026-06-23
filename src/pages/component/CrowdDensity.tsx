@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { admin, densityStyles, type DensityLevel } from '@/lib/adminTheme';
 import { db } from '@/firebase/firebase';
 
 interface CCTV {
@@ -135,14 +136,13 @@ const CrowdDensity = () => {
     };
   }, [cameras, autoRefresh]);
 
-  const getDensityColor = (level: string) => {
-    switch (level) {
-      case 'low': return { bg: 'bg-green-600', text: 'text-green-700', border: 'border-green-300', light: 'bg-green-50' };
-      case 'medium': return { bg: 'bg-yellow-600', text: 'text-yellow-700', border: 'border-yellow-300', light: 'bg-yellow-50' };
-      case 'high': return { bg: 'bg-orange-600', text: 'text-orange-700', border: 'border-orange-300', light: 'bg-orange-50' };
-      case 'critical': return { bg: 'bg-red-600', text: 'text-red-700', border: 'border-red-300', light: 'bg-red-50' };
-      default: return { bg: 'bg-gray-600', text: 'text-gray-700', border: 'border-gray-300', light: 'bg-gray-50' };
-    }
+  const getDensityColor = (level: DensityLevel) => densityStyles(level);
+
+  const densityFilterActiveClass: Record<DensityLevel, string> = {
+    low: 'bg-gray-400 hover:bg-gray-500 text-white',
+    medium: 'bg-gray-600 hover:bg-gray-700 text-white',
+    high: 'bg-gray-800 hover:bg-gray-900 text-white',
+    critical: 'bg-black hover:bg-gray-900 text-white',
   };
 
   const getDensityLabel = (level: string) => {
@@ -181,8 +181,8 @@ const CrowdDensity = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-purple-600" />
+            <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+              <BarChart3 className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Density Analysis</h1>
@@ -195,7 +195,7 @@ const CrowdDensity = () => {
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={autoRefresh ? 'bg-green-50 border-green-200 text-green-700' : ''}
+            className={autoRefresh ? 'bg-gray-100 border-gray-300 text-gray-800' : ''}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
             {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
@@ -205,7 +205,7 @@ const CrowdDensity = () => {
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -213,14 +213,14 @@ const CrowdDensity = () => {
                 <p className="text-3xl font-bold text-gray-900">{totalPeople.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1">Across all locations</p>
               </div>
-              <div className="p-3 bg-blue-600 rounded-lg">
+              <div className={`p-3 rounded-lg ${admin.statIcon}`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-purple-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -228,14 +228,14 @@ const CrowdDensity = () => {
                 <p className="text-3xl font-bold text-gray-900">{Math.round(averageDensity)}%</p>
                 <p className="text-xs text-gray-500 mt-1">Overall capacity utilization</p>
               </div>
-              <div className="p-3 bg-purple-600 rounded-lg">
+              <div className="p-3 bg-gray-700 rounded-lg">
                 <Activity className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -243,14 +243,14 @@ const CrowdDensity = () => {
                 <p className="text-3xl font-bold text-gray-900">{highDensityAreas}</p>
                 <p className="text-xs text-gray-500 mt-1">Requiring attention</p>
               </div>
-              <div className="p-3 bg-orange-600 rounded-lg">
+              <div className="p-3 bg-gray-600 rounded-lg">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -258,7 +258,7 @@ const CrowdDensity = () => {
                 <p className="text-3xl font-bold text-gray-900">{criticalAreas}</p>
                 <p className="text-xs text-gray-500 mt-1">Immediate action needed</p>
               </div>
-              <div className="p-3 bg-red-600 rounded-lg">
+              <div className="p-3 bg-black rounded-lg">
                 <Zap className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -287,38 +287,17 @@ const CrowdDensity = () => {
                 >
                   All
                 </Button>
-                <Button
-                  variant={filterDensity === 'low' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterDensity('low')}
-                  className={filterDensity === 'low' ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
-                >
-                  Low
-                </Button>
-                <Button
-                  variant={filterDensity === 'medium' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterDensity('medium')}
-                  className={filterDensity === 'medium' ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : ''}
-                >
-                  Medium
-                </Button>
-                <Button
-                  variant={filterDensity === 'high' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterDensity('high')}
-                  className={filterDensity === 'high' ? 'bg-orange-600 hover:bg-orange-700 text-white' : ''}
-                >
-                  High
-                </Button>
-                <Button
-                  variant={filterDensity === 'critical' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFilterDensity('critical')}
-                  className={filterDensity === 'critical' ? 'bg-red-600 hover:bg-red-700 text-white' : ''}
-                >
-                  Critical
-                </Button>
+                {(['low', 'medium', 'high', 'critical'] as const).map((level) => (
+                  <Button
+                    key={level}
+                    variant={filterDensity === level ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterDensity(level)}
+                    className={filterDensity === level ? densityFilterActiveClass[level] : ''}
+                  >
+                    {level.charAt(0).toUpperCase() + level.slice(1)}
+                  </Button>
+                ))}
               </div>
             </div>
             <div className="flex items-center gap-3 ml-auto">
@@ -368,15 +347,7 @@ const CrowdDensity = () => {
             return (
               <Card 
                 key={data.cameraId} 
-                className={`hover:shadow-xl transition-all duration-300 ${
-                  data.densityLevel === 'critical' 
-                    ? 'border-red-300 bg-red-50/30' 
-                    : data.densityLevel === 'high'
-                    ? 'border-orange-300 bg-orange-50/30'
-                    : data.densityLevel === 'medium'
-                    ? 'border-yellow-300 bg-yellow-50/30'
-                    : 'border-green-300 bg-green-50/30'
-                }`}
+                className={`hover:shadow-xl transition-all duration-300 border ${getDensityColor(data.densityLevel).border} ${getDensityColor(data.densityLevel).light}`}
               >
                 <CardHeader className="pb-4">
                   <div className="flex items-start justify-between">
@@ -423,10 +394,10 @@ const CrowdDensity = () => {
                   </div>
 
                   {/* People Count */}
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-blue-600" />
+                        <Users className="w-5 h-5 text-gray-700" />
                         <div>
                           <p className="text-xs font-medium text-gray-600">People Count</p>
                           <p className="text-2xl font-bold text-gray-900">{data.peopleCount}</p>
@@ -460,43 +431,27 @@ const CrowdDensity = () => {
 
                   {/* Trend and Change */}
                   <div className="grid grid-cols-2 gap-4">
-                    <div className={`p-3 rounded-lg border ${
-                      data.trend === 'increasing' 
-                        ? 'bg-red-50 border-red-200' 
-                        : data.trend === 'decreasing'
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                       <div className="flex items-center gap-2 mb-1">
                         {data.trend === 'increasing' ? (
-                          <TrendingUp className="w-4 h-4 text-red-600" />
+                          <TrendingUp className="w-4 h-4 text-gray-800" />
                         ) : data.trend === 'decreasing' ? (
-                          <TrendingDown className="w-4 h-4 text-green-600" />
+                          <TrendingDown className="w-4 h-4 text-gray-600" />
                         ) : (
                           <Activity className="w-4 h-4 text-gray-600" />
                         )}
                         <p className="text-xs font-medium text-gray-600">Trend</p>
                       </div>
-                      <p className={`text-sm font-semibold capitalize ${
-                        data.trend === 'increasing' ? 'text-red-700' : data.trend === 'decreasing' ? 'text-green-700' : 'text-gray-700'
-                      }`}>
+                      <p className="text-sm font-semibold capitalize text-gray-900">
                         {data.trend}
                       </p>
                     </div>
-                    <div className={`p-3 rounded-lg border ${
-                      data.lastHourChange > 0 
-                        ? 'bg-red-50 border-red-200' 
-                        : data.lastHourChange < 0
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div className="p-3 rounded-lg border bg-gray-50 border-gray-200">
                       <div className="flex items-center gap-2 mb-1">
                         <Clock className="w-4 h-4 text-gray-600" />
                         <p className="text-xs font-medium text-gray-600">Last Hour</p>
                       </div>
-                      <p className={`text-sm font-semibold ${
-                        data.lastHourChange > 0 ? 'text-red-700' : data.lastHourChange < 0 ? 'text-green-700' : 'text-gray-700'
-                      }`}>
+                      <p className="text-sm font-semibold text-gray-900">
                         {data.lastHourChange > 0 ? '+' : ''}{data.lastHourChange}%
                       </p>
                     </div>
@@ -504,10 +459,10 @@ const CrowdDensity = () => {
 
                   {/* Capacity Warning */}
                   {data.densityPercentage >= 85 && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="p-3 bg-gray-200 border border-gray-400 rounded-lg">
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-600" />
-                        <p className="text-xs font-semibold text-red-700">
+                        <AlertTriangle className="w-4 h-4 text-gray-800" />
+                        <p className="text-xs font-semibold text-gray-900">
                           Capacity limit approaching! Consider crowd management measures.
                         </p>
                       </div>
@@ -518,7 +473,7 @@ const CrowdDensity = () => {
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-200">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${
-                        data.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                        data.status === 'active' ? 'bg-gray-800 animate-pulse' : 'bg-gray-400'
                       }`}></div>
                       <span>{data.status === 'active' ? 'Camera Online' : 'Camera Offline'}</span>
                     </div>

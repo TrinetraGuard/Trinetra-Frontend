@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { admin } from '@/lib/adminTheme';
 import { db } from '@/firebase/firebase';
 
 interface CCTV {
@@ -283,8 +284,8 @@ const CrowdLogs = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <FileText className="w-6 h-6 text-indigo-600" />
+            <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+              <FileText className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Logs</h1>
@@ -302,7 +303,7 @@ const CrowdLogs = () => {
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -310,14 +311,14 @@ const CrowdLogs = () => {
                 <p className="text-3xl font-bold text-gray-900">{totalLogs.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1">Historical records</p>
               </div>
-              <div className="p-3 bg-blue-600 rounded-lg">
+              <div className={`p-3 rounded-lg ${admin.statIcon}`}>
                 <FileText className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -325,14 +326,14 @@ const CrowdLogs = () => {
                 <p className="text-3xl font-bold text-gray-900">{totalVisits.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1">Across all locations</p>
               </div>
-              <div className="p-3 bg-green-600 rounded-lg">
+              <div className="p-3 bg-gray-700 rounded-lg">
                 <Users className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-purple-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -340,7 +341,7 @@ const CrowdLogs = () => {
                 <p className="text-3xl font-bold text-gray-900">{Math.round(averagePeople)}</p>
                 <p className="text-xs text-gray-500 mt-1">Per location</p>
               </div>
-              <div className="p-3 bg-purple-600 rounded-lg">
+              <div className="p-3 bg-gray-600 rounded-lg">
                 <BarChart3 className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -411,8 +412,8 @@ const CrowdLogs = () => {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3 flex-1">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <MapPin className="w-5 h-5 text-indigo-600" />
+                    <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+                      <MapPin className="w-5 h-5" />
                     </div>
                     <div>
                       <CardTitle className="text-xl">{summary.placeName}</CardTitle>
@@ -423,7 +424,7 @@ const CrowdLogs = () => {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">
+                  <Badge variant="outline" className={`${admin.badge}`}>
                     {summary.totalVisits} Records
                   </Badge>
                 </div>
@@ -432,20 +433,20 @@ const CrowdLogs = () => {
               <CardContent className="space-y-6">
                 {/* Key Metrics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-xs font-medium text-gray-600 mb-1">Average People</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.averagePeople}</p>
                   </div>
-                  <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
                     <p className="text-xs font-medium text-gray-600 mb-1">Peak People</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.peakPeople}</p>
                   </div>
-                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <p className="text-xs font-medium text-gray-600 mb-1">Peak Time</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.peakTime}</p>
                     <p className="text-xs text-gray-500 mt-1">Most crowded</p>
                   </div>
-                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="p-4 bg-white rounded-lg border border-gray-200">
                     <p className="text-xs font-medium text-gray-600 mb-1">Quiet Time</p>
                     <p className="text-2xl font-bold text-gray-900">{summary.quietTime}</p>
                     <p className="text-xs text-gray-500 mt-1">Least crowded</p>
@@ -453,9 +454,9 @@ const CrowdLogs = () => {
                 </div>
 
                 {/* Busiest Day */}
-                <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-indigo-600" />
+                    <Calendar className="w-4 h-4 text-gray-700" />
                     <p className="text-sm font-semibold text-gray-700">Busiest Day</p>
                   </div>
                   <p className="text-xl font-bold text-gray-900">{summary.busiestDay}</p>
@@ -484,7 +485,7 @@ const CrowdLogs = () => {
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                             <div
-                              className="bg-blue-600 h-2 rounded-full transition-all"
+                              className="bg-gray-800 h-2 rounded-full transition-all"
                               style={{ width: `${slot.averageDensity}%` }}
                             ></div>
                           </div>
@@ -506,7 +507,7 @@ const CrowdLogs = () => {
                       return (
                         <div key={slot.hour} className="flex-1 flex flex-col items-center">
                           <div
-                            className="w-full bg-gradient-to-t from-blue-600 to-blue-400 rounded-t transition-all hover:from-blue-700 hover:to-blue-500"
+                            className="w-full bg-gradient-to-t from-gray-900 to-gray-500 rounded-t transition-all hover:from-black hover:to-gray-600"
                             style={{ height: `${height}%` }}
                             title={`${slot.label}: ${slot.averagePeople} people`}
                           ></div>

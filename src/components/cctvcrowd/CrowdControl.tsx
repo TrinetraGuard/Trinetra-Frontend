@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 
+import { admin } from '@/lib/adminTheme';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CameraFeedCard } from '@/components/cctvcrowd/CameraFeedCard';
@@ -66,8 +67,8 @@ const CrowdControl = () => {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <div className="mb-2 flex items-center gap-3">
-            <div className="rounded-lg bg-blue-100 p-2">
-              <Monitor className="h-6 w-6 text-blue-600" />
+            <div className="rounded-lg bg-gray-100 p-2">
+              <Monitor className="h-6 w-6 text-gray-700" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Monitoring</h1>
@@ -79,13 +80,13 @@ const CrowdControl = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <Card className="border-green-200 bg-green-50">
+          <Card className={`${admin.statCard} shadow-sm`}>
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-gray-800" />
                 <div>
                   <p className="text-xs font-medium text-gray-600">Active Cameras</p>
-                  <p className="text-xl font-bold text-green-700">{activeCameras}</p>
+                  <p className="text-xl font-bold text-gray-900">{activeCameras}</p>
                 </div>
               </div>
             </CardContent>
@@ -105,8 +106,8 @@ const CrowdControl = () => {
       </div>
 
       {!isStreamProxyConfigured() && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          Configure <code className="rounded bg-blue-100 px-1">VITE_CCTV_PROXY_URL</code> (go2rtc or
+        <div className={admin.warning}>
+          Configure <code className="rounded bg-gray-200 px-1">VITE_CCTV_PROXY_URL</code> (go2rtc or
           MediaMTX) in production so RTSP cameras render as live video in this dashboard.
         </div>
       )}
@@ -138,7 +139,7 @@ const CrowdControl = () => {
                   variant={filterStatus === 'active' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setFilterStatus('active')}
-                  className={filterStatus === 'active' ? 'bg-green-600 text-white hover:bg-green-700' : ''}
+                  className={filterStatus === 'active' ? 'bg-gray-800 text-white hover:bg-gray-700' : ''}
                 >
                   <Wifi className="mr-1 h-3 w-3" />
                   Active ({activeCameras})
@@ -271,7 +272,7 @@ const CrowdControl = () => {
                   <Badge
                     className={`flex items-center gap-1.5 px-3 py-1.5 ${
                       selectedCamera.status === 'active'
-                        ? 'border-green-500 bg-green-600'
+                        ? 'border-gray-400 bg-gray-800'
                         : 'border-gray-500 bg-gray-600'
                     }`}
                   >

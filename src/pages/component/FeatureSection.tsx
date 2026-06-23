@@ -267,7 +267,7 @@ const FeatureSectionAdmin = () => {
   if (initialLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px] text-gray-600 gap-2">
-        <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
         Loading feature settings…
       </div>
     );
@@ -277,7 +277,7 @@ const FeatureSectionAdmin = () => {
     <div className="space-y-6 max-w-5xl mx-auto p-4 md:p-6 text-gray-900">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-          <span className="p-2 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 text-white shadow-md">
+          <span className="p-2 rounded-xl bg-gray-900 text-white">
             <ImageIcon className="h-6 w-6" />
           </span>
           Home feature carousel
@@ -290,11 +290,11 @@ const FeatureSectionAdmin = () => {
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <Badge variant="secondary" className="bg-orange-50 text-orange-900 border-orange-200">
+        <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">
           <code className="text-xs">feature/highlight</code> · {slides.length} slide{slides.length === 1 ? "" : "s"}
         </Badge>
         {saveSuccess && (
-          <Badge className="bg-emerald-600 hover:bg-emerald-600 gap-1">
+          <Badge className="bg-gray-100 text-gray-800 border border-gray-200 hover:bg-gray-100 gap-1">
             <CheckCircle2 className="h-3.5 w-3.5" />
             Saved — app updates live
           </Badge>
@@ -305,7 +305,7 @@ const FeatureSectionAdmin = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-orange-600" />
+              <MapPin className="h-5 w-5 text-gray-700" />
               Slides (place + image)
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -318,7 +318,7 @@ const FeatureSectionAdmin = () => {
               value={placeSearch}
               onChange={(e) => setPlaceSearch(e.target.value)}
               placeholder="Filter places by name…"
-              className="pl-9 h-10 border-orange-100"
+              className="pl-9 h-10 border-gray-200"
             />
           </div>
         </div>
@@ -326,8 +326,8 @@ const FeatureSectionAdmin = () => {
 
       <div className="space-y-4">
         {slides.map((slide, index) => (
-          <Card key={slide.clientId} className="border-orange-100 shadow-sm overflow-visible">
-            <CardHeader className="py-3 px-4 border-b bg-white flex flex-row items-center justify-between gap-2">
+          <Card key={slide.clientId} className="border border-gray-200 shadow-sm overflow-visible">
+            <CardHeader className="py-3 px-4 border-b bg-gray-50 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-base font-semibold text-gray-800">Slide {index + 1}</CardTitle>
               <div className="flex items-center gap-1 shrink-0">
                 <Button
@@ -356,7 +356,7 @@ const FeatureSectionAdmin = () => {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="h-8 w-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                   disabled={slides.length <= 1}
                   onClick={() => removeSlide(slide.clientId)}
                   title="Remove slide"
@@ -376,7 +376,7 @@ const FeatureSectionAdmin = () => {
                     value={slide.headline}
                     onChange={(e) => updateSlide(slide.clientId, { headline: e.target.value })}
                     placeholder="Title for this slide only"
-                    className="h-11 border-orange-100"
+                    className="h-11 border-gray-200"
                   />
                 </div>
                 <div className="space-y-2">
@@ -386,7 +386,7 @@ const FeatureSectionAdmin = () => {
                     value={slide.tagline}
                     onChange={(e) => updateSlide(slide.clientId, { tagline: e.target.value })}
                     placeholder="Short line under the headline"
-                    className="h-11 border-orange-100"
+                    className="h-11 border-gray-200"
                   />
                 </div>
               </div>
@@ -396,13 +396,13 @@ const FeatureSectionAdmin = () => {
                   value={slide.placeId || undefined}
                   onValueChange={(v) => updateSlide(slide.clientId, { placeId: v })}
                 >
-                  <SelectTrigger className="h-11 border-orange-200 bg-white">
+                  <SelectTrigger className="h-11 border-gray-200 bg-white">
                     <SelectValue placeholder="Choose place for this slide…" />
                   </SelectTrigger>
                   <SelectContent
                     position="popper"
                     sideOffset={8}
-                    className="max-h-72 w-[var(--radix-select-trigger-width)] border-orange-100"
+                    className="max-h-72 w-[var(--radix-select-trigger-width)] border-gray-200"
                   >
                     {filteredPlaces.length === 0 ? (
                       <div className="py-6 px-3 text-sm text-gray-500 text-center">No places match filter.</div>
@@ -424,7 +424,7 @@ const FeatureSectionAdmin = () => {
                         ·{" "}
                         <button
                           type="button"
-                          className="text-orange-700 font-medium underline-offset-2 hover:underline"
+                          className="text-gray-700 font-medium underline-offset-2 hover:underline"
                           onClick={() => applyFirstPhoto(slide.clientId, slide.placeId)}
                         >
                           Use first place photo as URL
@@ -440,7 +440,7 @@ const FeatureSectionAdmin = () => {
                   value={slide.imageUrl}
                   onChange={(e) => updateSlide(slide.clientId, { imageUrl: e.target.value })}
                   placeholder="https://… (direct image link)"
-                  className="min-h-[72px] font-mono text-sm border-orange-100"
+                  className="min-h-[72px] font-mono text-sm border-gray-200"
                 />
               </div>
             </CardContent>
@@ -451,15 +451,15 @@ const FeatureSectionAdmin = () => {
       <Button
         type="button"
         variant="outline"
-        className="w-full sm:w-auto border-orange-300 border-dashed text-orange-900"
+        className="w-full sm:w-auto border-gray-300 border-dashed text-gray-900"
         onClick={addSlide}
       >
         <Plus className="h-4 w-4 mr-2" />
         Add another slide
       </Button>
 
-      <Card className="border-dashed border-orange-200 bg-orange-50/30">
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <Card className="border border-gray-200 border-dashed bg-gray-50/50">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b bg-gray-50">
           <div>
             <CardTitle className="text-base text-gray-800">Preview</CardTitle>
             <CardDescription>Pick which slide to preview (same order as in the app).</CardDescription>
@@ -471,7 +471,6 @@ const FeatureSectionAdmin = () => {
                 type="button"
                 size="sm"
                 variant={previewSlideIndex === i ? "default" : "outline"}
-                className={previewSlideIndex === i ? "bg-orange-600 hover:bg-orange-700" : ""}
                 onClick={() => {
                   setPreviewSlideIndex(i);
                   setPreviewImageError(false);
@@ -483,7 +482,7 @@ const FeatureSectionAdmin = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative rounded-2xl overflow-hidden border border-orange-100 shadow-inner bg-gray-900 aspect-[16/10] max-h-72">
+          <div className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-inner bg-gray-900 aspect-[16/10] max-h-72">
             {previewSlide?.imageUrl?.trim() && !previewImageError ? (
               <img
                 src={previewSlide.imageUrl.trim()}
@@ -526,7 +525,7 @@ const FeatureSectionAdmin = () => {
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="h-12 min-w-[180px] bg-orange-600 hover:bg-orange-700"
+          className="h-12 min-w-[180px]"
         >
           {isSaving ? (
             <>

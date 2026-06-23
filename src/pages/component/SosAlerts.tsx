@@ -61,14 +61,14 @@ const createSOSIcon = () => {
   });
 };
 
-// Custom blue marker for volunteers
+// Custom gray marker for volunteers
 const createVolunteerIcon = () => {
   return L.divIcon({
     className: 'volunteer-marker',
     html: `<div style="
       width: 35px;
       height: 35px;
-      background: #3b82f6;
+      background: #374151;
       border: 3px solid white;
       border-radius: 50%;
       display: flex;
@@ -366,28 +366,28 @@ const SosAlerts: React.FC = () => {
           <p className="text-gray-500 mt-1">Monitor and manage emergency alerts in real-time</p>
         </div>
         <div className="flex items-center gap-3">
-          <Card className="border-red-200 bg-gradient-to-br from-red-50 to-red-100/50 shadow-sm">
+          <Card className="border border-gray-200 bg-white shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500 rounded-lg">
+                <div className="p-2 bg-gray-900 rounded-lg">
                   <AlertCircle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-red-600 uppercase tracking-wide">Active Alerts</p>
-                  <p className="text-2xl font-bold text-red-700">{activeAlerts.length}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Alerts</p>
+                  <p className="text-2xl font-bold text-gray-900">{activeAlerts.length}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-green-200 bg-gradient-to-br from-green-50 to-green-100/50 shadow-sm">
+          <Card className="border border-gray-200 bg-white shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 rounded-lg">
+                <div className="p-2 bg-gray-600 rounded-lg">
                   <CheckCircle2 className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-green-600 uppercase tracking-wide">Resolved</p>
-                  <p className="text-2xl font-bold text-green-700">{resolvedAlerts.length}</p>
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Resolved</p>
+                  <p className="text-2xl font-bold text-gray-900">{resolvedAlerts.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -399,11 +399,11 @@ const SosAlerts: React.FC = () => {
         {/* Alerts List */}
         <div className="lg:col-span-1">
           <Card className="shadow-lg border-gray-200">
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100/50 border-b">
+            <CardHeader className="bg-gray-50 border-b">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <CardTitle className="text-xl flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <AlertCircle className="w-5 h-5 text-gray-700" />
                     Emergency Alerts
                   </CardTitle>
                   <CardDescription className="mt-1">
@@ -415,7 +415,7 @@ const SosAlerts: React.FC = () => {
                     variant={filter === 'active' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('active')}
-                    className={filter === 'active' ? 'bg-red-600 hover:bg-red-700 text-white shadow-md' : 'border-gray-300'}
+                    className={filter === 'active' ? 'bg-gray-900 hover:bg-gray-800 text-white shadow-md' : 'border-gray-300'}
                   >
                     Active
                   </Button>
@@ -423,7 +423,7 @@ const SosAlerts: React.FC = () => {
                     variant={filter === 'resolved' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setFilter('resolved')}
-                    className={filter === 'resolved' ? 'bg-green-600 hover:bg-green-700 text-white shadow-md' : 'border-gray-300'}
+                    className={filter === 'resolved' ? 'bg-gray-600 hover:bg-gray-700 text-white shadow-md' : 'border-gray-300'}
                   >
                     Resolved
                   </Button>
@@ -460,7 +460,7 @@ const SosAlerts: React.FC = () => {
                           key={alert.id}
                           className={`p-4 cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? 'bg-gradient-to-r from-orange-50 to-orange-100/50 border-l-4 border-orange-500 shadow-sm'
+                              ? 'bg-gray-100 border-l-4 border-gray-900 shadow-sm'
                               : 'hover:bg-gray-50'
                           } ${isNew ? 'animate-pulse bg-red-50 border-l-4 border-red-500' : ''}`}
                           onClick={() => handleAlertSelect(alert)}
@@ -476,7 +476,7 @@ const SosAlerts: React.FC = () => {
                                 )}
                                 <Badge
                                   variant={alert.status === 'active' ? 'destructive' : 'default'}
-                                  className={`${alert.status === 'active' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold shadow-sm`}
+                                  className={`${alert.status === 'active' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-600 hover:bg-gray-700'} text-white font-semibold shadow-sm`}
                                 >
                                   {alert.status === 'active' ? 'ACTIVE' : 'RESOLVED'}
                                 </Badge>
@@ -507,7 +507,7 @@ const SosAlerts: React.FC = () => {
                                   e.stopPropagation();
                                   handleResolveAlert(alert.id);
                                 }}
-                                className="flex-shrink-0 border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 shadow-sm"
+                                className="flex-shrink-0 border-gray-600 text-gray-700 hover:bg-gray-50 hover:border-gray-800 shadow-sm"
                               >
                                 <CheckCircle2 className="w-4 h-4 mr-1" />
                                 Resolve
@@ -530,10 +530,10 @@ const SosAlerts: React.FC = () => {
             <>
               {/* Alert Details Card */}
               <Card className="shadow-lg border-gray-200">
-                <CardHeader className="bg-gradient-to-r from-red-50 to-orange-50/50 border-b">
+                <CardHeader className="bg-gray-50 border-b">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
+                      <div className="p-3 bg-gray-900 rounded-xl shadow-lg">
                         <User className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -547,7 +547,7 @@ const SosAlerts: React.FC = () => {
                         className={`text-sm px-4 py-2 font-bold shadow-md ${
                           selectedAlert.status === 'active' 
                             ? 'bg-red-600 hover:bg-red-700 text-white' 
-                            : 'bg-green-600 hover:bg-green-700 text-white'
+                            : 'bg-gray-600 hover:bg-gray-700 text-white'
                         }`}
                       >
                         {selectedAlert.status === 'active' ? (
@@ -565,7 +565,7 @@ const SosAlerts: React.FC = () => {
                       {selectedAlert.status === 'active' && (
                         <Button
                           onClick={() => handleResolveAlert(selectedAlert.id)}
-                          className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md font-semibold"
+                          className="bg-gray-900 hover:bg-gray-800 text-white shadow-md font-semibold"
                         >
                           <CheckCircle2 className="w-4 h-4 mr-2" />
                           Mark Resolved
@@ -578,18 +578,18 @@ const SosAlerts: React.FC = () => {
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <Phone className="w-5 h-5 text-blue-600" />
+                      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <Phone className="w-5 h-5 text-gray-700" />
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Phone Number</p>
                           <p className="text-base font-bold text-gray-900">{selectedAlert.userPhone}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
-                        <div className="p-2 bg-purple-100 rounded-lg">
-                          <Mail className="w-5 h-5 text-purple-600" />
+                      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <Mail className="w-5 h-5 text-gray-700" />
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Email</p>
@@ -598,9 +598,9 @@ const SosAlerts: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl border border-orange-200 hover:shadow-md transition-shadow">
-                        <div className="p-2 bg-orange-100 rounded-lg">
-                          <Clock className="w-5 h-5 text-orange-600" />
+                      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <Clock className="w-5 h-5 text-gray-700" />
                         </div>
                         <div className="flex-1">
                           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Alert Activated</p>
@@ -613,9 +613,9 @@ const SosAlerts: React.FC = () => {
                         </div>
                       </div>
                       {selectedAlert.resolvedAt && (
-                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl border border-green-200 hover:shadow-md transition-shadow">
-                          <div className="p-2 bg-green-100 rounded-lg">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <CheckCircle2 className="w-5 h-5 text-gray-700" />
                           </div>
                           <div className="flex-1">
                             <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Resolved At</p>
@@ -626,9 +626,9 @@ const SosAlerts: React.FC = () => {
                         </div>
                       )}
                       {selectedAlert.status === 'active' && selectedAlert.lastLocationUpdate && (
-                        <div className="flex items-center gap-4 p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200 hover:shadow-md transition-shadow">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Navigation2 className="w-5 h-5 text-blue-600" />
+                        <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
+                          <div className="p-2 bg-gray-100 rounded-lg">
+                            <Navigation2 className="w-5 h-5 text-gray-700" />
                           </div>
                           <div className="flex-1">
                             <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Last Location Update</p>
@@ -646,10 +646,10 @@ const SosAlerts: React.FC = () => {
               {/* Nearby Volunteers Card */}
               {selectedAlert.status === 'active' && selectedAlert.latitude && selectedAlert.longitude && (
                 <Card className="shadow-lg border-gray-200">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b">
+                  <CardHeader className="bg-gray-50 border-b">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
+                        <div className="p-3 bg-gray-900 rounded-xl shadow-lg">
                           <Users className="w-6 h-6 text-white" />
                         </div>
                         <div>
@@ -681,13 +681,13 @@ const SosAlerts: React.FC = () => {
                               key={volunteer.uid}
                               className={`flex items-center justify-between p-4 border-2 rounded-xl transition-all hover:shadow-md ${
                                 hasAccess 
-                                  ? 'bg-gradient-to-r from-green-50 to-green-100/50 border-green-200' 
+                                  ? 'bg-gray-100 border-gray-400' 
                                   : 'bg-white border-gray-200 hover:border-gray-300'
                               }`}
                             >
                               <div className="flex items-center gap-4 flex-1">
                                 <div className={`flex items-center justify-center w-12 h-12 rounded-full font-bold text-white shadow-md ${
-                                  hasAccess ? 'bg-green-600' : 'bg-blue-600'
+                                  hasAccess ? 'bg-gray-800' : 'bg-gray-600'
                                 }`}>
                                   <span className="text-lg">{index + 1}</span>
                                 </div>
@@ -703,7 +703,7 @@ const SosAlerts: React.FC = () => {
                                     </span>
                                   </div>
                                   {hasAccess && (
-                                    <Badge className="bg-green-600 hover:bg-green-700 text-white mt-2 shadow-sm">
+                                    <Badge className="bg-gray-800 hover:bg-gray-900 text-white mt-2 shadow-sm">
                                       <Eye className="w-3 h-3 mr-1" />
                                       Has Access
                                     </Badge>
@@ -716,7 +716,7 @@ const SosAlerts: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleRevokeAccess(selectedAlert.id, volunteer.uid)}
-                                    className="border-red-600 text-red-600 hover:bg-red-50 hover:border-red-700 shadow-sm font-semibold"
+                                    className="border-gray-600 text-gray-700 hover:bg-gray-50 hover:border-gray-800 shadow-sm font-semibold"
                                   >
                                     <EyeOff className="w-4 h-4 mr-1" />
                                     Revoke
@@ -726,7 +726,7 @@ const SosAlerts: React.FC = () => {
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleGrantAccess(selectedAlert.id, volunteer.uid)}
-                                    className="border-green-600 text-green-600 hover:bg-green-50 hover:border-green-700 shadow-sm font-semibold"
+                                    className="border-gray-900 text-gray-900 hover:bg-gray-50 hover:border-black shadow-sm font-semibold"
                                   >
                                     <Eye className="w-4 h-4 mr-1" />
                                     Grant Access
@@ -744,9 +744,9 @@ const SosAlerts: React.FC = () => {
 
               {/* Map Card */}
               <Card className="overflow-hidden shadow-lg border-gray-200">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50/50 border-b">
+                <CardHeader className="bg-gray-50 border-b">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
+                    <div className="p-3 bg-gray-900 rounded-xl shadow-lg">
                       <MapPin className="w-6 h-6 text-white" />
                     </div>
                     <div>
@@ -814,7 +814,7 @@ const SosAlerts: React.FC = () => {
                                     <p className="text-xs text-gray-500">
                                       <strong>Distance:</strong> {volunteer.distance.toFixed(2)} km
                                     </p>
-                                    <Badge className="bg-green-600 mt-2">
+                                    <Badge className="bg-gray-800 mt-2">
                                       <Eye className="w-3 h-3 mr-1" />
                                       Has Access
                                     </Badge>

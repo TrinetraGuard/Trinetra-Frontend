@@ -313,10 +313,10 @@ RULES:
 
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg border-2 border-orange-100">
-        <CardHeader className="bg-gradient-to-r from-orange-50 to-amber-50/50 border-b">
+      <Card className="border border-gray-200">
+        <CardHeader className="border-b bg-gray-50">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-500 text-white">
+            <div className="p-2 rounded-lg bg-gray-900 text-white">
               <Sparkles className="h-6 w-6" />
             </div>
             <div>
@@ -339,7 +339,6 @@ RULES:
                   type="button"
                   size="sm"
                   variant={selectedCategories.includes(cat) ? "default" : "outline"}
-                  className={selectedCategories.includes(cat) ? "bg-orange-600 hover:bg-orange-700" : ""}
                   onClick={() => toggleCategory(cat)}
                 >
                   {cat}
@@ -395,7 +394,6 @@ RULES:
           <Button
             onClick={generateWithAI}
             disabled={isGenerating || selectedCategories.length === 0 || !selectedPlaceType}
-            className="bg-orange-600 hover:bg-orange-700"
           >
             {isGenerating ? (
               <>
@@ -414,8 +412,8 @@ RULES:
 
       {/* Generated list */}
       {generatedPlaces.length > 0 && (
-        <Card className="shadow-lg">
-          <CardHeader className="border-b">
+        <Card className="border border-gray-200">
+          <CardHeader className="border-b bg-gray-50">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -439,7 +437,6 @@ RULES:
                 <Button
                   onClick={addSelectedToFirestore}
                   disabled={isAdding || selectedIds.size === 0}
-                  className="bg-green-600 hover:bg-green-700"
                 >
                   {isAdding ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -498,13 +495,13 @@ RULES:
       )}
 
       {addResult && (
-        <Card className="shadow border-green-200 bg-green-50/50">
+        <Card className="border border-gray-200 bg-gray-50">
           <CardContent className="pt-6">
-            <p className="font-medium text-green-800">
+            <p className="font-medium text-gray-900">
               Added {addResult.added} place(s) successfully.
             </p>
             {addResult.failed.length > 0 && (
-              <p className="text-sm text-amber-800 mt-1">
+              <p className="text-sm text-red-800 mt-1">
                 Failed: {addResult.failed.join(", ")}
               </p>
             )}

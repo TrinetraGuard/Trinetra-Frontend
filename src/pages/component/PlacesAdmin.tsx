@@ -228,8 +228,8 @@ const PlacesAdmin = () => {
   return (
     <div className="space-y-6">
       {/* Form */}
-      <Card className="shadow-lg">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="border-b bg-gray-50">
           <CardTitle>Add / Update Place</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -261,11 +261,6 @@ const PlacesAdmin = () => {
                   type="button"
                   size="sm"
                   variant={categories.includes(cat) ? "default" : "outline"}
-                  className={
-                    categories.includes(cat)
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : ""
-                  }
                   onClick={() => toggleCategory(cat)}
                 >
                   {cat}
@@ -332,7 +327,7 @@ const PlacesAdmin = () => {
                 {urls.map((u, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 bg-gray-100 dark:bg-gray-400 rounded px-3 py-1.5 border"
+                    className="flex items-center gap-2 bg-gray-100 rounded px-3 py-1.5 border"
                   >
                     <span className="text-xs max-w-[200px] truncate">{u}</span>
                     <Button
@@ -385,11 +380,6 @@ const PlacesAdmin = () => {
                   type="button"
                   size="sm"
                   variant={crowd === level ? "default" : "outline"}
-                  className={
-                    crowd === level
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : ""
-                  }
                   onClick={() => setCrowd(level)}
                 >
                   {level}
@@ -411,11 +401,6 @@ const PlacesAdmin = () => {
                   type="button"
                   size="sm"
                   variant={entryType.includes(type) ? "default" : "outline"}
-                  className={
-                    entryType.includes(type)
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : ""
-                  }
                   onClick={() => toggleEntryType(type)}
                 >
                   {type}
@@ -487,11 +472,6 @@ const PlacesAdmin = () => {
                     variant={
                       transportModes.some((t) => t.mode === mode) ? "default" : "outline"
                     }
-                    className={
-                      transportModes.some((t) => t.mode === mode)
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : ""
-                    }
                     onClick={() => toggleTransportMode(mode)}
                   >
                     {mode}
@@ -501,7 +481,7 @@ const PlacesAdmin = () => {
 
               {/* Transport Pricing Inputs */}
               {transportModes.length > 0 && (
-                <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-400 rounded-lg border">
+                <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
                   <p className="text-sm font-medium">Pricing Range (INR)</p>
                   {transportModes.map((transport) => (
                     <div key={transport.mode} className="space-y-2">
@@ -559,11 +539,6 @@ const PlacesAdmin = () => {
                     variant={
                       facilities.some((f) => f.name === facility) ? "default" : "outline"
                     }
-                    className={
-                      facilities.some((f) => f.name === facility)
-                        ? "bg-primary text-primary-foreground shadow-md"
-                        : ""
-                    }
                     onClick={() => toggleFacility(facility)}
                   >
                     {facility}
@@ -573,7 +548,7 @@ const PlacesAdmin = () => {
 
               {/* Facility Pricing Inputs */}
               {facilities.length > 0 && (
-                <div className="space-y-3 p-4 bg-gray-50 dark:bg-gray-400 rounded-lg border">
+                <div className="space-y-3 p-4 bg-gray-50 rounded-lg border">
                   <p className="text-sm font-medium">Pricing Range & Estimated Price (INR)</p>
                   {facilities.map((facility) => (
                     <div key={facility.name} className="space-y-2">
@@ -637,8 +612,8 @@ const PlacesAdmin = () => {
       </Card>
 
       {/* List */}
-      <Card className="shadow-lg">
-        <CardHeader className="flex flex-row items-center justify-between gap-4">
+      <Card className="border border-gray-200 shadow-sm">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b bg-gray-50">
           <CardTitle>All Places</CardTitle>
           <div className="flex items-center gap-2">
             <Button
@@ -646,7 +621,6 @@ const PlacesAdmin = () => {
               variant={showOnlyComplete ? "default" : "outline"}
               size="sm"
               onClick={() => setShowOnlyComplete(!showOnlyComplete)}
-              className={showOnlyComplete ? "bg-green-600 hover:bg-green-700" : ""}
             >
               <Filter className="h-4 w-4 mr-1.5" />
               {showOnlyComplete ? "Showing 100% complete only" : "Show 100% complete only"}
@@ -670,7 +644,7 @@ const PlacesAdmin = () => {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0">
                     {isComplete ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800" title="Information filled 100%">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-800 text-white" title="Information filled 100%">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         100%
                       </span>
@@ -711,7 +685,7 @@ const PlacesAdmin = () => {
                     </p>
                   )}
                   {place.facilities && place.facilities.length > 0 && (
-                    <p className="text-xs text-blue-500 mt-1">
+                    <p className="text-xs text-gray-500 mt-1">
                       Facilities:{" "}
                       {place.facilities
                         .map((f) => {

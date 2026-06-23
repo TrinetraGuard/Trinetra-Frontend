@@ -57,7 +57,7 @@ export default function HeritageNarrativesAddPage() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-gradient-to-br from-indigo-600 to-orange-500 text-white">
+            <span className="p-2 rounded-xl bg-gray-900 text-white">
               <BookOpen className="h-6 w-6" />
             </span>
             Add heritage narrative
@@ -68,7 +68,7 @@ export default function HeritageNarrativesAddPage() {
             <strong>Update heritage narratives</strong>.
           </p>
         </div>
-        <Button asChild variant="outline" className="shrink-0 border-indigo-200 text-indigo-900 w-full sm:w-auto">
+        <Button asChild variant="outline" className="shrink-0 w-full sm:w-auto">
           <Link to="/dashboard/heritage-narratives/manage">
             <LayoutList className="h-4 w-4 mr-2" />
             View all saved narratives
@@ -76,12 +76,12 @@ export default function HeritageNarrativesAddPage() {
         </Button>
       </div>
 
-      <Card className="border-indigo-100 shadow-md overflow-visible">
-        <CardHeader className="border-b bg-gradient-to-r from-indigo-50/80 to-orange-50/50">
+      <Card className="border border-gray-200 shadow-sm overflow-visible">
+        <CardHeader className="border-b bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
                   <MapPin className="h-4 w-4" />
                 </span>
                 Select place
@@ -93,7 +93,7 @@ export default function HeritageNarrativesAddPage() {
               </CardDescription>
             </div>
             {!loadingPlaces && places.length > 0 && (
-              <span className="text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-3 py-1 shrink-0">
+              <span className="text-xs font-medium text-gray-700 bg-gray-100 border border-gray-200 rounded-full px-3 py-1 shrink-0">
                 {places.length} place{places.length === 1 ? "" : "s"} total
               </span>
             )}
@@ -106,7 +106,7 @@ export default function HeritageNarrativesAddPage() {
               Loading places…
             </div>
           ) : places.length === 0 ? (
-            <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-6 text-center text-sm text-amber-900">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-800">
               No places found in Firestore. Add places under <strong>Add Places</strong> first.
             </div>
           ) : (
@@ -116,7 +116,7 @@ export default function HeritageNarrativesAddPage() {
                   type="button"
                   size="sm"
                   variant={placeListMode === "all" ? "default" : "outline"}
-                  className={placeListMode === "all" ? "bg-indigo-600 hover:bg-indigo-700" : "border-indigo-100"}
+                  className={placeListMode === "all" ? "bg-gray-900 hover:bg-gray-800 text-white" : ""}
                   onClick={() => setPlaceListMode("all")}
                 >
                   All places
@@ -126,7 +126,7 @@ export default function HeritageNarrativesAddPage() {
                   size="sm"
                   variant={placeListMode === "no_narrative" ? "default" : "outline"}
                   className={
-                    placeListMode === "no_narrative" ? "bg-indigo-600 hover:bg-indigo-700" : "border-indigo-100"
+                    placeListMode === "no_narrative" ? "bg-gray-900 hover:bg-gray-800 text-white" : ""
                   }
                   onClick={() => setPlaceListMode("no_narrative")}
                 >
@@ -145,7 +145,7 @@ export default function HeritageNarrativesAddPage() {
                     value={placeSearch}
                     onChange={(e) => setPlaceSearch(e.target.value)}
                     placeholder="Type to filter by name…"
-                    className="h-11 pl-9 bg-white border-indigo-100 focus-visible:ring-indigo-500"
+                    className="h-11 pl-9 bg-white"
                   />
                 </div>
                 {placeSearch.trim() && (
@@ -166,10 +166,10 @@ export default function HeritageNarrativesAddPage() {
                 >
                   <SelectTrigger
                     id="place-select-trigger"
-                    className="h-11 w-full bg-white border-2 border-indigo-100 shadow-sm hover:border-indigo-200 focus:ring-2 focus:ring-indigo-500/20 data-[placeholder]:text-gray-400"
+                    className="h-11 w-full bg-white border-2 border-gray-200 shadow-sm hover:border-gray-300 focus:ring-2 focus:ring-gray-400/20 data-[placeholder]:text-gray-400"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
-                      <MapPin className="h-4 w-4 shrink-0 text-indigo-500" />
+                      <MapPin className="h-4 w-4 shrink-0 text-gray-500" />
                       <SelectValue placeholder="Choose a place to attach this narrative…" />
                     </div>
                   </SelectTrigger>
@@ -177,7 +177,7 @@ export default function HeritageNarrativesAddPage() {
                     position="popper"
                     sideOffset={8}
                     align="start"
-                    className="w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[min(100vw-2rem,32rem)] border-indigo-100 shadow-xl"
+                    className="w-[var(--radix-select-trigger-width)] min-w-[var(--radix-select-trigger-width)] max-w-[min(100vw-2rem,32rem)] border-gray-200 shadow-xl"
                   >
                     {filteredPlaces.length === 0 ? (
                       <div className="py-8 px-4 text-center text-sm text-gray-500">
@@ -190,7 +190,7 @@ export default function HeritageNarrativesAddPage() {
                         <SelectItem
                           key={p.id}
                           value={p.id}
-                          className="cursor-pointer py-2.5 pl-3 pr-8 focus:bg-indigo-50 focus:text-indigo-900"
+                          className="cursor-pointer py-2.5 pl-3 pr-8 focus:bg-gray-100 focus:text-gray-900"
                         >
                           <span className="line-clamp-2">{p.name}</span>
                         </SelectItem>
@@ -224,18 +224,18 @@ export default function HeritageNarrativesAddPage() {
       )}
 
       {!selectedPlaceId && !loadingPlaces && places.length > 0 && (
-        <Card className="border-dashed border-indigo-200 bg-indigo-50/30">
+        <Card className="border-dashed border-gray-200 bg-gray-50">
           <CardContent className="py-8 text-center text-sm text-gray-600">
             Select a place above to show the editor and preview.
           </CardContent>
         </Card>
       )}
 
-      <Card className="bg-slate-50 border-dashed">
+      <Card className="border border-gray-200 border-dashed bg-gray-50">
         <CardContent className="py-4 text-sm text-gray-600">
           <strong>Firestore:</strong> collection <code className="bg-white px-1 rounded">place_stories</code>,
           document ID = place ID. After saving, you can review and edit again from{" "}
-          <Link to="/dashboard/heritage-narratives/manage" className="text-indigo-700 font-medium underline-offset-2 hover:underline">
+          <Link to="/dashboard/heritage-narratives/manage" className="text-gray-900 font-medium underline-offset-2 hover:underline">
             Update heritage narratives
           </Link>
           .

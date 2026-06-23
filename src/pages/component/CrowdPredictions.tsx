@@ -18,6 +18,7 @@ import { useEffect, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { admin, densityStyles, type DensityLevel } from '@/lib/adminTheme';
 import { db } from '@/firebase/firebase';
 
 interface CCTV {
@@ -192,14 +193,12 @@ const CrowdPredictions = () => {
     };
   }, [cameras, predictionTimeframe, autoRefresh]);
 
-  const getDensityColor = (level: string) => {
-    switch (level) {
-      case 'low': return { bg: 'bg-green-600', text: 'text-green-700', border: 'border-green-300', light: 'bg-green-50' };
-      case 'medium': return { bg: 'bg-yellow-600', text: 'text-yellow-700', border: 'border-yellow-300', light: 'bg-yellow-50' };
-      case 'high': return { bg: 'bg-orange-600', text: 'text-orange-700', border: 'border-orange-300', light: 'bg-orange-50' };
-      case 'critical': return { bg: 'bg-red-600', text: 'text-red-700', border: 'border-red-300', light: 'bg-red-50' };
-      default: return { bg: 'bg-gray-600', text: 'text-gray-700', border: 'border-gray-300', light: 'bg-gray-50' };
-    }
+  const getDensityColor = (level: DensityLevel) => densityStyles(level);
+
+  const riskStyles: Record<'low' | 'medium' | 'high', { bg: string; text: string; border: string }> = {
+    low: { bg: 'bg-gray-50', text: 'text-gray-600', border: 'border-gray-300' },
+    medium: { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-400' },
+    high: { bg: 'bg-gray-200', text: 'text-gray-900', border: 'border-gray-500' },
   };
 
   const allPredictions = Array.from(predictions.values()).flat();
@@ -227,8 +226,8 @@ const CrowdPredictions = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-pink-100 rounded-lg">
-              <Brain className="w-6 h-6 text-pink-600" />
+            <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+              <Brain className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Crowd Predictions</h1>
@@ -241,7 +240,7 @@ const CrowdPredictions = () => {
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={autoRefresh ? 'bg-green-50 border-green-200 text-green-700' : ''}
+            className={autoRefresh ? 'bg-gray-100 border-gray-300 text-gray-800' : ''}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
             {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
@@ -251,7 +250,7 @@ const CrowdPredictions = () => {
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -259,14 +258,14 @@ const CrowdPredictions = () => {
                 <p className="text-3xl font-bold text-gray-900">{Math.round(averagePredictedPeople)}</p>
                 <p className="text-xs text-gray-500 mt-1">Across all locations</p>
               </div>
-              <div className="p-3 bg-blue-600 rounded-lg">
+              <div className={`p-3 rounded-lg ${admin.statIcon}`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -274,14 +273,14 @@ const CrowdPredictions = () => {
                 <p className="text-3xl font-bold text-gray-900">{highRiskPredictions.length}</p>
                 <p className="text-xs text-gray-500 mt-1">Requiring attention</p>
               </div>
-              <div className="p-3 bg-orange-600 rounded-lg">
+              <div className="p-3 bg-gray-700 rounded-lg">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -289,14 +288,14 @@ const CrowdPredictions = () => {
                 <p className="text-3xl font-bold text-gray-900">{criticalPredictions.length}</p>
                 <p className="text-xs text-gray-500 mt-1">Immediate action needed</p>
               </div>
-              <div className="p-3 bg-red-600 rounded-lg">
+              <div className="p-3 bg-black rounded-lg">
                 <Zap className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-purple-200 bg-purple-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -308,7 +307,7 @@ const CrowdPredictions = () => {
                 </p>
                 <p className="text-xs text-gray-500 mt-1">Average confidence</p>
               </div>
-              <div className="p-3 bg-purple-600 rounded-lg">
+              <div className="p-3 bg-gray-600 rounded-lg">
                 <Brain className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -385,8 +384,8 @@ const CrowdPredictions = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="p-2 bg-pink-100 rounded-lg">
-                        <MapPin className="w-5 h-5 text-pink-600" />
+                      <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+                        <MapPin className="w-5 h-5" />
                       </div>
                       <div>
                         <CardTitle className="text-xl">{camera.placeName}</CardTitle>
@@ -397,7 +396,7 @@ const CrowdPredictions = () => {
                         </CardDescription>
                       </div>
                     </div>
-                    <Badge variant="outline" className="bg-pink-50 text-pink-700 border-pink-200">
+                    <Badge variant="outline" className={`${admin.badge}`}>
                       {cameraPredictions.length} Predictions
                     </Badge>
                   </div>
@@ -412,13 +411,7 @@ const CrowdPredictions = () => {
                       return (
                         <Card 
                           key={index} 
-                          className={`border-2 ${
-                            prediction.densityLevel === 'critical' 
-                              ? 'border-red-300 bg-red-50/30' 
-                              : prediction.densityLevel === 'high'
-                              ? 'border-orange-300 bg-orange-50/30'
-                              : 'border-gray-200'
-                          }`}
+                          className={`border-2 ${getDensityColor(prediction.densityLevel).border} ${getDensityColor(prediction.densityLevel).light}`}
                         >
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
@@ -441,15 +434,13 @@ const CrowdPredictions = () => {
                               <p className="text-2xl font-bold text-gray-900">{prediction.predictedPeople}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 {prediction.trend === 'increasing' ? (
-                                  <TrendingUp className="w-3 h-3 text-red-600" />
+                                  <TrendingUp className="w-3 h-3 text-gray-800" />
                                 ) : prediction.trend === 'decreasing' ? (
-                                  <TrendingDown className="w-3 h-3 text-green-600" />
+                                  <TrendingDown className="w-3 h-3 text-gray-600" />
                                 ) : (
                                   <Activity className="w-3 h-3 text-gray-600" />
                                 )}
-                                <span className={`text-xs font-semibold ${
-                                  prediction.predictedChange > 0 ? 'text-red-600' : 'text-green-600'
-                                }`}>
+                                <span className="text-xs font-semibold text-gray-700">
                                   {prediction.predictedChange > 0 ? '+' : ''}{prediction.predictedChange}% vs avg
                                 </span>
                               </div>
@@ -471,22 +462,13 @@ const CrowdPredictions = () => {
 
                             {/* Confidence & Risk */}
                             <div className="grid grid-cols-2 gap-2">
-                              <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
+                              <div className="p-2 bg-gray-50 rounded-lg border border-gray-200">
                                 <p className="text-xs text-gray-600 mb-1">Confidence</p>
-                                <p className="text-sm font-bold text-blue-700">{prediction.confidence}%</p>
+                                <p className="text-sm font-bold text-gray-900">{prediction.confidence}%</p>
                               </div>
-                              <div className={`p-2 rounded-lg border ${
-                                prediction.riskLevel === 'high' 
-                                  ? 'bg-red-50 border-red-200' 
-                                  : prediction.riskLevel === 'medium'
-                                  ? 'bg-yellow-50 border-yellow-200'
-                                  : 'bg-green-50 border-green-200'
-                              }`}>
+                              <div className={`p-2 rounded-lg border ${riskStyles[prediction.riskLevel].bg} ${riskStyles[prediction.riskLevel].border}`}>
                                 <p className="text-xs text-gray-600 mb-1">Risk</p>
-                                <p className={`text-sm font-bold capitalize ${
-                                  prediction.riskLevel === 'high' ? 'text-red-700' : 
-                                  prediction.riskLevel === 'medium' ? 'text-yellow-700' : 'text-green-700'
-                                }`}>
+                                <p className={`text-sm font-bold capitalize ${riskStyles[prediction.riskLevel].text}`}>
                                   {prediction.riskLevel}
                                 </p>
                               </div>
@@ -494,10 +476,10 @@ const CrowdPredictions = () => {
 
                             {/* Recommendation */}
                             {prediction.riskLevel === 'high' && (
-                              <div className="p-2 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="p-2 bg-gray-200 border border-gray-400 rounded-lg">
                                 <div className="flex items-start gap-2">
-                                  <Info className="w-3 h-3 text-red-600 mt-0.5 flex-shrink-0" />
-                                  <p className="text-xs text-red-700">{prediction.recommendation}</p>
+                                  <Info className="w-3 h-3 text-gray-800 mt-0.5 flex-shrink-0" />
+                                  <p className="text-xs text-gray-900">{prediction.recommendation}</p>
                                 </div>
                               </div>
                             )}

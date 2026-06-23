@@ -52,12 +52,12 @@ export function HeritageNarrativeEditorCard({
   previewFacts,
 }: HeritageNarrativeEditorCardProps) {
   return (
-    <Card id="heritage-narrative-editor" className="shadow-md scroll-mt-4 border-indigo-100">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+    <Card id="heritage-narrative-editor" className="border border-gray-200 shadow-sm scroll-mt-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b bg-gray-50">
         <div>
           <CardTitle className="text-lg">{editorPlaceName}</CardTitle>
           {!selectedPlace && activeStoryRow && (
-            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-md px-3 py-2 mt-2">
+            <p className="text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mt-2">
               This story&apos;s place is not in your <strong>places</strong> list anymore. You can still edit and
               save; the app links by place ID <code className="text-xs">{selectedPlaceId}</code>.
             </p>
@@ -75,8 +75,8 @@ export function HeritageNarrativeEditorCard({
         </div>
         <Button
           type="button"
-          variant="secondary"
-          className="shrink-0 bg-violet-600 text-white hover:bg-violet-700"
+          variant="outline"
+          className="shrink-0"
           disabled={aiLoading || !(selectedPlace?.name?.trim() || activeStoryRow?.placeName?.trim())}
           onClick={onGenerateAI}
         >
@@ -159,29 +159,29 @@ export function HeritageNarrativeEditorCard({
           />
         </div>
 
-        <Card className="border-amber-200 bg-amber-50/40 shadow-sm">
-          <CardHeader className="py-3 pb-0">
-            <CardTitle className="text-base text-amber-900">App preview (matches mobile layout)</CardTitle>
+        <Card className="border border-gray-200 bg-gray-50 shadow-sm">
+          <CardHeader className="py-3 pb-0 border-b bg-gray-50">
+            <CardTitle className="text-base text-gray-900">App preview (matches mobile layout)</CardTitle>
             <CardDescription>
               Paragraph count: {previewParagraphs.length} · Facts: {previewFacts.length}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-2 pb-4 text-gray-800">
             <div>
-              <p className="text-xs font-semibold tracking-wider text-orange-600 mb-1">PLACE NAME</p>
+              <p className="text-xs font-semibold tracking-wider text-gray-500 mb-1">PLACE NAME</p>
               <p className="font-semibold text-gray-900">{editorPlaceName}</p>
               {form.subtitle.trim() && <p className="text-sm text-gray-600 mt-1">{form.subtitle.trim()}</p>}
             </div>
             {form.introText.trim() && (
               <div>
-                <p className="text-xs font-semibold tracking-wider text-orange-600 mb-1">OVERVIEW</p>
+                <p className="text-xs font-semibold tracking-wider text-gray-500 mb-1">OVERVIEW</p>
                 <p className="text-sm italic text-gray-700 leading-relaxed whitespace-pre-wrap">
                   {normalizeMultiline(form.introText)}
                 </p>
               </div>
             )}
             <div>
-              <p className="text-xs font-semibold tracking-wider text-orange-600 mb-2">THE STORY</p>
+              <p className="text-xs font-semibold tracking-wider text-gray-500 mb-2">THE STORY</p>
               <div className="space-y-4 text-sm leading-relaxed">
                 {previewParagraphs.length === 0 ? (
                   <p className="text-gray-400 italic">Add main story text to see paragraphs here.</p>
@@ -195,8 +195,8 @@ export function HeritageNarrativeEditorCard({
               </div>
             </div>
             {previewFacts.length > 0 && (
-              <div className="rounded-lg border border-orange-100 bg-white p-3">
-                <p className="text-xs font-semibold text-orange-800 mb-2">Did you know?</p>
+              <div className="rounded-lg border border-gray-200 bg-white p-3">
+                <p className="text-xs font-semibold text-gray-700 mb-2">Did you know?</p>
                 <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
                   {previewFacts.map((f, i) => (
                     <li key={i}>{f}</li>
@@ -211,7 +211,7 @@ export function HeritageNarrativeEditorCard({
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              className="rounded border-gray-300 h-4 w-4 text-indigo-600"
+              className="rounded border-gray-300 h-4 w-4 text-gray-900"
               checked={form.published}
               onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
             />
@@ -221,14 +221,14 @@ export function HeritageNarrativeEditorCard({
             type="button"
             onClick={onSave}
             disabled={saving}
-            className="sm:ml-auto bg-orange-600 hover:bg-orange-700"
+            className="sm:ml-auto"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             Save story
           </Button>
         </div>
         {saveMsg && (
-          <p className={`text-sm ${saveMsg.includes("success") ? "text-green-600" : "text-red-600"}`}>{saveMsg}</p>
+          <p className={`text-sm ${saveMsg.includes("success") ? "text-gray-700" : "text-red-600"}`}>{saveMsg}</p>
         )}
       </CardContent>
     </Card>

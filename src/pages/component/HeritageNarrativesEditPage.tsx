@@ -59,7 +59,7 @@ export default function HeritageNarrativesEditPage() {
           <Button
             type="button"
             variant="ghost"
-            className="w-fit -ml-2 text-indigo-800 hover:text-indigo-950 hover:bg-indigo-50"
+            className="w-fit -ml-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100"
             onClick={() => navigate("/dashboard/heritage-narratives/manage")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -73,7 +73,7 @@ export default function HeritageNarrativesEditPage() {
             </p>
           </div>
         </div>
-        <Button asChild variant="outline" className="border-indigo-200 shrink-0 w-full sm:w-auto">
+        <Button asChild variant="outline" className="shrink-0 w-full sm:w-auto">
           <Link to="/dashboard/heritage-narratives/add">Add another narrative</Link>
         </Button>
       </div>
@@ -86,16 +86,16 @@ export default function HeritageNarrativesEditPage() {
 
       {stillLoading ? (
         <div className="flex items-center gap-2 text-gray-500 py-16 justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+          <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
           Loading editor…
         </div>
       ) : (
         <>
           {!activeStoryRow && !selectedPlace && (
-            <Card className="border-amber-200 bg-amber-50/50">
-              <CardContent className="py-6 text-sm text-amber-950">
+            <Card className="border border-gray-200 bg-gray-50">
+              <CardContent className="py-6 text-sm text-gray-800">
                 <p className="font-medium">No matching place in your directory and no saved row yet.</p>
-                <p className="mt-2 text-amber-900/90">
+                <p className="mt-2 text-gray-700">
                   You can still compose and save — a new{" "}
                   <code className="text-xs bg-white/80 px-1 rounded">place_stories</code> document will be created for
                   this ID when you save.
@@ -122,7 +122,7 @@ export default function HeritageNarrativesEditPage() {
         </>
       )}
 
-      <Card className="bg-slate-50 border-dashed">
+      <Card className="border border-gray-200 border-dashed bg-gray-50">
         <CardContent className="py-4 text-sm text-gray-600">
           Changes sync live from Firestore while this page is open. Use <strong>Save story</strong> to persist your edits.
         </CardContent>

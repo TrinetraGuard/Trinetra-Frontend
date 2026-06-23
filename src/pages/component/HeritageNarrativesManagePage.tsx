@@ -41,7 +41,7 @@ export default function HeritageNarrativesManagePage() {
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <span className="p-2 rounded-xl bg-gradient-to-br from-indigo-600 to-orange-500 text-white">
+            <span className="p-2 rounded-xl bg-gray-900 text-white">
               <LayoutList className="h-6 w-6" />
             </span>
             Update heritage narratives
@@ -52,7 +52,7 @@ export default function HeritageNarrativesManagePage() {
             <strong>Add heritage narrative</strong>.
           </p>
         </div>
-        <Button asChild className="shrink-0 bg-indigo-600 hover:bg-indigo-700 w-full sm:w-auto">
+        <Button asChild className="shrink-0 w-full sm:w-auto">
           <Link to="/dashboard/heritage-narratives/add">
             <PlusCircle className="h-4 w-4 mr-2" />
             Add new narrative
@@ -60,11 +60,11 @@ export default function HeritageNarrativesManagePage() {
         </Button>
       </div>
 
-      <Card className="border-indigo-200 shadow-md overflow-hidden">
-        <CardHeader className="border-b bg-gradient-to-r from-slate-50 to-indigo-50/60">
+      <Card className="border border-gray-200 shadow-sm overflow-hidden">
+        <CardHeader className="border-b bg-gray-50">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div className="flex items-start gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shrink-0">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-900 text-white shrink-0">
                 <BookOpen className="h-5 w-5" />
               </span>
               <div>
@@ -77,15 +77,17 @@ export default function HeritageNarrativesManagePage() {
             </div>
             {!storiesLoading && !storiesError && (
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="bg-white border-indigo-100 text-indigo-900">
+                <Badge variant="secondary" className="bg-gray-100 text-gray-800 border-gray-200">
                   {narrativeStats.total} saved
                 </Badge>
-                <Badge className="bg-emerald-600 hover:bg-emerald-600">{narrativeStats.published} live in app</Badge>
-                <Badge variant="outline" className="bg-amber-50 text-amber-900 border-amber-200">
+                <Badge variant="secondary" className="bg-gray-800 text-white hover:bg-gray-800">
+                  {narrativeStats.published} live in app
+                </Badge>
+                <Badge variant="outline" className="bg-gray-50 text-gray-800 border-gray-300">
                   {narrativeStats.drafts} draft{narrativeStats.drafts === 1 ? "" : "s"}
                 </Badge>
                 {narrativeStats.empty > 0 && (
-                  <Badge variant="destructive" className="font-normal">
+                  <Badge variant="outline" className="font-normal border-gray-400 text-gray-700">
                     {narrativeStats.empty} without story text
                   </Badge>
                 )}
@@ -101,17 +103,17 @@ export default function HeritageNarrativesManagePage() {
           )}
           {storiesLoading ? (
             <div className="flex items-center gap-2 text-gray-500 py-10 justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-gray-600" />
               Loading saved stories…
             </div>
           ) : storyRows.length === 0 && !storiesError ? (
-            <div className="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/40 px-6 py-12 text-center">
-              <BookOpen className="h-10 w-10 mx-auto text-indigo-300 mb-3" />
+            <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-6 py-12 text-center">
+              <BookOpen className="h-10 w-10 mx-auto text-gray-400 mb-3" />
               <p className="font-medium text-gray-800">No narratives saved yet</p>
               <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
                 Add your first narrative from the <strong>Add heritage narrative</strong> screen.
               </p>
-              <Button asChild className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+              <Button asChild className="mt-4">
                 <Link to="/dashboard/heritage-narratives/add">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Add heritage narrative
@@ -136,8 +138,8 @@ export default function HeritageNarrativesManagePage() {
                       variant={narrativeFilter === key ? "default" : "outline"}
                       className={
                         narrativeFilter === key
-                          ? "bg-indigo-600 hover:bg-indigo-700"
-                          : "border-indigo-100 text-indigo-900"
+                          ? "bg-gray-900 hover:bg-gray-800 text-white"
+                          : ""
                       }
                       onClick={() => setNarrativeFilter(key)}
                     >
@@ -152,7 +154,7 @@ export default function HeritageNarrativesManagePage() {
                     value={narrativeSearch}
                     onChange={(e) => setNarrativeSearch(e.target.value)}
                     placeholder="Search by place name or text…"
-                    className="h-10 pl-9 border-indigo-100"
+                    className="h-10 pl-9"
                   />
                 </div>
               </div>
@@ -162,8 +164,8 @@ export default function HeritageNarrativesManagePage() {
               </p>
               <div className="rounded-lg border border-gray-200 overflow-x-auto shadow-sm">
                 <table className="w-full text-sm min-w-[720px]">
-                  <thead>
-                    <tr className="bg-slate-100/90 border-b border-gray-200 text-left">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-gray-50 border-b border-gray-200 text-left">
                       <th className="px-3 py-3 font-semibold text-gray-700 w-14 whitespace-nowrap">#</th>
                       <th className="px-3 py-3 font-semibold text-gray-700 min-w-[160px]">Place</th>
                       <th className="px-3 py-3 font-semibold text-gray-700 whitespace-nowrap">Status</th>
@@ -197,11 +199,11 @@ export default function HeritageNarrativesManagePage() {
                           </td>
                           <td className="px-3 py-3 align-top whitespace-nowrap">
                             {row.published && row.hasBody ? (
-                              <Badge className="bg-emerald-600 hover:bg-emerald-600">Published</Badge>
+                              <Badge variant="secondary" className="bg-gray-800 text-white hover:bg-gray-800">Published</Badge>
                             ) : row.published && !row.hasBody ? (
-                              <Badge variant="destructive">No body</Badge>
+                              <Badge variant="outline" className="border-gray-400 text-gray-700">No body</Badge>
                             ) : (
-                              <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                              <Badge variant="secondary" className="bg-gray-100 text-gray-700 border-gray-200">
                                 Draft
                               </Badge>
                             )}
@@ -219,7 +221,7 @@ export default function HeritageNarrativesManagePage() {
                             <Button
                               type="button"
                               size="sm"
-                              className="bg-indigo-600 hover:bg-indigo-700"
+                              variant="default"
                               onClick={() => navigate(`/dashboard/heritage-narratives/edit/${row.id}`)}
                             >
                               <Edit3 className="h-3.5 w-3.5 mr-1" />
@@ -237,7 +239,7 @@ export default function HeritageNarrativesManagePage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-slate-50 border-dashed">
+      <Card className="border border-gray-200 border-dashed bg-gray-50">
         <CardContent className="py-4 text-sm text-gray-600">
           <strong>Tip:</strong> Document ID in <code className="bg-white px-1 rounded">place_stories</code> matches the
           place ID in <code className="bg-white px-1 rounded">places</code>. Only narratives marked published appear in

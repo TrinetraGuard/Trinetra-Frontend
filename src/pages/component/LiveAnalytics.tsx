@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { admin, densityStyles, type DensityLevel } from '@/lib/adminTheme';
 import { db } from '@/firebase/firebase';
 
 interface CCTV {
@@ -126,17 +127,9 @@ const LiveAnalytics = () => {
     };
   }, [cameras, autoRefresh]);
 
-  const getDensityColor = (density: string) => {
-    switch (density) {
-      case 'low': return 'bg-green-600';
-      case 'medium': return 'bg-yellow-600';
-      case 'high': return 'bg-orange-600';
-      case 'critical': return 'bg-red-600';
-      default: return 'bg-gray-600';
-    }
-  };
+  const getDensityColor = (density: DensityLevel) => densityStyles(density).bg;
 
-  const getDensityText = (density: string) => {
+  const getDensityText = (density: DensityLevel) => {
     switch (density) {
       case 'low': return 'Low';
       case 'medium': return 'Medium';
@@ -149,9 +142,9 @@ const LiveAnalytics = () => {
   const getTrendIcon = (trend: string) => {
     switch (trend) {
       case 'increasing':
-        return <TrendingUp className="w-4 h-4 text-red-600" />;
+        return <TrendingUp className="w-4 h-4 text-gray-800" />;
       case 'decreasing':
-        return <TrendingDown className="w-4 h-4 text-green-600" />;
+        return <TrendingDown className="w-4 h-4 text-gray-600" />;
       default:
         return <Activity className="w-4 h-4 text-gray-600" />;
     }
@@ -176,8 +169,8 @@ const LiveAnalytics = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+            <div className={`p-2 rounded-lg ${admin.iconWrap}`}>
+              <BarChart3 className="w-6 h-6" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Live Analytics</h1>
@@ -190,7 +183,7 @@ const LiveAnalytics = () => {
             variant="outline"
             size="sm"
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={autoRefresh ? 'bg-green-50 border-green-200 text-green-700' : ''}
+            className={autoRefresh ? 'bg-gray-100 border-gray-300 text-gray-800' : ''}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
             {autoRefresh ? 'Auto Refresh ON' : 'Auto Refresh OFF'}
@@ -200,7 +193,7 @@ const LiveAnalytics = () => {
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -208,14 +201,14 @@ const LiveAnalytics = () => {
                 <p className="text-3xl font-bold text-gray-900">{totalPeople.toLocaleString()}</p>
                 <p className="text-xs text-gray-500 mt-1">Across all cameras</p>
               </div>
-              <div className="p-3 bg-blue-600 rounded-lg">
+              <div className={`p-3 rounded-lg ${admin.statIcon}`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-green-200 bg-green-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -223,14 +216,14 @@ const LiveAnalytics = () => {
                 <p className="text-3xl font-bold text-gray-900">{activeCameras}</p>
                 <p className="text-xs text-gray-500 mt-1">Out of {cameras.length} total</p>
               </div>
-              <div className="p-3 bg-green-600 rounded-lg">
+              <div className="p-3 bg-gray-700 rounded-lg">
                 <Camera className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-orange-200 bg-orange-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -238,14 +231,14 @@ const LiveAnalytics = () => {
                 <p className="text-3xl font-bold text-gray-900">{highDensityCameras}</p>
                 <p className="text-xs text-gray-500 mt-1">Requiring attention</p>
               </div>
-              <div className="p-3 bg-orange-600 rounded-lg">
+              <div className="p-3 bg-gray-600 rounded-lg">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 bg-red-50">
+        <Card className={`${admin.statCard} shadow-sm`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -253,7 +246,7 @@ const LiveAnalytics = () => {
                 <p className="text-3xl font-bold text-gray-900">{criticalCameras}</p>
                 <p className="text-xs text-gray-500 mt-1">Immediate action needed</p>
               </div>
-              <div className="p-3 bg-red-600 rounded-lg">
+              <div className="p-3 bg-black rounded-lg">
                 <Zap className="w-6 h-6 text-white" />
               </div>
             </div>
@@ -283,22 +276,16 @@ const LiveAnalytics = () => {
             return (
               <Card 
                 key={camera.id} 
-                className={`hover:shadow-lg transition-all duration-200 ${
-                  cameraAnalytics.crowdDensity === 'critical' 
-                    ? 'border-red-300 bg-red-50/30' 
-                    : cameraAnalytics.crowdDensity === 'high'
-                    ? 'border-orange-300 bg-orange-50/30'
-                    : 'border-gray-200'
-                }`}
+                className={`hover:shadow-lg transition-all duration-200 border ${densityStyles(cameraAnalytics.crowdDensity).border} ${densityStyles(cameraAnalytics.crowdDensity).light}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 flex-1">
                       <div className={`p-2 rounded-lg ${
-                        camera.status === 'active' ? 'bg-green-100' : 'bg-gray-100'
+                        camera.status === 'active' ? 'bg-gray-200' : 'bg-gray-100'
                       }`}>
                         {camera.status === 'active' ? (
-                          <Wifi className="w-5 h-5 text-green-600" />
+                          <Wifi className="w-5 h-5 text-gray-800" />
                         ) : (
                           <WifiOff className="w-5 h-5 text-gray-600" />
                         )}
@@ -327,7 +314,7 @@ const LiveAnalytics = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 bg-white rounded-lg border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-4 h-4 text-blue-600" />
+                        <Users className="w-4 h-4 text-gray-600" />
                         <p className="text-xs font-medium text-gray-600">Total People</p>
                       </div>
                       <p className="text-2xl font-bold text-gray-900">{cameraAnalytics.totalPeople}</p>
@@ -338,7 +325,7 @@ const LiveAnalytics = () => {
 
                     <div className="p-4 bg-white rounded-lg border border-gray-200">
                       <div className="flex items-center gap-2 mb-2">
-                        <BarChart3 className="w-4 h-4 text-purple-600" />
+                        <BarChart3 className="w-4 h-4 text-gray-600" />
                         <p className="text-xs font-medium text-gray-600">Density</p>
                       </div>
                       <p className="text-2xl font-bold text-gray-900">{cameraAnalytics.densityPercentage}%</p>
@@ -365,25 +352,23 @@ const LiveAnalytics = () => {
 
                     <div className={`p-3 rounded-lg border ${
                       cameraAnalytics.highCrowdAreas > 0
-                        ? 'bg-orange-50 border-orange-200'
+                        ? 'bg-gray-200 border-gray-400'
                         : 'bg-gray-50 border-gray-200'
                     }`}>
                       <div className="flex items-center gap-2 mb-1">
                         <AlertTriangle className={`w-4 h-4 ${
-                          cameraAnalytics.highCrowdAreas > 0 ? 'text-orange-600' : 'text-gray-400'
+                          cameraAnalytics.highCrowdAreas > 0 ? 'text-gray-800' : 'text-gray-400'
                         }`} />
                         <p className="text-xs font-medium text-gray-600">High Crowd Areas</p>
                       </div>
-                      <p className={`text-sm font-semibold ${
-                        cameraAnalytics.highCrowdAreas > 0 ? 'text-orange-700' : 'text-gray-700'
-                      }`}>
+                      <p className="text-sm font-semibold text-gray-900">
                         {cameraAnalytics.highCrowdAreas} {cameraAnalytics.highCrowdAreas === 1 ? 'area' : 'areas'}
                       </p>
                     </div>
                   </div>
 
                   {/* Capacity Indicator */}
-                  <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-xs font-semibold text-gray-700">Capacity Utilization</p>
                       <p className="text-xs font-bold text-gray-900">
@@ -397,7 +382,7 @@ const LiveAnalytics = () => {
                       ></div>
                     </div>
                     {cameraAnalytics.densityPercentage >= 85 && (
-                      <p className="text-xs text-red-600 font-medium mt-2 flex items-center gap-1">
+                      <p className="text-xs text-gray-800 font-medium mt-2 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" />
                         Capacity limit approaching!
                       </p>
@@ -409,7 +394,7 @@ const LiveAnalytics = () => {
                     <div className="flex items-center gap-2">
                       {camera.status === 'active' ? (
                         <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <div className="w-2 h-2 bg-gray-800 rounded-full animate-pulse"></div>
                           <span>Camera Online</span>
                         </div>
                       ) : (
@@ -435,8 +420,8 @@ const LiveAnalytics = () => {
 
       {/* Detailed View for Selected Camera */}
       {selectedCamera && analytics.has(selectedCamera) && (
-        <Card className="border-2 border-blue-300">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
+        <Card className="border-2 border-gray-300">
+          <CardHeader className="bg-gray-50">
             <div className="flex items-center justify-between">
               <CardTitle className="text-2xl">
                 Detailed Analytics - {analytics.get(selectedCamera)?.placeName}
