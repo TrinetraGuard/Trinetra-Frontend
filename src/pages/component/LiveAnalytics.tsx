@@ -102,7 +102,7 @@ const LiveAnalytics = () => {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Camera snapshot</CardTitle>
-            <CardDescription>Current crowd level per camera — updated for demo display</CardDescription>
+            <CardDescription>Current crowd level per camera</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">

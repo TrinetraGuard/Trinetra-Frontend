@@ -10,7 +10,6 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useMemo, useState } from 'react';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useDummyDensityReports } from '@/hooks/useDummyCrowdAnalytics';
 import { useCctvCameras } from '@/hooks/useCctvCameras';
@@ -63,19 +62,14 @@ const CrowdDensity = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`rounded-lg p-2 ${admin.iconWrap}`}>
-            <BarChart3 className="h-6 w-6" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Crowd Density</h1>
-            <p className="mt-1 text-gray-500">Capacity usage across 8 site cameras</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className={`rounded-lg p-2 ${admin.iconWrap}`}>
+          <BarChart3 className="h-6 w-6" />
         </div>
-        <Badge variant="outline" className="w-fit border-amber-300 bg-amber-50 text-amber-900">
-          Demo data
-        </Badge>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Crowd Density</h1>
+          <p className="mt-1 text-gray-500">Capacity usage across 8 site cameras</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
