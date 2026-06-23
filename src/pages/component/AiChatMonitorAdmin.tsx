@@ -1,12 +1,24 @@
-import {useEffect, useMemo, useState} from "react";
-import {Timestamp, collection, limit, onSnapshot, orderBy, query} from "firebase/firestore";
+import {
+  ArrowLeft,
+  Bot,
+  ChevronRight,
+  MessageSquare,
+  MessagesSquare,
+  Search,
+  UserRound,
+  Users,
+} from "lucide-react";
+import { useEffect, useMemo, useState, type ComponentType } from "react";
+import { Timestamp, collection, limit, onSnapshot, orderBy, query } from "firebase/firestore";
 
-import {Badge} from "@/components/ui/badge";
-import {Card, CardContent, CardDescription, CardTitle} from "@/components/ui/card";
-import {Input} from "@/components/ui/input";
-import {db} from "@/firebase/firebase";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { db } from "@/firebase/firebase";
 
 type MessageRole = "user" | "assistant" | "system";
+type MonitorStep = "users" | "chats" | "messages";
 
 interface ChatMessage {
   role: MessageRole;
@@ -41,6 +53,12 @@ interface UserWithChats {
   totalMessages: number;
 }
 
+const STEPS: { key: MonitorStep; label: string }[] = [
+  { key: "users", label: "Users" },
+  { key: "chats", label: "Chats" },
+  { key: "messages", label: "Messages" },
+];
+
 function toDateLabel(ts?: Timestamp): string {
   if (!ts) return "—";
   return ts.toDate().toLocaleString();
@@ -48,22 +66,23 @@ function toDateLabel(ts?: Timestamp): string {
 
 function toRelativeTime(ts?: Timestamp): string {
   if (!ts) return "No activity";
-  const now = Date.now();
-  const diffMs = now - ts.toDate().getTime();
+  const diffMs = Date.now() - ts.toDate().getTime();
   const diffMinutes = Math.floor(diffMs / 60000);
   if (diffMinutes < 1) return "Just now";
   if (diffMinutes < 60) return `${diffMinutes}m ago`;
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}d ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
 }
 
 function userInitials(name: string, fallback: string): string {
   const clean = name.trim();
   if (clean) {
-    const parts = clean.split(/\s+/).slice(0, 2);
-    return parts.map((part) => part[0]?.toUpperCase() ?? "").join("");
+    return clean
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("");
   }
   return fallback.slice(0, 2).toUpperCase();
 }
@@ -72,7 +91,8 @@ function normalizeMessage(raw: unknown): ChatMessage | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as Record<string, unknown>;
   const roleRaw = String(data.role ?? "").trim().toLowerCase();
-  const role: MessageRole = roleRaw === "assistant" || roleRaw === "system" ? roleRaw : "user";
+  const role: MessageRole =
+    roleRaw === "assistant" || roleRaw === "system" ? roleRaw : "user";
   const text = String(data.text ?? "").trim();
   if (!text) return null;
   return {
@@ -84,7 +104,9 @@ function normalizeMessage(raw: unknown): ChatMessage | null {
 
 function normalizeChat(id: string, raw: Record<string, unknown>): ChatRecord {
   const messagesRaw = Array.isArray(raw.messages) ? raw.messages : [];
-  const messages = messagesRaw.map(normalizeMessage).filter((msg): msg is ChatMessage => !!msg);
+  const messages = messagesRaw
+    .map(normalizeMessage)
+    .filter((msg): msg is ChatMessage => !!msg);
 
   return {
     id,
@@ -92,12 +114,92 @@ function normalizeChat(id: string, raw: Record<string, unknown>): ChatRecord {
     title: String(raw.title ?? "Untitled Chat"),
     lastMessage: String(raw.lastMessage ?? ""),
     messageCount: Number(raw.messageCount ?? messages.length ?? 0),
-    userMessageCount: Number(raw.userMessageCount ?? messages.filter((m) => m.role === "user").length),
-    aiMessageCount: Number(raw.aiMessageCount ?? messages.filter((m) => m.role === "assistant").length),
+    userMessageCount: Number(
+      raw.userMessageCount ?? messages.filter((m) => m.role === "user").length
+    ),
+    aiMessageCount: Number(
+      raw.aiMessageCount ?? messages.filter((m) => m.role === "assistant").length
+    ),
     updatedAt: raw.updatedAt as Timestamp | undefined,
     createdAt: raw.createdAt as Timestamp | undefined,
     messages,
   };
+}
+
+function EmptyPanel({
+  icon: Icon,
+  title,
+  description,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="flex min-h-[360px] flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="mb-4 rounded-full bg-gray-100 p-4">
+        <Icon className="h-8 w-8 text-gray-400" />
+      </div>
+      <p className="text-base font-semibold text-gray-700">{title}</p>
+      <p className="mt-2 max-w-sm text-sm text-gray-500">{description}</p>
+    </div>
+  );
+}
+
+function UserAvatar({
+  name,
+  fallback,
+  size = "md",
+}: {
+  name: string;
+  fallback: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const sizeClass =
+    size === "lg"
+      ? "h-12 w-12 text-sm"
+      : size === "sm"
+        ? "h-8 w-8 text-[10px]"
+        : "h-10 w-10 text-xs";
+  return (
+    <div
+      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-gray-800 to-gray-600 font-semibold text-white ${sizeClass}`}
+    >
+      {userInitials(name, fallback)}
+    </div>
+  );
+}
+
+function StepIndicator({ currentStep }: { currentStep: MonitorStep }) {
+  const currentIndex = STEPS.findIndex((s) => s.key === currentStep);
+
+  return (
+    <div className="flex items-center gap-2 border-b bg-gray-50 px-4 py-3">
+      {STEPS.map((step, index) => {
+        const isActive = step.key === currentStep;
+        const isComplete = index < currentIndex;
+        return (
+          <div key={step.key} className="flex items-center gap-2">
+            {index > 0 && <ChevronRight className="h-4 w-4 text-gray-300" />}
+            <div
+              className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+                isActive
+                  ? "bg-violet-600 text-white"
+                  : isComplete
+                    ? "bg-violet-100 text-violet-700"
+                    : "bg-gray-200 text-gray-500"
+              }`}
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
+                {index + 1}
+              </span>
+              {step.label}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 const AiChatMonitorAdmin = () => {
@@ -107,6 +209,7 @@ const AiChatMonitorAdmin = () => {
   const [chatSearchQuery, setChatSearchQuery] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [step, setStep] = useState<MonitorStep>("users");
   const [isLoadingChats, setIsLoadingChats] = useState(true);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
@@ -115,10 +218,12 @@ const AiChatMonitorAdmin = () => {
     const unsubscribe = onSnapshot(
       chatsQuery,
       (snapshot) => {
-        setChats(snapshot.docs.map((doc) => normalizeChat(doc.id, doc.data() as Record<string, unknown>)));
+        setChats(
+          snapshot.docs.map((doc) => normalizeChat(doc.id, doc.data() as Record<string, unknown>))
+        );
         setIsLoadingChats(false);
       },
-      () => setIsLoadingChats(false),
+      () => setIsLoadingChats(false)
     );
     return unsubscribe;
   }, []);
@@ -140,7 +245,7 @@ const AiChatMonitorAdmin = () => {
         setUsers(next);
         setIsLoadingUsers(false);
       },
-      () => setIsLoadingUsers(false),
+      () => setIsLoadingUsers(false)
     );
     return unsubscribe;
   }, []);
@@ -157,13 +262,14 @@ const AiChatMonitorAdmin = () => {
     return Array.from(grouped.entries())
       .map(([userId, userChats]) => {
         const user = users[userId];
-        const totalMessagesForUser = userChats.reduce((sum, chat) => sum + chat.messageCount, 0);
         return {
           userId,
           name: user?.name || "Unknown User",
           email: user?.email || "",
-          chats: userChats.sort((a, b) => (b.updatedAt?.toMillis() ?? 0) - (a.updatedAt?.toMillis() ?? 0)),
-          totalMessages: totalMessagesForUser,
+          chats: userChats.sort(
+            (a, b) => (b.updatedAt?.toMillis() ?? 0) - (a.updatedAt?.toMillis() ?? 0)
+          ),
+          totalMessages: userChats.reduce((sum, chat) => sum + chat.messageCount, 0),
         };
       })
       .sort((a, b) => {
@@ -176,15 +282,14 @@ const AiChatMonitorAdmin = () => {
   const filteredUsers = useMemo(() => {
     const q = userSearchQuery.trim().toLowerCase();
     if (!q) return usersWithChats;
-    return usersWithChats.filter((entry) => {
-      const haystack = [entry.name, entry.email, entry.userId].join(" ").toLowerCase();
-      return haystack.includes(q);
-    });
+    return usersWithChats.filter((entry) =>
+      [entry.name, entry.email, entry.userId].join(" ").toLowerCase().includes(q)
+    );
   }, [userSearchQuery, usersWithChats]);
 
   const selectedUser = useMemo(
-    () => filteredUsers.find((entry) => entry.userId === selectedUserId) ?? null,
-    [filteredUsers, selectedUserId],
+    () => usersWithChats.find((entry) => entry.userId === selectedUserId) ?? null,
+    [usersWithChats, selectedUserId]
   );
 
   const visibleChats = useMemo(() => {
@@ -192,222 +297,379 @@ const AiChatMonitorAdmin = () => {
     const q = chatSearchQuery.trim().toLowerCase();
     if (!q) return selectedUser.chats;
     return selectedUser.chats.filter((chat) =>
-      [chat.title, chat.lastMessage, chat.id].join(" ").toLowerCase().includes(q),
+      [chat.title, chat.lastMessage, chat.id].join(" ").toLowerCase().includes(q)
     );
   }, [chatSearchQuery, selectedUser]);
 
   const selectedChat = useMemo(
     () => visibleChats.find((chat) => chat.id === selectedChatId) ?? null,
-    [visibleChats, selectedChatId],
+    [visibleChats, selectedChatId]
   );
 
   useEffect(() => {
     if (!selectedUserId) return;
-    const userStillVisible = filteredUsers.some((entry) => entry.userId === selectedUserId);
-    if (!userStillVisible) {
+    if (!filteredUsers.some((entry) => entry.userId === selectedUserId)) {
       setSelectedUserId(null);
       setSelectedChatId(null);
+      setStep("users");
     }
   }, [filteredUsers, selectedUserId]);
 
   useEffect(() => {
     if (!selectedChatId) return;
-    const chatStillVisible = visibleChats.some((chat) => chat.id === selectedChatId);
-    if (!chatStillVisible) {
+    if (!visibleChats.some((chat) => chat.id === selectedChatId)) {
       setSelectedChatId(null);
+      setStep("chats");
     }
   }, [selectedChatId, visibleChats]);
 
   const totalMessages = useMemo(
     () => chats.reduce((count, chat) => count + chat.messageCount, 0),
-    [chats],
+    [chats]
   );
 
+  const isLoading = isLoadingChats || isLoadingUsers;
+
+  const selectUser = (userId: string) => {
+    setSelectedUserId(userId);
+    setSelectedChatId(null);
+    setChatSearchQuery("");
+    setStep("chats");
+  };
+
+  const selectChat = (chatId: string) => {
+    setSelectedChatId(chatId);
+    setStep("messages");
+  };
+
+  const goBackToUsers = () => {
+    setSelectedUserId(null);
+    setSelectedChatId(null);
+    setChatSearchQuery("");
+    setStep("users");
+  };
+
+  const goBackToChats = () => {
+    setSelectedChatId(null);
+    setStep("chats");
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">AI Chat Monitor</h1>
-          <p className="text-sm text-gray-500">Select user, open chat, and review messages in one organized screen.</p>
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-violet-100 p-2">
+              <MessagesSquare className="h-6 w-6 text-violet-600" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">AI Chat Monitor</h1>
+              <p className="mt-1 text-gray-500">
+                Review Netra Chat conversations by user and session
+              </p>
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-            Users: {usersWithChats.length}
+
+        <div className="flex flex-wrap gap-2">
+          <Badge variant="secondary" className="bg-violet-50 px-3 py-1 text-violet-700">
+            <Users className="mr-1.5 h-3.5 w-3.5" />
+            {usersWithChats.length} users
           </Badge>
-          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-            Chats: {chats.length}
+          <Badge variant="secondary" className="bg-blue-50 px-3 py-1 text-blue-700">
+            <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
+            {chats.length} chats
           </Badge>
-          <Badge variant="secondary" className="bg-gray-100 text-gray-700">
-            Messages: {totalMessages}
+          <Badge variant="secondary" className="bg-emerald-50 px-3 py-1 text-emerald-700">
+            {totalMessages} messages
           </Badge>
         </div>
       </div>
 
       <Card className="overflow-hidden border-gray-200 shadow-sm">
+        <StepIndicator currentStep={step} />
+
         <CardContent className="p-0">
-          <div className="grid min-h-[700px] grid-cols-1 xl:grid-cols-12">
-            <section className="border-b bg-white xl:col-span-3 xl:border-b-0 xl:border-r">
-              <div className="border-b px-4 py-3">
-                <CardTitle className="text-base">Users</CardTitle>
-                <CardDescription>Select a user to load their chats.</CardDescription>
+          {/* Step 1 — Users (full width) */}
+          {step === "users" && (
+            <section className="min-h-[680px] bg-white">
+              <div className="border-b bg-gradient-to-r from-violet-50 to-white px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <Users className="h-5 w-5 text-violet-600" />
+                  <div>
+                    <CardTitle className="text-lg">All Users</CardTitle>
+                    <CardDescription>Select a user to view their Netra Chat sessions</CardDescription>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3 p-4">
-                <Input
-                  value={userSearchQuery}
-                  onChange={(event) => setUserSearchQuery(event.target.value)}
-                  placeholder="Search users..."
-                  className="h-10"
-                />
 
-                <div className="max-h-[580px] space-y-2 overflow-y-auto pr-1">
-                  {(isLoadingChats || isLoadingUsers) && <p className="text-sm text-gray-500">Loading users...</p>}
+              <div className="mx-auto max-w-3xl space-y-4 p-6">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    value={userSearchQuery}
+                    onChange={(event) => setUserSearchQuery(event.target.value)}
+                    placeholder="Search by name, email, or ID..."
+                    className="h-11 pl-9"
+                  />
+                </div>
 
-                  {!isLoadingChats && filteredUsers.length === 0 && (
-                    <p className="text-sm text-gray-500">No users found for this query.</p>
+                <div className="space-y-2">
+                  {isLoading &&
+                    [1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100" />
+                    ))}
+
+                  {!isLoading && filteredUsers.length === 0 && (
+                    <EmptyPanel
+                      icon={Users}
+                      title="No users found"
+                      description="Try a different search or wait for users to start chatting with Netra."
+                    />
                   )}
 
-                  {filteredUsers.map((entry) => {
-                    const selected = selectedUser?.userId === entry.userId;
-                    return (
+                  {!isLoading &&
+                    filteredUsers.map((entry) => (
                       <button
                         key={entry.userId}
-                        onClick={() => {
-                          setSelectedUserId(entry.userId);
-                          setSelectedChatId(null);
-                        }}
-                        className={`w-full rounded-md border p-3 text-left transition ${
-                          selected
-                            ? "border-gray-900 bg-gray-50 shadow-sm ring-1 ring-gray-200"
-                            : "border-gray-200 bg-white hover:bg-gray-50"
-                        }`}
+                        type="button"
+                        onClick={() => selectUser(entry.userId)}
+                        className="group w-full rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-violet-300 hover:bg-violet-50/50 hover:shadow-sm"
                       >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex min-w-0 items-center gap-2">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-900 text-[11px] font-semibold text-white">
-                              {userInitials(entry.name, entry.userId)}
+                        <div className="flex items-center gap-4">
+                          <UserAvatar name={entry.name} fallback={entry.userId} size="lg" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-base font-semibold text-gray-900">
+                                {entry.name}
+                              </p>
+                              <Badge variant="secondary" className="shrink-0 bg-violet-100 text-violet-700">
+                                {entry.chats.length} chat{entry.chats.length === 1 ? "" : "s"}
+                              </Badge>
                             </div>
-                            <p className="truncate text-sm font-semibold">{entry.name}</p>
+                            <p className="mt-0.5 truncate text-sm text-gray-500">
+                              {entry.email || entry.userId}
+                            </p>
+                            <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
+                              <span>{entry.totalMessages} messages</span>
+                              <span>·</span>
+                              <span>Last active {toRelativeTime(entry.chats[0]?.updatedAt)}</span>
+                            </div>
                           </div>
-                          <Badge variant="secondary">{entry.chats.length}</Badge>
+                          <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-violet-500" />
                         </div>
-                        <p className="mt-1 truncate text-xs text-gray-500">{entry.email || entry.userId}</p>
-                        <p className="mt-2 text-[11px] text-gray-400">Last active: {toRelativeTime(entry.chats[0]?.updatedAt)}</p>
                       </button>
-                    );
-                  })}
+                    ))}
                 </div>
               </div>
             </section>
+          )}
 
-            <section className="border-b bg-white xl:col-span-4 xl:border-b-0 xl:border-r">
-              <div className="border-b px-4 py-3">
-                <CardTitle className="text-base">{selectedUser ? `${selectedUser.name}'s Chats` : "Chats"}</CardTitle>
-                <CardDescription>{selectedUser ? "Select chat to open messages." : "Choose a user first."}</CardDescription>
+          {/* Step 2 — Chats (full width, replaces users) */}
+          {step === "chats" && selectedUser && (
+            <section className="min-h-[680px] bg-white">
+              <div className="border-b bg-gradient-to-r from-blue-50 to-white px-6 py-5">
+                <div className="flex items-center gap-4">
+                  <Button variant="outline" size="sm" onClick={goBackToUsers} className="shrink-0">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Users
+                  </Button>
+                  <UserAvatar name={selectedUser.name} fallback={selectedUser.userId} />
+                  <div className="min-w-0">
+                    <CardTitle className="truncate text-lg">{selectedUser.name}&apos;s Chats</CardTitle>
+                    <CardDescription>
+                      {selectedUser.email || selectedUser.userId} · {visibleChats.length} conversation
+                      {visibleChats.length === 1 ? "" : "s"}
+                    </CardDescription>
+                  </div>
+                </div>
               </div>
-              <div className="space-y-3 p-4">
-                <Input
-                  value={chatSearchQuery}
-                  onChange={(event) => setChatSearchQuery(event.target.value)}
-                  placeholder="Search chats..."
-                  className="h-10"
-                  disabled={!selectedUser}
-                />
 
-                <div className="max-h-[580px] space-y-2 overflow-y-auto pr-1">
-                  {!selectedUser && <p className="text-sm text-gray-500">Select a user to load chats.</p>}
-                  {selectedUser && visibleChats.length === 0 && (
-                    <p className="text-sm text-gray-500">No chats found for this user.</p>
+              <div className="mx-auto max-w-3xl space-y-4 p-6">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input
+                    value={chatSearchQuery}
+                    onChange={(event) => setChatSearchQuery(event.target.value)}
+                    placeholder="Search chats by title or message..."
+                    className="h-11 pl-9"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  {visibleChats.length === 0 && (
+                    <EmptyPanel
+                      icon={MessageSquare}
+                      title="No chats found"
+                      description="This user has no matching conversations for your search."
+                    />
                   )}
 
-                  {selectedUser &&
-                    visibleChats.map((chat) => {
-                      const selected = selectedChat?.id === chat.id;
-                      return (
-                        <button
-                          key={chat.id}
-                          onClick={() => setSelectedChatId(chat.id)}
-                          className={`w-full rounded-md border p-3 text-left transition ${
-                            selected
-                              ? "border-gray-900 bg-gray-50 shadow-sm ring-1 ring-gray-200"
-                              : "border-gray-200 bg-white hover:bg-gray-50"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="truncate text-sm font-semibold">{chat.title || "Untitled Chat"}</p>
-                            <Badge variant="secondary">{chat.messageCount}</Badge>
+                  {visibleChats.map((chat) => (
+                    <button
+                      key={chat.id}
+                      type="button"
+                      onClick={() => selectChat(chat.id)}
+                      className="group w-full rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-sm"
+                    >
+                      <div className="flex items-start gap-4">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100">
+                          <MessageSquare className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="truncate text-base font-semibold text-gray-900">
+                              {chat.title || "Untitled Chat"}
+                            </p>
+                            <Badge variant="secondary" className="shrink-0">
+                              {chat.messageCount} msgs
+                            </Badge>
                           </div>
-                          <p className="mt-2 line-clamp-2 text-xs text-gray-600">{chat.lastMessage || "No preview available"}</p>
-                          <p className="mt-2 text-[11px] text-gray-400">Updated: {toDateLabel(chat.updatedAt)}</p>
-                        </button>
-                      );
-                    })}
+                          <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                            {chat.lastMessage || "No preview available"}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                            <span>{toRelativeTime(chat.updatedAt)}</span>
+                            <span>·</span>
+                            <span>{chat.userMessageCount} user</span>
+                            <span>·</span>
+                            <span>{chat.aiMessageCount} Netra</span>
+                          </div>
+                        </div>
+                        <ChevronRight className="mt-3 h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-blue-500" />
+                      </div>
+                    </button>
+                  ))}
                 </div>
               </div>
             </section>
+          )}
 
-            <section className="bg-gray-50 xl:col-span-5">
-              <div className="border-b bg-white px-4 py-3">
-                <CardTitle className="text-base">{selectedChat?.title || "Conversation Viewer"}</CardTitle>
-                <CardDescription>
-                  {selectedChat ? "User and Netra Chat messages." : "Select a chat to open conversation."}
-                </CardDescription>
+          {/* Step 3 — Messages (full width, replaces chats) */}
+          {step === "messages" && selectedChat && selectedUser && (
+            <section className="min-h-[680px] bg-gray-50">
+              <div className="border-b bg-white px-6 py-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm" onClick={goBackToChats} className="shrink-0">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Chats
+                    </Button>
+                    <div className="min-w-0">
+                      <CardTitle className="truncate text-lg">{selectedChat.title}</CardTitle>
+                      <CardDescription>
+                        {selectedUser.name} · {selectedChat.messages.length} messages
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="w-fit shrink-0 bg-emerald-100 text-emerald-700">
+                    <Bot className="mr-1.5 h-3.5 w-3.5" />
+                    Netra Chat
+                  </Badge>
+                </div>
               </div>
 
-              <div className="space-y-4 p-4">
-                {!selectedUser && <p className="text-sm text-gray-500">Select a user first.</p>}
-                {selectedUser && !selectedChat && <p className="text-sm text-gray-500">Now select a chat to view messages.</p>}
+              <div className="mx-auto max-w-4xl space-y-4 p-6">
+                <div className="grid grid-cols-2 gap-3 rounded-xl border bg-white p-4 sm:grid-cols-4">
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">User</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-900">{selectedUser.name}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Email</p>
+                    <p className="mt-1 truncate text-sm text-gray-700">{selectedUser.email || "—"}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Started</p>
+                    <p className="mt-1 text-sm text-gray-700">{toDateLabel(selectedChat.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Updated</p>
+                    <p className="mt-1 text-sm text-gray-700">{toDateLabel(selectedChat.updatedAt)}</p>
+                  </div>
+                </div>
 
-                {selectedChat && (
-                  <>
-                    <div className="grid grid-cols-1 gap-3 rounded-md border bg-white p-3 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs text-gray-500">Name of User</p>
-                        <p className="text-sm font-semibold">{selectedUser?.name || selectedChat.userId || "Unknown User"}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Email</p>
-                        <p className="text-sm font-medium">{selectedUser?.email || "—"}</p>
-                      </div>
-                    </div>
+                <div className="rounded-xl border bg-white shadow-sm">
+                  <div className="border-b px-4 py-3">
+                    <p className="text-sm font-medium text-gray-700">Conversation</p>
+                    <p className="text-xs text-gray-400">User messages and Netra Chat responses</p>
+                  </div>
 
-                    <div className="max-h-[560px] space-y-3 overflow-y-auto rounded-md border bg-white p-3">
-                      {selectedChat.messages.length === 0 && (
-                        <p className="text-sm text-gray-500">No message content found in this chat.</p>
-                      )}
+                  <div className="max-h-[520px] space-y-4 overflow-y-auto p-4">
+                    {selectedChat.messages.length === 0 && (
+                      <EmptyPanel
+                        icon={MessageSquare}
+                        title="No messages"
+                        description="This chat session has no stored message content yet."
+                      />
+                    )}
 
-                      {selectedChat.messages.map((message, index) => {
-                        const isUser = message.role === "user";
-                        const isAssistant = message.role === "assistant";
-                        return (
-                          <div key={`${selectedChat.id}-${index}`} className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+                    {selectedChat.messages.map((message, index) => {
+                      const isUser = message.role === "user";
+                      const isAssistant = message.role === "assistant";
+
+                      return (
+                        <div
+                          key={`${selectedChat.id}-${index}`}
+                          className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+                        >
+                          <div
+                            className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                              isUser
+                                ? "bg-blue-100 text-blue-700"
+                                : isAssistant
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-gray-100 text-gray-600"
+                            }`}
+                          >
+                            {isUser ? (
+                              <UserRound className="h-4 w-4" />
+                            ) : isAssistant ? (
+                              <Bot className="h-4 w-4" />
+                            ) : (
+                              <MessageSquare className="h-4 w-4" />
+                            )}
+                          </div>
+
+                          <div
+                            className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[70%] ${
+                              isUser
+                                ? "rounded-tr-md bg-blue-600 text-white"
+                                : isAssistant
+                                  ? "rounded-tl-md border border-emerald-100 bg-emerald-50 text-gray-800"
+                                  : "rounded-tl-md border bg-gray-50 text-gray-700"
+                            }`}
+                          >
                             <div
-                              className={`w-full max-w-[92%] rounded-xl px-3 py-2 shadow-sm ${
-                                isUser
-                                  ? "border border-blue-100 bg-blue-50"
-                                  : isAssistant
-                                    ? "border border-emerald-100 bg-emerald-50"
-                                    : "border bg-white"
+                              className={`mb-1.5 flex items-center justify-between gap-3 ${
+                                isUser ? "text-blue-100" : "text-gray-500"
                               }`}
                             >
-                              <div className="mb-1 flex items-center justify-between gap-2">
-                                <Badge variant={isUser ? "default" : "secondary"}>
-                                  {isUser ? selectedUser?.name || "User" : isAssistant ? "Netra Chat" : "System"}
-                                </Badge>
-                                <span className="text-[11px] text-gray-400">
-                                  {message.timestamp ? new Date(message.timestamp).toLocaleString() : ""}
+                              <span className="text-xs font-semibold">
+                                {isUser
+                                  ? selectedUser.name
+                                  : isAssistant
+                                    ? "Netra Chat"
+                                    : "System"}
+                              </span>
+                              {message.timestamp && (
+                                <span className="text-[10px] opacity-80">
+                                  {new Date(message.timestamp).toLocaleString()}
                                 </span>
-                              </div>
-                              <p className="whitespace-pre-wrap break-words text-sm text-gray-800">{message.text}</p>
+                              )}
                             </div>
+                            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                              {message.text}
+                            </p>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </section>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
