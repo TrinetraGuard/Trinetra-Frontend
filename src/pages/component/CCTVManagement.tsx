@@ -1,16 +1,42 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { Camera, Edit2, MapPin, Plus, RefreshCw, Trash2, Video, WifiOff, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Camera,
+  Edit2,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Video,
+  Wifi,
+  WifiOff,
+  X,
+} from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
 import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
 import { checkRTSPStatus } from '@/lib/cctvApi';
-import { formatCctvTimestamp, isValidStreamUrl, maskRtspCredentials, normalizeRtspUrl } from '@/lib/cctv';
+import {
+  formatCctvTimestamp,
+  getCameraChannelOrder,
+  isValidStreamUrl,
+  maskRtspCredentials,
+  normalizeRtspUrl,
+  sortCamerasByChannel,
+} from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
 import { admin } from '@/lib/adminTheme';
 import { db } from '../../firebase/firebase';
@@ -25,6 +51,12 @@ const CCTVManagement = () => {
   const [formError, setFormError] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [importing, setImporting] = useState(false);
+  const [refreshingAll, setRefreshingAll] = useState(false);
+  const initialStatusCheckDone = useRef(false);
+
+  const orderedCameras = useMemo(() => sortCamerasByChannel(cameras), [cameras]);
+  const liveCount = orderedCameras.filter((camera) => camera.status === 'active').length;
+  const offlineCount = orderedCameras.length - liveCount;
 
   const [formData, setFormData] = useState<Omit<CCTV, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'lastStatusCheck'>>({
     placeName: '',
@@ -56,6 +88,23 @@ const CCTVManagement = () => {
       });
     }
   };
+
+  const checkAllCameraStatuses = async () => {
+    if (orderedCameras.length === 0 || refreshingAll) return;
+
+    setRefreshingAll(true);
+    for (const camera of orderedCameras) {
+      await checkCameraStatus(camera);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    setRefreshingAll(false);
+  };
+
+  useEffect(() => {
+    if (loading || orderedCameras.length === 0 || initialStatusCheckDone.current) return;
+    initialStatusCheckDone.current = true;
+    void checkAllCameraStatuses();
+  }, [loading, orderedCameras.length]);
 
   const handleImportSiteCameras = async () => {
     setImporting(true);
@@ -350,124 +399,192 @@ const CCTVManagement = () => {
       )}
 
       <Card className={admin.card}>
-        <CardHeader className={admin.cardHeader}>
-          <CardTitle>All CCTV Cameras ({cameras.length})</CardTitle>
-          <CardDescription>
-            Cameras added here appear automatically in Crowd Monitoring
-          </CardDescription>
+        <CardHeader className={`${admin.cardHeader} space-y-4`}>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>All CCTV Cameras ({orderedCameras.length})</CardTitle>
+              <CardDescription>
+                Live status for every registered camera — feeds appear in Crowd Monitoring
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void checkAllCameraStatuses()}
+              disabled={refreshingAll || orderedCameras.length === 0}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${refreshingAll ? 'animate-spin' : ''}`} />
+              {refreshingAll ? 'Checking all…' : 'Refresh all status'}
+            </Button>
+          </div>
+
+          {orderedCameras.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total</p>
+                <p className="mt-1 text-2xl font-bold text-gray-900">{orderedCameras.length}</p>
+              </div>
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">Live</p>
+                <p className="mt-1 flex items-center gap-2 text-2xl font-bold text-emerald-900">
+                  {liveCount}
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                </p>
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white px-4 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Offline</p>
+                <p className="mt-1 text-2xl font-bold text-gray-700">{offlineCount}</p>
+              </div>
+            </div>
+          )}
         </CardHeader>
-        <CardContent>
-          {cameras.length === 0 ? (
-            <div className="py-12 text-center">
+        <CardContent className="p-0 sm:p-0">
+          {orderedCameras.length === 0 ? (
+            <div className="px-6 py-12 text-center">
               <Camera className="mx-auto mb-4 h-16 w-16 text-gray-400" />
               <p className="font-medium text-gray-500">No CCTV cameras added yet</p>
               <p className="mt-2 text-sm text-gray-400">
-                Use the form above to register your first camera
+                Import the site NVR pack or use the form above to register cameras
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {cameras.map((camera) => (
-                <Card key={camera.id} className={`overflow-hidden ${admin.card} hover:shadow-md`}>
-                  <div className="relative aspect-video bg-black">
-                    {camera.status === 'active' ? (
-                      <CCTVStreamPlayer
-                        camera={camera}
-                        className="h-full w-full"
-                        autoPlay
-                        muted
-                        showControls={false}
-                        showLiveBadge
-                        compact
-                      />
-                    ) : (
-                      <div className="flex h-full flex-col items-center justify-center gap-2 bg-gray-900 px-4 text-center">
-                        <WifiOff className="h-10 w-10 text-gray-500" />
-                        <p className="text-xs text-gray-400">Camera offline or unreachable</p>
-                      </div>
-                    )}
-                  </div>
+            <div className="overflow-x-auto rounded-b-lg border-t border-gray-200">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 hover:bg-gray-50">
+                    <TableHead className="w-14 font-semibold">#</TableHead>
+                    <TableHead className="min-w-[160px] font-semibold">Camera</TableHead>
+                    <TableHead className="hidden min-w-[180px] font-semibold md:table-cell">
+                      Location
+                    </TableHead>
+                    <TableHead className="hidden min-w-[220px] font-semibold lg:table-cell">
+                      Stream URL
+                    </TableHead>
+                    <TableHead className="min-w-[120px] font-semibold">Status</TableHead>
+                    <TableHead className="hidden min-w-[130px] font-semibold sm:table-cell">
+                      Last checked
+                    </TableHead>
+                    <TableHead className="w-[180px] text-right font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orderedCameras.map((camera) => {
+                    const channel = getCameraChannelOrder(camera);
+                    const isLive = camera.status === 'active';
+                    const isChecking = camera.id ? checkingStatus.has(camera.id) : false;
 
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <CardTitle className="truncate text-lg">{camera.placeName}</CardTitle>
-                        <CardDescription className="mt-1 flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {camera.latitude.toFixed(6)}, {camera.longitude.toFixed(6)}
-                        </CardDescription>
-                        {camera.lastStatusCheck && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            Last checked: {formatCctvTimestamp(camera.lastStatusCheck)}
+                    return (
+                      <TableRow key={camera.id ?? camera.placeName} className="hover:bg-gray-50/80">
+                        <TableCell className="font-mono text-sm text-gray-500">
+                          {channel < 999 ? channel : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                                isLive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                              }`}
+                            >
+                              <Camera className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate font-semibold text-gray-900">{camera.placeName}</p>
+                              <p className="truncate text-xs text-gray-500 md:hidden">
+                                {camera.latitude.toFixed(4)}, {camera.longitude.toFixed(4)}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-start gap-1.5 text-sm text-gray-600">
+                            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span className="font-mono text-xs">
+                              {camera.latitude.toFixed(6)}, {camera.longitude.toFixed(6)}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <p
+                            className="max-w-[280px] truncate font-mono text-xs text-gray-600"
+                            title={maskRtspCredentials(camera.rtspLink)}
+                          >
+                            {maskRtspCredentials(camera.rtspLink)}
                           </p>
-                        )}
-                      </div>
-                      <Badge
-                        variant={camera.status === 'active' ? 'default' : 'outline'}
-                        className={`flex items-center gap-1 ${
-                          camera.status === 'active' ? 'bg-gray-900 hover:bg-gray-900' : 'bg-gray-400 hover:bg-gray-400'
-                        }`}
-                      >
-                        {camera.status === 'active' ? (
-                          <>
-                            <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-                            Online
-                          </>
-                        ) : (
-                          <>
-                            <WifiOff className="h-3 w-3" />
-                            Offline
-                          </>
-                        )}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    <div className="rounded-lg bg-gray-50 p-3">
-                      <p className="mb-1 text-xs font-medium text-gray-500">Stream URL</p>
-                      <p className="truncate font-mono text-sm text-gray-900">
-                        {maskRtspCredentials(camera.rtspLink)}
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setSelectedCamera(camera)}
-                        disabled={camera.status === 'inactive'}
-                      >
-                        <Video className="mr-2 h-4 w-4" />
-                        View Live
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void checkCameraStatus(camera)}
-                        disabled={checkingStatus.has(camera.id!)}
-                        title="Check Status"
-                      >
-                        <RefreshCw
-                          className={`h-4 w-4 ${checkingStatus.has(camera.id!) ? 'animate-spin' : ''}`}
-                        />
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleEdit(camera)}>
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void handleDelete(camera.id!)}
-                        className="border-red-600 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        </TableCell>
+                        <TableCell>
+                          {isChecking ? (
+                            <Badge variant="outline" className="gap-1.5 border-gray-300 bg-white">
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                              Checking…
+                            </Badge>
+                          ) : isLive ? (
+                            <Badge className="gap-1.5 border-emerald-600 bg-emerald-600 hover:bg-emerald-600">
+                              <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
+                              <Wifi className="h-3 w-3" />
+                              Live
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="gap-1.5 border-gray-300 bg-gray-100 text-gray-700"
+                            >
+                              <WifiOff className="h-3 w-3" />
+                              Offline
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="hidden text-sm text-gray-500 sm:table-cell">
+                          {camera.lastStatusCheck
+                            ? formatCctvTimestamp(camera.lastStatusCheck)
+                            : '—'}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => setSelectedCamera(camera)}
+                              disabled={!isLive}
+                              title="View live feed"
+                            >
+                              <Video className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => void checkCameraStatus(camera)}
+                              disabled={isChecking || !camera.id}
+                              title="Refresh status"
+                            >
+                              <RefreshCw className={`h-4 w-4 ${isChecking ? 'animate-spin' : ''}`} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2"
+                              onClick={() => handleEdit(camera)}
+                              title="Edit camera"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 px-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => camera.id && void handleDelete(camera.id)}
+                              title="Delete camera"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
