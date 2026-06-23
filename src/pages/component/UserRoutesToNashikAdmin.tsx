@@ -328,7 +328,6 @@ const UserRoutesToNashikAdmin = () => {
     const workers = Array.from({ length: Math.min(parallelLimit, pendingRows.length) }, async () => {
       for (let next = cursor++; next < pendingRows.length; next = cursor++) {
         const row = pendingRows[next];
-
         setRows((prev) => prev.map((r) => (r.uid === row.uid ? { ...r, status: "searching" } : r)));
         const resolved = await processSingleUser(row);
         const idx = rowIndexByUid.get(resolved.uid);
