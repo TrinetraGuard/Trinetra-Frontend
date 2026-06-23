@@ -12,13 +12,22 @@ import {
   doc,
   onSnapshot,
 } from "firebase/firestore";
-import { CheckCircle2, Filter } from "lucide-react";
-import { useEffect, useState } from "react";
+import { CheckCircle2, Filter, MapPin, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { admin } from "@/lib/adminTheme";
 import { db } from "../../firebase/firebase";
 
 // All available categories
@@ -92,6 +101,7 @@ const PlacesAdmin = () => {
   const [transportModes, setTransportModes] = useState<TransportMode[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [showOnlyComplete, setShowOnlyComplete] = useState(false);
+  const [placeSearch, setPlaceSearch] = useState("");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "places"), (snapshot) => {
@@ -100,9 +110,20 @@ const PlacesAdmin = () => {
     return () => unsub();
   }, []);
 
-  const displayedPlaces = showOnlyComplete
-    ? places.filter((p) => getPlaceCompleteness(p).isComplete)
-    : places;
+  const displayedPlaces = useMemo(() => {
+    let list = showOnlyComplete
+      ? places.filter((p) => getPlaceCompleteness(p).isComplete)
+      : places;
+    const q = placeSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter((p) =>
+        [p.name, ...(p.categories ?? [])].join(" ").toLowerCase().includes(q)
+      );
+    }
+    return [...list].sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+  }, [places, showOnlyComplete, placeSearch]);
 
   const handleAddUrl = () => {
     if (urlInput.trim() !== "") {
@@ -226,11 +247,23 @@ const PlacesAdmin = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className={admin.page}>
+      <div className="flex items-center gap-3">
+        <div className={admin.iconWrapSolid}>
+          <MapPin className="h-6 w-6" />
+        </div>
+        <div>
+          <h1 className={admin.title}>All Places</h1>
+          <p className={admin.subtitle}>
+            Add new places and manage the full places directory for the app
+          </p>
+        </div>
+      </div>
+
       {/* Form */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="border-b bg-gray-50">
-          <CardTitle>Add / Update Place</CardTitle>
+      <Card className={admin.card}>
+        <CardHeader className={admin.cardHeader}>
+          <CardTitle>Add New Place</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Name */}
@@ -605,120 +638,110 @@ const PlacesAdmin = () => {
           </div>
 
           {/* Save */}
-          <Button onClick={handleAddPlace} className="w-full">
+          <Button onClick={handleAddPlace} className={`w-full ${admin.cta}`}>
             Save Place
           </Button>
         </CardContent>
       </Card>
 
-      {/* List */}
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between gap-4 border-b bg-gray-50">
-          <CardTitle>All Places</CardTitle>
-          <div className="flex items-center gap-2">
+      <Card className={admin.card}>
+        <CardHeader className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${admin.cardHeader}`}>
+          <CardTitle>Places directory ({displayedPlaces.length})</CardTitle>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={placeSearch}
+                onChange={(e) => setPlaceSearch(e.target.value)}
+                placeholder="Search by name or category…"
+                className={`h-10 pl-9 ${admin.input}`}
+              />
+            </div>
             <Button
               type="button"
               variant={showOnlyComplete ? "default" : "outline"}
               size="sm"
+              className={showOnlyComplete ? admin.cta : ""}
               onClick={() => setShowOnlyComplete(!showOnlyComplete)}
             >
               <Filter className="h-4 w-4 mr-1.5" />
-              {showOnlyComplete ? "Showing 100% complete only" : "Show 100% complete only"}
+              {showOnlyComplete ? "100% complete only" : "Show all"}
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-gray-500 mb-4">
             {showOnlyComplete
               ? `${displayedPlaces.length} place(s) with information filled 100%.`
               : `${places.length} total · ${places.filter((p) => getPlaceCompleteness(p).isComplete).length} with 100% info`}
+            {placeSearch.trim() ? ` · filtered by “${placeSearch.trim()}”` : ""}
           </p>
-          <div className="space-y-3">
-            {displayedPlaces.map((place) => {
-              const { percent, isComplete } = getPlaceCompleteness(place);
-              return (
-              <div
-                key={place.id}
-                className="p-3 border rounded-lg flex justify-between items-center"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    {isComplete ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-800 text-white" title="Information filled 100%">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        100%
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600" title="Information completeness">
-                        {percent}%
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                  <p className="font-semibold">{place.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {place.categories?.join(", ")}
-                  </p>
-                  <p className="text-xs text-gray-400">
-                    Crowd: {place.crowd} | Season: {place.bestSeason}
-                    {place.entryType && place.entryType.length > 0 && (
-                      <> | Entry: {place.entryType.join(", ")}</>
-                    )}
-                    {place.entryFee && (
-                      <> | Fee: ₹{place.entryFee} INR</>
-                    )}
-                  </p>
-                  {place.transportModes && place.transportModes.length > 0 && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Transport:{" "}
-                      {place.transportModes
-                        .map((t) => {
-                          const hasPrice = t.minPrice || t.maxPrice;
-                          if (hasPrice) {
-                            const min = t.minPrice || "0";
-                            const max = t.maxPrice || "0";
-                            return `${t.mode} (₹${min}-${max})`;
-                          }
-                          return t.mode;
-                        })
-                        .join(", ")}
-                    </p>
-                  )}
-                  {place.facilities && place.facilities.length > 0 && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      Facilities:{" "}
-                      {place.facilities
-                        .map((f) => {
-                          const hasPrice = f.minPrice || f.maxPrice || f.estimatedPrice;
-                          if (hasPrice) {
-                            const parts: string[] = [f.name];
-                            if (f.minPrice || f.maxPrice) {
-                              const min = f.minPrice || "0";
-                              const max = f.maxPrice || "0";
-                              parts.push(`₹${min}-${max}`);
-                            }
-                            if (f.estimatedPrice) {
-                              parts.push(`(Est: ₹${f.estimatedPrice})`);
-                            }
-                            return parts.join(" ");
-                          }
-                          return f.name;
-                        })
-                        .join(", ")}
-                    </p>
-                  )}
-                  </div>
-                </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(place.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            );})}
-          </div>
+          {displayedPlaces.length === 0 ? (
+            <div className={`py-12 text-center ${admin.empty}`}>
+              No places match your filters.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[72px]">Status</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Categories</TableHead>
+                  <TableHead className="hidden lg:table-cell">Crowd / Season</TableHead>
+                  <TableHead className="hidden xl:table-cell">Entry</TableHead>
+                  <TableHead className="w-[88px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayedPlaces.map((place) => {
+                  const { percent, isComplete } = getPlaceCompleteness(place);
+                  return (
+                    <TableRow key={place.id}>
+                      <TableCell>
+                        {isComplete ? (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-900 text-white"
+                            title="Information filled 100%"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            100%
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                            title="Information completeness"
+                          >
+                            {percent}%
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-medium">{place.name}</TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-gray-600">
+                        {place.categories?.join(", ") || "—"}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-gray-500">
+                        {place.crowd || "—"} · {place.bestSeason || "—"}
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell text-sm text-gray-500">
+                        {place.entryType?.length ? place.entryType.join(", ") : "—"}
+                        {place.entryFee ? ` · ₹${place.entryFee}` : ""}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-gray-300 text-gray-700 hover:bg-gray-100"
+                          onClick={() => handleDelete(place.id)}
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

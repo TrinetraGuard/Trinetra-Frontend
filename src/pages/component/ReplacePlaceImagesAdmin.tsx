@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { admin } from "@/lib/adminTheme";
 import { db } from "../../firebase/firebase";
 
 type PlaceRow = { id: string; name: string; urls: string[] };
@@ -232,28 +233,28 @@ function SlotBlock(props: {
     <div
       className={`rounded-lg border p-3 sm:p-4 space-y-3 ${
         needsFix
-          ? "border-amber-300 bg-amber-50/40"
+          ? "border-gray-400 bg-gray-100/60"
           : status === "probing"
-            ? "border-muted bg-muted/20"
-            : "border-green-200 bg-green-50/30"
+            ? "border-gray-200 bg-gray-50"
+            : "border-gray-200 bg-white"
       }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Label className="text-sm font-semibold">{label}</Label>
         {status === "ok" && (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-800 bg-green-100 px-2 py-0.5 rounded-full">
+          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${admin.badge}`}>
             <CheckCircle2 className="h-3.5 w-3.5" />
             OK
           </span>
         )}
         {status === "broken" && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-900 bg-gray-200 px-2 py-0.5 rounded-full">
             <AlertTriangle className="h-3.5 w-3.5" />
             Broken link
           </span>
         )}
         {status === "empty" && (
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-full">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-gray-800 bg-gray-200 px-2 py-0.5 rounded-full">
             <AlertTriangle className="h-3.5 w-3.5" />
             Missing / empty URL
           </span>
@@ -297,7 +298,7 @@ function SlotBlock(props: {
             <Button
               type="button"
               size="sm"
-              className="bg-amber-600 hover:bg-amber-700"
+              className={admin.cta}
               disabled={savingKey === k || !(inputValue || "").trim()}
               onClick={onSave}
             >
@@ -617,11 +618,11 @@ export default function ReplacePlaceImagesAdmin() {
         </div>
       )}
 
-      <Card className="shadow-lg border-amber-100">
-        <CardHeader className="border-b bg-amber-50/50">
+      <Card className={admin.card}>
+        <CardHeader className={admin.cardHeader}>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-amber-100 text-amber-900">
+              <div className={admin.iconWrapSolid}>
                 <ImageOff className="h-7 w-7" />
               </div>
               <div>
@@ -655,10 +656,10 @@ export default function ReplacePlaceImagesAdmin() {
           {!hasAnyFirestoreData && loadErrorMessages.length === 0 ? (
             <p className="text-sm text-muted-foreground">Loading content…</p>
           ) : !anyIssue ? (
-            <div className="rounded-xl border border-green-200 bg-green-50/60 px-6 py-10 text-center">
-              <ImageIcon className="h-12 w-12 mx-auto text-green-700 mb-3" />
-              <p className="font-semibold text-green-900">No broken or missing images</p>
-              <p className="text-sm text-green-800/90 mt-1 max-w-lg mx-auto">
+            <div className={`rounded-xl border px-6 py-10 text-center ${admin.empty}`}>
+              <ImageIcon className="h-12 w-12 mx-auto text-gray-600 mb-3" />
+              <p className="font-semibold text-gray-900">No broken or missing images</p>
+              <p className="text-sm text-gray-600 mt-1 max-w-lg mx-auto">
                 All checked URLs in places, heritage stories, events, home feature images, and category icons loaded
                 successfully (or your search / filters hide the rest).
               </p>
@@ -667,16 +668,16 @@ export default function ReplacePlaceImagesAdmin() {
 
           {displayPlaces.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Places</h2>
+              <h2 className={admin.sectionTitle}>Places</h2>
               <div className="space-y-6">
                 {displayPlaces.map((place) => {
                   const indices = place.urls.length === 0 ? [0] : place.urls.map((_, i) => i);
                   return (
                     <div
                       key={place.id}
-                      className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4"
+                      className={`rounded-xl border p-4 sm:p-5 shadow-sm space-y-4 ${admin.card}`}
                     >
-                      <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
+                      <h3 className="font-semibold text-base text-gray-900 border-b border-gray-200 pb-2">
                         {place.name || "Unnamed place"}
                         <span className="ml-2 text-sm font-normal text-muted-foreground">
                           ({place.urls.length === 0 ? "no images yet" : `${place.urls.length} image URL(s)`})
@@ -723,7 +724,7 @@ export default function ReplacePlaceImagesAdmin() {
 
           {displayHeritage.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Heritage narratives</h2>
+              <h2 className={admin.sectionTitle}>Heritage narratives</h2>
               <div className="space-y-6">
                 {displayHeritage.map((h) => {
                   const k = mediaSlotKey.heritage(h.id);
@@ -731,9 +732,9 @@ export default function ReplacePlaceImagesAdmin() {
                   return (
                     <div
                       key={h.id}
-                      className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4"
+                      className={`rounded-xl border p-4 sm:p-5 shadow-sm space-y-4 ${admin.card}`}
                     >
-                      <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
+                      <h3 className="font-semibold text-base text-gray-900 border-b border-gray-200 pb-2">
                         {h.placeName}
                         <span className="ml-2 text-sm font-normal text-muted-foreground">(place_stories / hero)</span>
                       </h3>
@@ -761,7 +762,7 @@ export default function ReplacePlaceImagesAdmin() {
 
           {displayEvents.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Events</h2>
+              <h2 className={admin.sectionTitle}>Events</h2>
               <div className="space-y-6">
                 {displayEvents.map((ev) => {
                   const k = mediaSlotKey.event(ev.id);
@@ -769,9 +770,9 @@ export default function ReplacePlaceImagesAdmin() {
                   return (
                     <div
                       key={ev.id}
-                      className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4"
+                      className={`rounded-xl border p-4 sm:p-5 shadow-sm space-y-4 ${admin.card}`}
                     >
-                      <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
+                      <h3 className="font-semibold text-base text-gray-900 border-b border-gray-200 pb-2">
                         {ev.eventName}
                       </h3>
                       <SlotBlock
@@ -798,9 +799,9 @@ export default function ReplacePlaceImagesAdmin() {
 
           {displayFeature && feature && (
             <section className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Home feature carousel</h2>
-              <div className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4">
-                <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
+              <h2 className={admin.sectionTitle}>Home feature carousel</h2>
+              <div className={`rounded-xl border p-4 sm:p-5 shadow-sm space-y-4 ${admin.card}`}>
+                <h3 className="font-semibold text-base text-gray-900 border-b border-gray-200 pb-2">
                   {feature.title || "Home feature carousel"}
                   <span className="ml-2 text-sm font-normal text-muted-foreground">
                     ({feature.images.length === 0 ? "no images" : `${feature.images.length} slide(s)`})
@@ -845,7 +846,7 @@ export default function ReplacePlaceImagesAdmin() {
 
           {displayCategories.length > 0 && (
             <section className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b pb-2">Categories</h2>
+              <h2 className={admin.sectionTitle}>Categories</h2>
               <div className="space-y-6">
                 {displayCategories.map((c) => {
                   const k = mediaSlotKey.category(c.id);
@@ -853,9 +854,9 @@ export default function ReplacePlaceImagesAdmin() {
                   return (
                     <div
                       key={c.id}
-                      className="rounded-xl border-2 border-amber-200 bg-card p-4 sm:p-5 shadow-sm space-y-4"
+                      className={`rounded-xl border p-4 sm:p-5 shadow-sm space-y-4 ${admin.card}`}
                     >
-                      <h3 className="font-semibold text-base text-gray-900 border-b border-amber-100 pb-2">
+                      <h3 className="font-semibold text-base text-gray-900 border-b border-gray-200 pb-2">
                         {c.name || "Unnamed category"}
                       </h3>
                       <SlotBlock

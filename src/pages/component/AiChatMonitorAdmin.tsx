@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { db } from "@/firebase/firebase";
+import { admin } from "@/lib/adminTheme";
 
 type MessageRole = "user" | "assistant" | "system";
 type MonitorStep = "users" | "chats" | "messages";
@@ -184,10 +185,10 @@ function StepIndicator({ currentStep }: { currentStep: MonitorStep }) {
             <div
               className={`flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
                 isActive
-                  ? "bg-violet-600 text-white"
+                  ? "bg-gray-900 text-white"
                   : isComplete
-                    ? "bg-violet-100 text-violet-700"
-                    : "bg-gray-200 text-gray-500"
+                    ? "bg-gray-200 text-gray-800"
+                    : "bg-gray-100 text-gray-500"
               }`}
             >
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold">
@@ -359,8 +360,8 @@ const AiChatMonitorAdmin = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-violet-100 p-2">
-              <MessagesSquare className="h-6 w-6 text-violet-600" />
+            <div className={admin.iconWrapSolid}>
+              <MessagesSquare className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">AI Chat Monitor</h1>
@@ -372,15 +373,15 @@ const AiChatMonitorAdmin = () => {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="bg-violet-50 px-3 py-1 text-violet-700">
+          <Badge variant="secondary" className={`px-3 py-1 ${admin.badge}`}>
             <Users className="mr-1.5 h-3.5 w-3.5" />
             {usersWithChats.length} users
           </Badge>
-          <Badge variant="secondary" className="bg-blue-50 px-3 py-1 text-blue-700">
+          <Badge variant="secondary" className={`px-3 py-1 ${admin.badge}`}>
             <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
             {chats.length} chats
           </Badge>
-          <Badge variant="secondary" className="bg-emerald-50 px-3 py-1 text-emerald-700">
+          <Badge variant="secondary" className={`px-3 py-1 ${admin.badge}`}>
             {totalMessages} messages
           </Badge>
         </div>
@@ -393,9 +394,9 @@ const AiChatMonitorAdmin = () => {
           {/* Step 1 — Users (full width) */}
           {step === "users" && (
             <section className="min-h-[680px] bg-white">
-              <div className="border-b bg-gradient-to-r from-violet-50 to-white px-6 py-5">
+              <div className={`border-b px-6 py-5 ${admin.cardHeader}`}>
                 <div className="flex items-center gap-3">
-                  <Users className="h-5 w-5 text-violet-600" />
+                  <Users className="h-5 w-5 text-gray-700" />
                   <div>
                     <CardTitle className="text-lg">All Users</CardTitle>
                     <CardDescription>Select a user to view their Netra Chat sessions</CardDescription>
@@ -434,7 +435,7 @@ const AiChatMonitorAdmin = () => {
                         key={entry.userId}
                         type="button"
                         onClick={() => selectUser(entry.userId)}
-                        className="group w-full rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-violet-300 hover:bg-violet-50/50 hover:shadow-sm"
+                        className={`group w-full ${admin.listItem}`}
                       >
                         <div className="flex items-center gap-4">
                           <UserAvatar name={entry.name} fallback={entry.userId} size="lg" />
@@ -443,7 +444,7 @@ const AiChatMonitorAdmin = () => {
                               <p className="truncate text-base font-semibold text-gray-900">
                                 {entry.name}
                               </p>
-                              <Badge variant="secondary" className="shrink-0 bg-violet-100 text-violet-700">
+                              <Badge variant="secondary" className={`shrink-0 ${admin.badge}`}>
                                 {entry.chats.length} chat{entry.chats.length === 1 ? "" : "s"}
                               </Badge>
                             </div>
@@ -456,7 +457,7 @@ const AiChatMonitorAdmin = () => {
                               <span>Last active {toRelativeTime(entry.chats[0]?.updatedAt)}</span>
                             </div>
                           </div>
-                          <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-violet-500" />
+                          <ChevronRight className="h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-gray-700" />
                         </div>
                       </button>
                     ))}
@@ -468,7 +469,7 @@ const AiChatMonitorAdmin = () => {
           {/* Step 2 — Chats (full width, replaces users) */}
           {step === "chats" && selectedUser && (
             <section className="min-h-[680px] bg-white">
-              <div className="border-b bg-gradient-to-r from-blue-50 to-white px-6 py-5">
+              <div className={`border-b px-6 py-5 ${admin.cardHeader}`}>
                 <div className="flex items-center gap-4">
                   <Button variant="outline" size="sm" onClick={goBackToUsers} className="shrink-0">
                     <ArrowLeft className="mr-2 h-4 w-4" />
@@ -510,11 +511,11 @@ const AiChatMonitorAdmin = () => {
                       key={chat.id}
                       type="button"
                       onClick={() => selectChat(chat.id)}
-                      className="group w-full rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-sm"
+                      className={`group w-full ${admin.listItem}`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100">
-                          <MessageSquare className="h-6 w-6 text-blue-600" />
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                          <MessageSquare className="h-6 w-6 text-gray-700" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-start justify-between gap-2">
@@ -536,7 +537,7 @@ const AiChatMonitorAdmin = () => {
                             <span>{chat.aiMessageCount} Netra</span>
                           </div>
                         </div>
-                        <ChevronRight className="mt-3 h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-blue-500" />
+                        <ChevronRight className="mt-3 h-5 w-5 shrink-0 text-gray-300 transition group-hover:text-gray-700" />
                       </div>
                     </button>
                   ))}
@@ -562,7 +563,7 @@ const AiChatMonitorAdmin = () => {
                       </CardDescription>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="w-fit shrink-0 bg-emerald-100 text-emerald-700">
+                  <Badge variant="secondary" className={`w-fit shrink-0 ${admin.badge}`}>
                     <Bot className="mr-1.5 h-3.5 w-3.5" />
                     Netra Chat
                   </Badge>
@@ -616,9 +617,9 @@ const AiChatMonitorAdmin = () => {
                           <div
                             className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                               isUser
-                                ? "bg-blue-100 text-blue-700"
+                                ? "bg-gray-900 text-white"
                                 : isAssistant
-                                  ? "bg-emerald-100 text-emerald-700"
+                                  ? "bg-gray-100 text-gray-700"
                                   : "bg-gray-100 text-gray-600"
                             }`}
                           >
@@ -634,15 +635,15 @@ const AiChatMonitorAdmin = () => {
                           <div
                             className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[70%] ${
                               isUser
-                                ? "rounded-tr-md bg-blue-600 text-white"
+                                ? "rounded-tr-md bg-gray-900 text-white"
                                 : isAssistant
-                                  ? "rounded-tl-md border border-emerald-100 bg-emerald-50 text-gray-800"
+                                  ? "rounded-tl-md border border-gray-200 bg-white text-gray-800"
                                   : "rounded-tl-md border bg-gray-50 text-gray-700"
                             }`}
                           >
                             <div
                               className={`mb-1.5 flex items-center justify-between gap-3 ${
-                                isUser ? "text-blue-100" : "text-gray-500"
+                                isUser ? "text-gray-300" : "text-gray-500"
                               }`}
                             >
                               <span className="text-xs font-semibold">

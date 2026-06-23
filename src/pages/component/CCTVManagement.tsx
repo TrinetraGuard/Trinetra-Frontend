@@ -11,6 +11,7 @@ import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
 import { checkRTSPStatus } from '@/lib/cctvApi';
 import { formatCctvTimestamp, isStreamProxyConfigured, isValidRtspUrl, maskRtspCredentials } from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
+import { admin } from '@/lib/adminTheme';
 import { db } from '../../firebase/firebase';
 
 const CCTVManagement = () => {
@@ -223,12 +224,17 @@ const CCTVManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">CCTV Management</h1>
-          <p className="mt-1 text-gray-500">
-            Manage CCTV cameras and RTSP links for real-time crowd monitoring
-          </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className={admin.iconWrapSolid}>
+            <Camera className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className={admin.title}>CCTV Management</h1>
+            <p className={admin.subtitle}>
+              Manage CCTV cameras and RTSP links for real-time crowd monitoring
+            </p>
+          </div>
         </div>
         <Button
           onClick={() => {
@@ -236,7 +242,7 @@ const CCTVManagement = () => {
             setIsAdding(true);
             setActionMessage('');
           }}
-          className="bg-orange-600 text-white hover:bg-orange-700"
+          className={admin.cta}
         >
           <Plus className="mr-2 h-4 w-4" />
           Add CCTV Camera
@@ -244,22 +250,22 @@ const CCTVManagement = () => {
       </div>
 
       {!isStreamProxyConfigured() && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className={admin.warning}>
           <strong>Production setup:</strong> Browsers cannot play RTSP directly. Set{' '}
-          <code className="rounded bg-amber-100 px-1">VITE_CCTV_PROXY_URL</code> to your go2rtc or
+          <code className="rounded bg-gray-200 px-1">VITE_CCTV_PROXY_URL</code> to your go2rtc or
           MediaMTX service so live feeds appear in Crowd Monitoring.
         </div>
       )}
 
       {actionMessage && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+        <div className={admin.success}>
           {actionMessage}
         </div>
       )}
 
       {(isAdding || editingId) && (
-        <Card>
-          <CardHeader>
+        <Card className={admin.card}>
+          <CardHeader className={admin.cardHeader}>
             <CardTitle>{editingId ? 'Edit CCTV Camera' : 'Add New CCTV Camera'}</CardTitle>
             <CardDescription>
               Enter camera details including place name, coordinates, and RTSP/HLS stream URL
@@ -338,7 +344,7 @@ const CCTVManagement = () => {
             <div className="flex gap-3 pt-2">
               <Button
                 onClick={editingId ? handleUpdate : handleAdd}
-                className="bg-orange-600 text-white hover:bg-orange-700"
+                className={admin.cta}
               >
                 {editingId ? 'Update Camera' : 'Add Camera'}
               </Button>
@@ -350,8 +356,8 @@ const CCTVManagement = () => {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
+      <Card className={admin.card}>
+        <CardHeader className={admin.cardHeader}>
           <CardTitle>All CCTV Cameras ({cameras.length})</CardTitle>
           <CardDescription>
             Cameras added here appear automatically in Crowd Monitoring
@@ -369,7 +375,7 @@ const CCTVManagement = () => {
           ) : (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
               {cameras.map((camera) => (
-                <Card key={camera.id} className="overflow-hidden transition-shadow hover:shadow-lg">
+                <Card key={camera.id} className={`overflow-hidden ${admin.card} hover:shadow-md`}>
                   <div className="relative aspect-video bg-black">
                     {camera.status === 'active' ? (
                       <CCTVStreamPlayer
@@ -405,7 +411,7 @@ const CCTVManagement = () => {
                       <Badge
                         variant={camera.status === 'active' ? 'default' : 'outline'}
                         className={`flex items-center gap-1 ${
-                          camera.status === 'active' ? 'bg-green-600' : 'bg-gray-400'
+                          camera.status === 'active' ? 'bg-gray-900 hover:bg-gray-900' : 'bg-gray-400 hover:bg-gray-400'
                         }`}
                       >
                         {camera.status === 'active' ? (

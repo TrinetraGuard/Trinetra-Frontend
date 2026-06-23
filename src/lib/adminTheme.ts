@@ -15,6 +15,15 @@ export const admin = {
   statCard: "border border-gray-200 bg-white",
   statIcon: "p-3 bg-gray-900 rounded-lg text-white",
   badge: "bg-gray-100 text-gray-800 border-gray-200",
+  /** Primary call-to-action — dark fill */
+  cta: "bg-gray-900 text-white hover:bg-gray-800",
+  /** Success / confirmation banner */
+  success: "rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800",
+  /** List row hover */
+  listItem:
+    "rounded-xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-gray-400 hover:bg-gray-50 hover:shadow-sm",
+  /** Section heading inside a page */
+  sectionTitle: "text-lg font-bold text-gray-900 border-b border-gray-200 pb-2",
 } as const;
 
 export type DensityLevel = "low" | "medium" | "high" | "critical";
