@@ -223,42 +223,6 @@ export function normalizePlaybackUrl(url: string): string {
   }
 }
 
-/** Resolves playback URL via backend (registers RTSP streams with go2rtc). */
-export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlayback | null> {
-  const source = normalizeRtspUrl(camera.rtspLink.trim());
-  if (!source) return null;
-
-  const direct = getStreamPlaybackUrl({ ...camera, rtspLink: source });
-  if (direct) return direct;
-
-  const apiBase = getTrinetraApiBase();
-  if (!apiBase) return null;
-
-  const params = new URLSearchParams({ src: source });
-  params.set('camera_id', getStableStreamId(camera, source));
-
-  try {
-    const response = await enqueueCctvPlayback(() =>
-      fetchWithTimeout(
-        `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
-        { method: 'GET' },
-        45000
-      )
-    );
-    if (!response.ok) {
-      const err = (await response.json().catch(() => null)) as { error?: string } | null;
-      console.error('[cctv] playback failed:', err?.error ?? response.status);
-      return null;
-    }
-    const data = (await response.json()) as StreamPlayback;
-    if (!data.url || !data.type) return null;
-    return { ...data, url: normalizePlaybackUrl(data.url) };
-  } catch (error) {
-    console.error('[cctv] playback request failed:', error);
-    return null;
-  }
-}
-
 export function formatCctvTimestamp(
   value: Date | { toDate: () => Date } | undefined
 ): string {
@@ -281,13 +245,29 @@ async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: numbe
 }
 
 export async function probeCctvProxy(): Promise<boolean> {
+  const health = await fetchCctvRelayHealth();
+  return health.online;
+}
+
+export interface CctvRelayHealth {
+  online: boolean;
+  message?: string;
+}
+
+export interface CctvNvrHealth {
+  online: boolean;
+  host?: string;
+  port?: string;
+  message?: string;
+}
+
+export async function fetchCctvRelayHealth(): Promise<CctvRelayHealth> {
   const apiBase = getTrinetraApiBase();
   if (apiBase) {
     try {
       const response = await fetchWithTimeout(`${apiBase}/v1/cctv/relay/health`, { method: 'GET' }, 4000);
       if (response.ok) {
-        const data = (await response.json()) as { online?: boolean };
-        return data.online === true;
+        return (await response.json()) as CctvRelayHealth;
       }
     } catch {
       // Fall through to direct relay probe.
@@ -295,12 +275,93 @@ export async function probeCctvProxy(): Promise<boolean> {
   }
 
   const proxyBase = getCctvProxyBase();
-  if (!proxyBase) return false;
+  if (!proxyBase) {
+    return { online: false, message: 'Stream relay is not configured' };
+  }
 
   try {
     const response = await fetchWithTimeout(`${proxyBase}/api/config`, { method: 'GET' }, 4000);
-    return response.ok;
+    return response.ok
+      ? { online: true, message: 'Stream relay online' }
+      : { online: false, message: 'Stream relay returned an error' };
   } catch {
-    return false;
+    return { online: false, message: 'Stream relay unreachable' };
+  }
+}
+
+export async function probeCctvNvr(rtspSource: string): Promise<CctvNvrHealth> {
+  const source = normalizeRtspUrl(rtspSource.trim());
+  if (!isValidRtspUrl(source)) {
+    return { online: false, message: 'Invalid RTSP URL' };
+  }
+
+  const apiBase = getTrinetraApiBase();
+  if (!apiBase) {
+    return { online: false, message: 'Backend required to probe NVR reachability' };
+  }
+
+  try {
+    const params = new URLSearchParams({ src: source });
+    const response = await fetchWithTimeout(
+      `${apiBase}/v1/cctv/nvr/health?${params.toString()}`,
+      { method: 'GET' },
+      8000
+    );
+    if (response.ok) {
+      return (await response.json()) as CctvNvrHealth;
+    }
+    const err = (await response.json().catch(() => null)) as { error?: string } | null;
+    return { online: false, message: err?.error ?? 'NVR health check failed' };
+  } catch {
+    return { online: false, message: 'Could not reach backend for NVR health check' };
+  }
+}
+
+export type StreamPlaybackResult = {
+  playback: StreamPlayback | null;
+  errorMessage?: string;
+};
+
+/** Resolves playback URL via backend (registers RTSP streams with go2rtc). */
+export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlaybackResult> {
+  const source = normalizeRtspUrl(camera.rtspLink.trim());
+  if (!source) return { playback: null, errorMessage: 'Missing stream URL' };
+
+  const direct = getStreamPlaybackUrl({ ...camera, rtspLink: source });
+  if (direct) return { playback: direct };
+
+  const apiBase = getTrinetraApiBase();
+  if (!apiBase) {
+    return {
+      playback: null,
+      errorMessage: 'Start the Trinetra backend and stream relay to play RTSP cameras in the browser.',
+    };
+  }
+
+  const params = new URLSearchParams({ src: source });
+  params.set('camera_id', getStableStreamId(camera, source));
+
+  try {
+    const response = await enqueueCctvPlayback(() =>
+      fetchWithTimeout(
+        `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
+        { method: 'GET' },
+        45000
+      )
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { error?: string } | null;
+      const message = err?.error ?? `Playback request failed (${response.status})`;
+      console.error('[cctv] playback failed:', message);
+      return { playback: null, errorMessage: message };
+    }
+    const data = (await response.json()) as StreamPlayback;
+    if (!data.url || !data.type) {
+      return { playback: null, errorMessage: 'Backend returned an invalid playback response' };
+    }
+    return { playback: { ...data, url: normalizePlaybackUrl(data.url) } };
+  } catch (error) {
+    console.error('[cctv] playback request failed:', error);
+    return { playback: null, errorMessage: 'Could not reach the Trinetra backend for stream playback' };
   }
 }

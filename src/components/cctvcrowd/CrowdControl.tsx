@@ -12,11 +12,13 @@ import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBan
 import { formatCctvTimestamp, getCameraChannelOrder, sortCamerasByChannel } from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
 import { useCctvCameras } from '@/hooks/useCctvCameras';
+import { useStreamInfrastructure } from '@/hooks/useStreamInfrastructure';
 
 type ViewMode = 'grid' | 'list' | 'wall';
 
 const CrowdControl = () => {
   const { cameras, loading } = useCctvCameras();
+  const { relay, nvr, checking: infraChecking, streamsEnabled } = useStreamInfrastructure(cameras);
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('wall');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
@@ -83,7 +85,7 @@ const CrowdControl = () => {
         </div>
       </div>
 
-      <CctvStreamRelayBanner />
+      <CctvStreamRelayBanner relay={relay} nvr={nvr} checking={infraChecking} />
 
       <Card className="border-gray-200 shadow-sm">
         <CardHeader className="pb-3">
@@ -188,6 +190,8 @@ const CrowdControl = () => {
           <CardContent>
             <CameraMonitorWall
               cameras={filteredCameras}
+              streamsEnabled={streamsEnabled}
+              nvrMessage={nvr.message}
               onSelectCamera={(camera) => setSelectedCamera(camera)}
             />
           </CardContent>
@@ -201,6 +205,8 @@ const CrowdControl = () => {
               onViewLive={setSelectedCamera}
               variant="grid"
               startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
+              streamsEnabled={streamsEnabled}
+              nvrMessage={nvr.message}
             />
           ))}
         </div>
@@ -213,6 +219,8 @@ const CrowdControl = () => {
               onViewLive={setSelectedCamera}
               variant="list"
               startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
+              streamsEnabled={streamsEnabled}
+              nvrMessage={nvr.message}
             />
           ))}
         </div>
@@ -278,14 +286,22 @@ const CrowdControl = () => {
 
             <CardContent className="bg-black p-0">
               <div className="aspect-video">
-                <CCTVStreamPlayer
-                  camera={selectedCamera}
-                  className="h-full w-full"
-                  autoPlay
-                  muted={false}
-                  showControls
-                  showLiveBadge
-                />
+                {streamsEnabled ? (
+                  <CCTVStreamPlayer
+                    camera={selectedCamera}
+                    className="h-full w-full"
+                    autoPlay
+                    muted={false}
+                    showControls
+                    showLiveBadge
+                  />
+                ) : (
+                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-center text-white">
+                    <WifiOff className="h-12 w-12 text-red-400" />
+                    <p className="font-semibold">Live feed unavailable</p>
+                    <p className="max-w-md text-sm text-gray-400">{nvr.message}</p>
+                  </div>
+                )}
               </div>
               {selectedCamera.lastStatusCheck && (
                 <div className="flex items-center gap-2 border-t border-gray-800 px-4 py-3 text-xs text-gray-400">

@@ -155,8 +155,14 @@ export function CCTVStreamPlayer({
 
       while (connectAttemptRef.current < maxAttempts && !cancelled) {
         connectAttemptRef.current += 1;
-        playback = await resolveStreamPlayback(camera);
-        if (playback || connectAttemptRef.current >= maxAttempts) break;
+        const result = await resolveStreamPlayback(camera);
+        playback = result.playback;
+        if (playback) break;
+        if (result.errorMessage && connectAttemptRef.current >= maxAttempts) {
+          handleFailure(result.errorMessage);
+          return;
+        }
+        if (connectAttemptRef.current >= maxAttempts) break;
         await new Promise((resolve) => setTimeout(resolve, 3000));
       }
 

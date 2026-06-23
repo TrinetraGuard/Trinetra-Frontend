@@ -12,6 +12,8 @@ interface CameraFeedCardProps {
   onViewLive: (camera: CCTV) => void;
   variant?: 'grid' | 'list';
   startupDelayMs?: number;
+  streamsEnabled?: boolean;
+  nvrMessage?: string;
 }
 
 export function CameraFeedCard({
@@ -19,6 +21,8 @@ export function CameraFeedCard({
   onViewLive,
   variant = 'grid',
   startupDelayMs = 0,
+  streamsEnabled = true,
+  nvrMessage,
 }: CameraFeedCardProps) {
   if (variant === 'list') {
     return (
@@ -26,16 +30,23 @@ export function CameraFeedCard({
         <CardContent className="p-6">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
             <div className="relative h-48 w-full flex-shrink-0 overflow-hidden rounded-lg sm:h-36 sm:w-64">
-              <CCTVStreamPlayer
-                camera={camera}
-                className="h-full w-full"
-                autoPlay
-                muted
-                showControls={false}
-                showLiveBadge
-                compact
-                startupDelayMs={startupDelayMs}
-              />
+              {streamsEnabled ? (
+                <CCTVStreamPlayer
+                  camera={camera}
+                  className="h-full w-full"
+                  autoPlay
+                  muted
+                  showControls={false}
+                  showLiveBadge
+                  compact
+                  startupDelayMs={startupDelayMs}
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gray-900 px-3 text-center text-white">
+                  <WifiOff className="h-8 w-8 text-red-400" />
+                  <p className="text-xs text-gray-400">{nvrMessage ?? 'NVR offline'}</p>
+                </div>
+              )}
               <div className="absolute left-3 top-3">
                 <StatusBadge status={camera.status} />
               </div>
@@ -89,16 +100,24 @@ export function CameraFeedCard({
     <Card className="group overflow-hidden border-gray-200 transition-all duration-300 hover:shadow-xl">
       <div className="relative">
         <div className="relative aspect-video overflow-hidden bg-black">
-          <CCTVStreamPlayer
-            camera={camera}
-            className="h-full w-full"
-            autoPlay
-            muted
-            showControls={false}
-            showLiveBadge
-            compact
-            startupDelayMs={startupDelayMs}
-          />
+          {streamsEnabled ? (
+            <CCTVStreamPlayer
+              camera={camera}
+              className="h-full w-full"
+              autoPlay
+              muted
+              showControls={false}
+              showLiveBadge
+              compact
+              startupDelayMs={startupDelayMs}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-2 px-3 text-center text-white">
+              <WifiOff className="h-10 w-10 text-red-400" />
+              <p className="text-sm font-medium">Feed unavailable</p>
+              <p className="text-xs text-gray-400">{nvrMessage ?? 'NVR offline'}</p>
+            </div>
+          )}
 
           <div className="absolute left-3 top-3 z-10">
             <StatusBadge status={camera.status} />

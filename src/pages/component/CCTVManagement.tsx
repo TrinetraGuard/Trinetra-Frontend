@@ -42,9 +42,11 @@ import type { CCTV } from '@/types/cctv';
 import { admin } from '@/lib/adminTheme';
 import { db } from '../../firebase/firebase';
 import { importSiteCameras, useCctvCameras } from '@/hooks/useCctvCameras';
+import { useStreamInfrastructure } from '@/hooks/useStreamInfrastructure';
 
 const CCTVManagement = () => {
   const { cameras, loading } = useCctvCameras();
+  const { relay, nvr, checking: infraChecking } = useStreamInfrastructure(cameras);
   const [isAdding, setIsAdding] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
@@ -307,7 +309,7 @@ const CCTVManagement = () => {
         </div>
       )}
 
-      <CctvStreamRelayBanner />
+      <CctvStreamRelayBanner relay={relay} nvr={nvr} checking={infraChecking} />
 
       {(isAdding || editingId) && (
         <Card className={admin.card}>

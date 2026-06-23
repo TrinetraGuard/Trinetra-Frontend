@@ -60,7 +60,7 @@ export function computeTrend(history: number[], current: number): CrowdTrend {
 }
 
 export async function ensureCameraStreamReady(camera: CCTV): Promise<boolean> {
-  const playback = await resolveStreamPlayback(camera);
+  const { playback } = await resolveStreamPlayback(camera);
   return Boolean(playback?.url);
 }
 
