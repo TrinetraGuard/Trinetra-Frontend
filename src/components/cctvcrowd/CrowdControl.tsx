@@ -1,7 +1,6 @@
 import { Activity, Camera, Grid, LayoutGrid, List, MapPin, Monitor, RefreshCw, Wifi, WifiOff, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { admin } from '@/lib/adminTheme';
 import { Badge } from '@/components/ui/badge';
@@ -9,41 +8,18 @@ import { Button } from '@/components/ui/button';
 import { CameraFeedCard } from '@/components/cctvcrowd/CameraFeedCard';
 import { CameraMonitorWall } from '@/components/cctvcrowd/CameraMonitorWall';
 import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
-import { formatCctvTimestamp, isStreamProxyConfigured } from '@/lib/cctv';
+import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
+import { formatCctvTimestamp } from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
-import { db } from '@/firebase/firebase';
+import { useCctvCameras } from '@/hooks/useCctvCameras';
 
 type ViewMode = 'grid' | 'list' | 'wall';
 
 const CrowdControl = () => {
-  const [cameras, setCameras] = useState<CCTV[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { cameras, loading } = useCctvCameras();
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('wall');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
-
-  useEffect(() => {
-    const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const camerasData = snapshot.docs.map((snapshotDoc) => ({
-          id: snapshotDoc.id,
-          ...snapshotDoc.data(),
-        })) as CCTV[];
-
-        setCameras(camerasData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error listening to CCTV cameras:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
 
   const filteredCameras = cameras.filter((camera) => {
     if (filterStatus === 'active') return camera.status === 'active';
@@ -105,12 +81,7 @@ const CrowdControl = () => {
         </div>
       </div>
 
-      {!isStreamProxyConfigured() && (
-        <div className={admin.warning}>
-          Configure <code className="rounded bg-gray-200 px-1">VITE_CCTV_PROXY_URL</code> (go2rtc or
-          MediaMTX) in production so RTSP cameras render as live video in this dashboard.
-        </div>
-      )}
+      <CctvStreamRelayBanner />
 
       <Card className="border-gray-200 shadow-sm">
         <CardHeader className="pb-3">

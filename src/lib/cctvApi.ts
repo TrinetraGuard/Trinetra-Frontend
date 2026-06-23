@@ -1,8 +1,11 @@
 import {
+  buildGo2RtcHlsUrl,
   getCctvProxyBase,
-  getCctvProxyType,
+  getTrinetraApiBase,
   isValidRtspUrl,
   isWebPlayableUrl,
+  normalizeRtspUrl,
+  probeCctvProxy,
 } from '@/lib/cctv';
 import type { CCTVStatus } from '@/types/cctv';
 
@@ -11,53 +14,51 @@ export interface CctvStatusResult {
   message?: string;
 }
 
-async function probeGo2RtcStream(rtspLink: string): Promise<CCTVStatus> {
-  const proxyBase = getCctvProxyBase();
-  if (!proxyBase) {
-    return isValidRtspUrl(rtspLink) ? 'active' : 'inactive';
-  }
-
+async function probeStreamUrl(url: string): Promise<boolean> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const timeoutId = setTimeout(() => controller.abort(), 45000);
 
   try {
-    const probeUrl = `${proxyBase}/api/stream.m3u8?src=${encodeURIComponent(rtspLink)}`;
-    const response = await fetch(probeUrl, {
+    const response = await fetch(url, {
       method: 'GET',
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
-    return response.ok ? 'active' : 'inactive';
+    return response.ok;
   } catch {
     clearTimeout(timeoutId);
-    return 'inactive';
+    return false;
   }
 }
 
-async function probeApiStream(cameraId: string): Promise<CCTVStatus> {
-  const proxyBase = getCctvProxyBase();
-  if (!proxyBase) return 'inactive';
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+async function checkStatusViaBackend(
+  streamUrl: string,
+  cameraId?: string
+): Promise<CctvStatusResult | null> {
+  const apiBase = getTrinetraApiBase();
+  if (!apiBase) return null;
 
   try {
-    const response = await fetch(`${proxyBase}/cctv/${cameraId}/status`, {
-      method: 'GET',
-      signal: controller.signal,
+    const body: { stream_url: string; camera_id?: string } = {
+      stream_url: streamUrl.trim(),
+    };
+    if (cameraId) body.camera_id = cameraId;
+
+    const response = await fetch(`${apiBase}/v1/cctv/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
     });
-    clearTimeout(timeoutId);
 
-    if (!response.ok) return 'inactive';
+    if (!response.ok) return null;
 
-    const data = (await response.json()) as { status?: string; active?: boolean };
-    if (data.active === true || data.status === 'online' || data.status === 'active') {
-      return 'active';
+    const data = (await response.json()) as CctvStatusResult;
+    if (data.status === 'active' || data.status === 'inactive') {
+      return data;
     }
-    return 'inactive';
+    return null;
   } catch {
-    clearTimeout(timeoutId);
-    return 'inactive';
+    return null;
   }
 }
 
@@ -65,48 +66,46 @@ export async function checkRTSPStatus(
   rtspLink: string,
   cameraId?: string
 ): Promise<CctvStatusResult> {
-  const trimmed = rtspLink.trim();
+  const trimmed = normalizeRtspUrl(rtspLink.trim());
+
+  const backendResult = await checkStatusViaBackend(trimmed, cameraId);
+  if (backendResult) return backendResult;
 
   if (isWebPlayableUrl(trimmed)) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-    try {
-      const response = await fetch(trimmed, {
-        method: 'HEAD',
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-      return {
-        status: response.ok ? 'active' : 'inactive',
-        message: response.ok ? 'Stream reachable' : 'Stream unreachable',
-      };
-    } catch {
-      clearTimeout(timeoutId);
-      return { status: 'inactive', message: 'Stream unreachable' };
-    }
-  }
-
-  if (!isValidRtspUrl(trimmed)) {
-    return { status: 'inactive', message: 'Invalid RTSP URL format' };
-  }
-
-  if (getCctvProxyType() === 'api' && cameraId) {
-    const status = await probeApiStream(cameraId);
+    const online = await probeStreamUrl(trimmed);
     return {
-      status,
-      message: status === 'active' ? 'Camera online' : 'Camera offline',
+      status: online ? 'active' : 'inactive',
+      message: online ? 'Stream online' : 'Stream unreachable',
     };
   }
 
-  const status = await probeGo2RtcStream(trimmed);
+  if (!isValidRtspUrl(trimmed)) {
+    return { status: 'inactive', message: 'Invalid stream URL format' };
+  }
+
+  if (!getCctvProxyBase()) {
+    return {
+      status: 'active',
+      message: 'RTSP URL saved',
+    };
+  }
+
+  const relayOnline = await probeCctvProxy();
+  if (!relayOnline) {
+    return {
+      status: 'active',
+      message: 'RTSP URL saved — start Trinetra backend and stream relay for live preview',
+    };
+  }
+
+  const hlsUrl = buildGo2RtcHlsUrl(trimmed);
+  if (!hlsUrl) {
+    return { status: 'active', message: 'RTSP URL saved' };
+  }
+
+  const online = await probeStreamUrl(hlsUrl);
   return {
-    status,
-    message:
-      status === 'active'
-        ? 'Stream online'
-        : getCctvProxyBase()
-          ? 'Stream offline or proxy unreachable'
-          : 'Valid RTSP URL (configure VITE_CCTV_PROXY_URL for live check)',
+    status: online ? 'active' : 'inactive',
+    message: online ? 'Camera online' : 'Camera offline or unreachable from stream relay',
   };
 }

@@ -1,0 +1,10 @@
+# go2rtc stream relay — converts RTSP camera feeds to HLS for browser playback.
+# Run: npm run cctv:proxy  (uses Trinetra-Backend script; no Docker required)
+api:
+  listen: ":1984"
+  origin: "*"
+
+webrtc:
+  listen: ":8555"
+
+streams: {}

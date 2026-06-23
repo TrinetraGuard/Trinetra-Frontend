@@ -16,6 +16,17 @@ export default defineConfig({
     hmr: {
       port: 3000,
     },
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8081",
+        changeOrigin: true,
+      },
+      "/cctv-proxy": {
+        target: "http://127.0.0.1:1984",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/cctv-proxy/, ""),
+      },
+    },
   },
   resolve: {
     alias: {

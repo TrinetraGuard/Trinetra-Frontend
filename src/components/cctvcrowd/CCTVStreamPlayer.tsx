@@ -4,11 +4,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
-  getStreamPlaybackUrl,
   isStreamProxyConfigured,
   isValidRtspUrl,
+  resolveStreamPlayback,
 } from '@/lib/cctv';
-import type { CCTV } from '@/types/cctv';
+import type { CCTV, StreamPlayback } from '@/types/cctv';
 
 type PlayerState = 'idle' | 'loading' | 'playing' | 'error';
 
@@ -24,6 +24,74 @@ interface CCTVStreamPlayerProps {
   onPlaying?: () => void;
 }
 
+function attachPlayback(
+  playback: StreamPlayback,
+  video: HTMLVideoElement,
+  autoPlay: boolean,
+  onFail: (message: string) => void,
+  hlsRef: React.MutableRefObject<Hls | null>,
+  networkRetriesRef: React.MutableRefObject<number>
+) {
+  if (playback.type === 'native') {
+    video.src = playback.url;
+    if (autoPlay) {
+      void video.play().catch(() => {
+        onFail('Autoplay blocked. Click play to start the stream.');
+      });
+    }
+    return;
+  }
+
+  if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    video.src = playback.url;
+    if (autoPlay) {
+      void video.play().catch(() => {
+        onFail('Autoplay blocked. Click play to start the stream.');
+      });
+    }
+    return;
+  }
+
+  if (!Hls.isSupported()) {
+    onFail('This browser does not support HLS playback.');
+    return;
+  }
+
+  const hls = new Hls({
+    enableWorker: true,
+    lowLatencyMode: true,
+    backBufferLength: 30,
+    manifestLoadingTimeOut: 60000,
+    manifestLoadingMaxRetry: 5,
+    levelLoadingTimeOut: 60000,
+    fragLoadingTimeOut: 60000,
+  });
+  hlsRef.current = hls;
+  hls.loadSource(playback.url);
+  hls.attachMedia(video);
+  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+    networkRetriesRef.current = 0;
+    if (autoPlay) {
+      void video.play().catch(() => {
+        onFail('Autoplay blocked. Click play to start the stream.');
+      });
+    }
+  });
+  hls.on(Hls.Events.ERROR, (_event, data) => {
+    if (!data.fatal) return;
+    if (data.type === Hls.ErrorTypes.NETWORK_ERROR && networkRetriesRef.current < 5) {
+      networkRetriesRef.current += 1;
+      hls.startLoad();
+      return;
+    }
+    onFail(
+      'HLS stream error. Verify the RTSP link, Trinetra backend, stream relay, and that the camera is online on your network.'
+    );
+    hls.destroy();
+    hlsRef.current = null;
+  });
+}
+
 export function CCTVStreamPlayer({
   camera,
   className = '',
@@ -37,11 +105,10 @@ export function CCTVStreamPlayer({
 }: CCTVStreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const networkRetriesRef = useRef(0);
   const [state, setState] = useState<PlayerState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [retryKey, setRetryKey] = useState(0);
-
-  const playback = getStreamPlaybackUrl(camera);
 
   const destroyPlayer = useCallback(() => {
     if (hlsRef.current) {
@@ -65,88 +132,59 @@ export function CCTVStreamPlayer({
   );
 
   useEffect(() => {
+    let cancelled = false;
+    let removeVideoListeners: (() => void) | undefined;
+
     destroyPlayer();
+    networkRetriesRef.current = 0;
     setState('loading');
     setErrorMessage('');
 
-    if (!playback) {
-      const needsProxy = isValidRtspUrl(camera.rtspLink) && !isStreamProxyConfigured();
-      handleFailure(
-        needsProxy
-          ? 'Set VITE_CCTV_PROXY_URL (go2rtc/MediaMTX) to play RTSP streams in the browser.'
-          : 'Unable to build a playable stream URL for this camera.'
-      );
-      return;
-    }
+    void (async () => {
+      const playback = await resolveStreamPlayback(camera);
+      if (cancelled) return;
 
-    const video = videoRef.current;
-    if (!video) return;
-
-    video.muted = muted;
-    video.playsInline = true;
-    if (showControls) {
-      video.controls = true;
-    }
-
-    const onVideoPlaying = () => {
-      setState('playing');
-      onPlaying?.();
-    };
-
-    const onVideoError = () => {
-      handleFailure('Video playback failed. Check the stream URL and proxy service.');
-    };
-
-    video.addEventListener('playing', onVideoPlaying);
-    video.addEventListener('error', onVideoError);
-
-    if (playback.type === 'native') {
-      video.src = playback.url;
-      if (autoPlay) {
-        void video.play().catch(() => {
-          handleFailure('Autoplay blocked. Click play to start the stream.');
-        });
+      if (!playback) {
+        const isRtsp = isValidRtspUrl(camera.rtspLink);
+        handleFailure(
+          isRtsp
+            ? isStreamProxyConfigured()
+              ? 'Unable to connect to this camera. Check the RTSP URL and that the camera is reachable from the stream relay.'
+              : 'Start the Trinetra backend and stream relay to play RTSP cameras in the browser.'
+            : 'Unable to build a playable stream URL for this camera.'
+        );
+        return;
       }
-    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = playback.url;
-      if (autoPlay) {
-        void video.play().catch(() => {
-          handleFailure('Autoplay blocked. Click play to start the stream.');
-        });
-      }
-    } else if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 30,
-      });
-      hlsRef.current = hls;
-      hls.loadSource(playback.url);
-      hls.attachMedia(video);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        if (autoPlay) {
-          void video.play().catch(() => {
-            handleFailure('Autoplay blocked. Click play to start the stream.');
-          });
-        }
-      });
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (!data.fatal) return;
-        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls.startLoad();
-          return;
-        }
-        handleFailure('HLS stream error. Verify the RTSP link and streaming proxy.');
-        hls.destroy();
-        hlsRef.current = null;
-      });
-    } else {
-      handleFailure('This browser does not support HLS playback.');
-    }
+
+      const video = videoRef.current;
+      if (!video || cancelled) return;
+
+      video.muted = muted;
+      video.playsInline = true;
+      video.controls = showControls;
+
+      const onVideoPlaying = () => {
+        setState('playing');
+        onPlaying?.();
+      };
+
+      const onVideoError = () => {
+        handleFailure('Video playback failed. Check the stream URL.');
+      };
+
+      video.addEventListener('playing', onVideoPlaying);
+      video.addEventListener('error', onVideoError);
+      removeVideoListeners = () => {
+        video.removeEventListener('playing', onVideoPlaying);
+        video.removeEventListener('error', onVideoError);
+      };
+
+      attachPlayback(playback, video, autoPlay, handleFailure, hlsRef, networkRetriesRef);
+    })();
 
     return () => {
-      video.removeEventListener('playing', onVideoPlaying);
-      video.removeEventListener('error', onVideoError);
+      cancelled = true;
+      removeVideoListeners?.();
       destroyPlayer();
     };
   }, [
@@ -156,10 +194,21 @@ export function CCTVStreamPlayer({
     handleFailure,
     muted,
     onPlaying,
-    playback,
     retryKey,
     showControls,
   ]);
+
+  useEffect(() => {
+    if (state !== 'loading') return;
+
+    const timeoutId = window.setTimeout(() => {
+      handleFailure(
+        'Connection timed out. The camera may be offline, on another network, or the RTSP URL may be incorrect.'
+      );
+    }, 60000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [state, handleFailure, retryKey]);
 
   const retry = () => setRetryKey((value) => value + 1);
 

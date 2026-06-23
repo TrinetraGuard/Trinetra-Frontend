@@ -14,29 +14,21 @@ interface CameraFeedCardProps {
 }
 
 export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraFeedCardProps) {
-  const isActive = camera.status === 'active';
-
   if (variant === 'list') {
     return (
       <Card className="border-gray-200 transition-all duration-300 hover:shadow-lg">
         <CardContent className="p-6">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
             <div className="relative h-48 w-full flex-shrink-0 overflow-hidden rounded-lg sm:h-36 sm:w-64">
-              {isActive ? (
-                <CCTVStreamPlayer
-                  camera={camera}
-                  className="h-full w-full"
-                  autoPlay
-                  muted
-                  showControls={false}
-                  showLiveBadge
-                  compact
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-500 to-gray-600">
-                  <WifiOff className="h-10 w-10 text-white/50" />
-                </div>
-              )}
+              <CCTVStreamPlayer
+                camera={camera}
+                className="h-full w-full"
+                autoPlay
+                muted
+                showControls={false}
+                showLiveBadge
+                compact
+              />
               <div className="absolute left-3 top-3">
                 <StatusBadge status={camera.status} />
               </div>
@@ -73,12 +65,7 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
                   variant="outline"
                   size="sm"
                   onClick={() => onViewLive(camera)}
-                  disabled={!isActive}
-                  className={`ml-4 border-2 ${
-                    isActive
-                      ? 'border-blue-600 text-blue-600 hover:bg-blue-50'
-                      : 'cursor-not-allowed border-gray-300 text-gray-400'
-                  }`}
+                  className="ml-4 border-2 border-blue-600 text-blue-600 hover:bg-blue-50"
                 >
                   <Video className="mr-2 h-4 w-4" />
                   View Live
@@ -95,21 +82,15 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
     <Card className="group overflow-hidden border-gray-200 transition-all duration-300 hover:shadow-xl">
       <div className="relative">
         <div className="relative aspect-video overflow-hidden bg-black">
-          {isActive ? (
-            <CCTVStreamPlayer
-              camera={camera}
-              className="h-full w-full"
-              autoPlay
-              muted
-              showControls={false}
-              showLiveBadge
-              compact
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-500 to-gray-600">
-              <WifiOff className="h-16 w-16 text-white/40" />
-            </div>
-          )}
+          <CCTVStreamPlayer
+            camera={camera}
+            className="h-full w-full"
+            autoPlay
+            muted
+            showControls={false}
+            showLiveBadge
+            compact
+          />
 
           <div className="absolute left-3 top-3 z-10">
             <StatusBadge status={camera.status} />
@@ -119,17 +100,15 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
             <p className="truncate text-lg font-bold text-white drop-shadow-lg">{camera.placeName}</p>
           </div>
 
-          {isActive && (
-            <div className="absolute right-3 top-3 z-10">
-              <Button
-                size="sm"
-                onClick={() => onViewLive(camera)}
-                className="bg-white text-gray-900 shadow-lg hover:bg-gray-100"
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+          <div className="absolute right-3 top-3 z-10">
+            <Button
+              size="sm"
+              onClick={() => onViewLive(camera)}
+              className="bg-white text-gray-900 shadow-lg hover:bg-gray-100"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -151,16 +130,11 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
         <Button
           variant="outline"
           size="sm"
-          className={`w-full border-2 transition-all ${
-            isActive
-              ? 'border-blue-600 text-blue-600 hover:border-blue-700 hover:bg-blue-50'
-              : 'cursor-not-allowed border-gray-300 text-gray-400'
-          }`}
+          className="w-full border-2 border-blue-600 text-blue-600 transition-all hover:border-blue-700 hover:bg-blue-50"
           onClick={() => onViewLive(camera)}
-          disabled={!isActive}
         >
           <Video className="mr-2 h-4 w-4" />
-          {isActive ? 'View Live Feed' : 'Camera Offline'}
+          View Live Feed
         </Button>
       </CardContent>
     </Card>

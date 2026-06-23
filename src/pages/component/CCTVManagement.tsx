@@ -1,29 +1,30 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { Camera, Edit2, MapPin, Plus, RefreshCw, Trash2, Video, WifiOff, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
+import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
 import { checkRTSPStatus } from '@/lib/cctvApi';
-import { formatCctvTimestamp, isStreamProxyConfigured, isValidRtspUrl, maskRtspCredentials } from '@/lib/cctv';
+import { formatCctvTimestamp, isValidStreamUrl, maskRtspCredentials, normalizeRtspUrl } from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
 import { admin } from '@/lib/adminTheme';
 import { db } from '../../firebase/firebase';
+import { importSiteCameras, useCctvCameras } from '@/hooks/useCctvCameras';
 
 const CCTVManagement = () => {
-  const [cameras, setCameras] = useState<CCTV[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
+  const { cameras, loading } = useCctvCameras();
+  const [isAdding, setIsAdding] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
   const [checkingStatus, setCheckingStatus] = useState<Set<string>>(new Set());
   const [formError, setFormError] = useState('');
   const [actionMessage, setActionMessage] = useState('');
-  const statusCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [importing, setImporting] = useState(false);
 
   const [formData, setFormData] = useState<Omit<CCTV, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'lastStatusCheck'>>({
     placeName: '',
@@ -56,64 +57,39 @@ const CCTVManagement = () => {
     }
   };
 
-  useEffect(() => {
-    const checkAllCameras = () => {
-      cameras.forEach((camera) => {
-        if (camera.id && camera.rtspLink) {
-          void checkCameraStatus(camera);
-        }
-      });
-    };
-
-    if (cameras.length > 0) {
-      checkAllCameras();
+  const handleImportSiteCameras = async () => {
+    setImporting(true);
+    setActionMessage('');
+    try {
+      const count = await importSiteCameras();
+      setActionMessage(
+        count > 0
+          ? `Imported ${count} site NVR camera${count === 1 ? '' : 's'}.`
+          : 'All 8 site cameras are already registered.'
+      );
+    } catch (error) {
+      console.error('Error importing site cameras:', error);
+      setFormError('Failed to import site cameras.');
+    } finally {
+      setImporting(false);
     }
-
-    statusCheckIntervalRef.current = setInterval(checkAllCameras, 30000);
-
-    return () => {
-      if (statusCheckIntervalRef.current) {
-        clearInterval(statusCheckIntervalRef.current);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cameras]);
-
-  useEffect(() => {
-    const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const camerasData = snapshot.docs.map((snapshotDoc) => ({
-          id: snapshotDoc.id,
-          ...snapshotDoc.data(),
-        })) as CCTV[];
-
-        setCameras(camerasData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error listening to CCTV cameras:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
+  };
 
   const validateForm = (): boolean => {
     setFormError('');
 
-    if (!formData.placeName.trim()) {
+    const placeName = formData.placeName.trim();
+    const streamUrl = formData.rtspLink.trim();
+
+    if (!placeName) {
       setFormError('Please enter CCTV place name.');
       return false;
     }
-    if (!formData.rtspLink.trim()) {
+    if (!streamUrl) {
       setFormError('Please enter an RTSP or HLS stream URL.');
       return false;
     }
-    if (!isValidRtspUrl(formData.rtspLink) && !formData.rtspLink.startsWith('http')) {
+    if (!isValidStreamUrl(streamUrl)) {
       setFormError('Enter a valid rtsp:// URL or an http(s):// HLS stream URL.');
       return false;
     }
@@ -135,11 +111,18 @@ const CCTVManagement = () => {
   const handleAdd = async () => {
     if (!validateForm()) return;
 
+    const payload = {
+      placeName: formData.placeName.trim(),
+      rtspLink: normalizeRtspUrl(formData.rtspLink.trim()),
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+    };
+
     try {
-      const initialStatus = await checkRTSPStatus(formData.rtspLink);
+      const initialStatus = await checkRTSPStatus(payload.rtspLink);
 
       await addDoc(collection(db, 'cctv_cameras'), {
-        ...formData,
+        ...payload,
         status: initialStatus.status,
         lastStatusCheck: new Date(),
         createdAt: new Date(),
@@ -157,11 +140,18 @@ const CCTVManagement = () => {
   const handleUpdate = async () => {
     if (!editingId || !validateForm()) return;
 
+    const payload = {
+      placeName: formData.placeName.trim(),
+      rtspLink: normalizeRtspUrl(formData.rtspLink.trim()),
+      latitude: formData.latitude,
+      longitude: formData.longitude,
+    };
+
     try {
-      const newStatus = await checkRTSPStatus(formData.rtspLink, editingId);
+      const newStatus = await checkRTSPStatus(payload.rtspLink, editingId);
 
       await updateDoc(doc(db, 'cctv_cameras', editingId), {
-        ...formData,
+        ...payload,
         status: newStatus.status,
         lastStatusCheck: new Date(),
         updatedAt: new Date(),
@@ -209,7 +199,7 @@ const CCTVManagement = () => {
       latitude: 0,
       longitude: 0,
     });
-    setIsAdding(false);
+    setIsAdding(cameras.length === 0);
     setEditingId(null);
     setFormError('');
   };
@@ -236,32 +226,35 @@ const CCTVManagement = () => {
             </p>
           </div>
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsAdding(true);
-            setActionMessage('');
-          }}
-          className={admin.cta}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add CCTV Camera
-        </Button>
-      </div>
-
-      {!isStreamProxyConfigured() && (
-        <div className={admin.warning}>
-          <strong>Production setup:</strong> Browsers cannot play RTSP directly. Set{' '}
-          <code className="rounded bg-gray-200 px-1">VITE_CCTV_PROXY_URL</code> to your go2rtc or
-          MediaMTX service so live feeds appear in Crowd Monitoring.
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => void handleImportSiteCameras()}
+            disabled={importing}
+          >
+            {importing ? 'Importing…' : 'Import site NVR (8 cameras)'}
+          </Button>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsAdding(true);
+              setActionMessage('');
+            }}
+            className={admin.cta}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Add CCTV Camera
+          </Button>
         </div>
-      )}
+      </div>
 
       {actionMessage && (
         <div className={admin.success}>
           {actionMessage}
         </div>
       )}
+
+      <CctvStreamRelayBanner />
 
       {(isAdding || editingId) && (
         <Card className={admin.card}>
@@ -369,7 +362,7 @@ const CCTVManagement = () => {
               <Camera className="mx-auto mb-4 h-16 w-16 text-gray-400" />
               <p className="font-medium text-gray-500">No CCTV cameras added yet</p>
               <p className="mt-2 text-sm text-gray-400">
-                Click &quot;Add CCTV Camera&quot; to register your first stream
+                Use the form above to register your first camera
               </p>
             </div>
           ) : (
@@ -388,8 +381,9 @@ const CCTVManagement = () => {
                         compact
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center bg-gray-200">
+                      <div className="flex h-full flex-col items-center justify-center gap-2 bg-gray-900 px-4 text-center">
                         <WifiOff className="h-10 w-10 text-gray-500" />
+                        <p className="text-xs text-gray-400">Camera offline or unreachable</p>
                       </div>
                     )}
                   </div>

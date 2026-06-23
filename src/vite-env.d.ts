@@ -9,7 +9,6 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID: string;
   readonly VITE_API_BASE_URL?: string;
   readonly VITE_CCTV_PROXY_URL?: string;
-  readonly VITE_CCTV_PROXY_TYPE?: 'go2rtc' | 'api';
 }
 
 interface ImportMeta {

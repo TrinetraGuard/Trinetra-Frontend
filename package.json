@@ -7,7 +7,9 @@
     "start": "vite --port 3000",
     "build": "tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cctv:proxy": "bash ../../Trinetra-Backend/scripts/start-cctv-relay.sh",
+    "cctv:proxy:docker": "docker compose -f docker-compose.go2rtc.yml up"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.23.0",
