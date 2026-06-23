@@ -230,9 +230,9 @@ export function CCTVStreamPlayer({
 
     const timeoutId = window.setTimeout(() => {
       handleFailure(
-        'Connection timed out. The camera may be offline, on another network, or the RTSP URL may be incorrect.'
+        'Connection timed out. Restart go2rtc with PREFER_BINARY=1 ./scripts/start-cctv-relay.sh and confirm ffplay can open the same RTSP URL on this Mac.'
       );
-    }, 60000);
+    }, 90000);
 
     return () => window.clearTimeout(timeoutId);
   }, [state, handleFailure, retryKey]);

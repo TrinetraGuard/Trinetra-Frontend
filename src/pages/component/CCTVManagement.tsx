@@ -33,6 +33,7 @@ import {
   dedupeCamerasByChannel,
   formatCctvTimestamp,
   getCameraChannelOrder,
+  getStableStreamId,
   isValidStreamUrl,
   maskRtspCredentials,
   normalizeRtspUrl,
@@ -77,7 +78,7 @@ const CCTVManagement = () => {
     setCheckingStatus((prev) => new Set(prev).add(camera.id!));
 
     try {
-      const result = await checkRTSPStatus(camera.rtspLink, camera.id);
+      const result = await checkRTSPStatus(camera.rtspLink, getStableStreamId(camera));
 
       await updateDoc(doc(db, 'cctv_cameras', camera.id!), {
         status: result.status,
@@ -101,7 +102,7 @@ const CCTVManagement = () => {
     setRefreshingAll(true);
     for (const camera of orderedCameras) {
       await checkCameraStatus(camera);
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
     setRefreshingAll(false);
   };

@@ -38,6 +38,9 @@ async function checkStatusViaBackend(
   const apiBase = getTrinetraApiBase();
   if (!apiBase) return null;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
+
   try {
     const body: { stream_url: string; camera_id?: string } = {
       stream_url: streamUrl.trim(),
@@ -48,7 +51,10 @@ async function checkStatusViaBackend(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) return null;
 
@@ -58,6 +64,7 @@ async function checkStatusViaBackend(
     }
     return null;
   } catch {
+    clearTimeout(timeoutId);
     return null;
   }
 }
@@ -70,6 +77,13 @@ export async function checkRTSPStatus(
 
   const backendResult = await checkStatusViaBackend(trimmed, cameraId);
   if (backendResult) return backendResult;
+
+  if (getTrinetraApiBase()) {
+    return {
+      status: 'inactive',
+      message: 'Status check timed out or failed — restart go2rtc and backend, then refresh',
+    };
+  }
 
   if (isWebPlayableUrl(trimmed)) {
     const online = await probeStreamUrl(trimmed);

@@ -20,6 +20,14 @@ export default defineConfig({
       "/api": {
         target: "http://127.0.0.1:8081",
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on("proxyReq", (proxyReq, req) => {
+            if (req.headers.host) {
+              proxyReq.setHeader("x-forwarded-host", req.headers.host);
+              proxyReq.setHeader("x-forwarded-proto", "http");
+            }
+          });
+        },
       },
       "/cctv-proxy": {
         target: "http://127.0.0.1:1984",

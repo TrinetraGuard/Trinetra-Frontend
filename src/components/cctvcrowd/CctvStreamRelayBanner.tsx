@@ -47,10 +47,21 @@ export function CctvStreamRelayBanner({ relay, nvr, checking = false }: CctvStre
         <div className="flex items-start gap-2">
           <WifiOff className="mt-0.5 h-4 w-4 shrink-0" />
           <div>
-            <strong>
-              Camera stream still connecting{nvr.host ? ` (${nvr.host}${nvr.port ? `:${nvr.port}` : ''})` : ''}.
-            </strong>{' '}
-            Live feeds will still attempt to play. ffmpeg may need a few seconds to connect (same as ffplay).
+            <strong>Camera stream not ready yet{nvr.host ? ` (${nvr.host}:${nvr.port ?? '554'})` : ''}.</strong>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
+              <li>
+                Restart the relay as a <strong>native binary</strong> (not Docker):{' '}
+                <code className="rounded bg-gray-200 px-1.5 py-0.5 text-sm">
+                  PREFER_BINARY=1 ./scripts/start-cctv-relay.sh
+                </code>
+              </li>
+              <li>
+                Confirm ffplay works on this same Mac:{' '}
+                <code className="rounded bg-gray-200 px-1.5 py-0.5 text-sm">
+                  ffplay &quot;rtsp://admin:cctv@0099@192.168.1.30:554/unicast/c1/s0/live&quot;
+                </code>
+              </li>
+            </ul>
             {nvr.message && (
               <p className="mt-2 text-xs text-gray-600">{nvr.message}</p>
             )}

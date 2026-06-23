@@ -346,7 +346,7 @@ export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlaybac
       fetchWithTimeout(
         `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
         { method: 'GET' },
-        45000
+        90000
       )
     );
     if (!response.ok) {
