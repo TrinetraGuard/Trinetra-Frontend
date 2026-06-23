@@ -1,21 +1,24 @@
 import {
   addDoc,
   collection,
+  doc,
   getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
-
-import { DEFAULT_CCTV_CAMERAS, getDefaultCamerasForDisplay } from '@/lib/defaultCctvCameras';
-import { normalizeRtspUrl } from '@/lib/cctv';
-import type { CCTV } from '@/types/cctv';
-import { db } from '@/firebase/firebase';
 import { useEffect, useState } from 'react';
 
+import { DEFAULT_CCTV_CAMERAS, getDefaultCamerasForDisplay } from '@/lib/defaultCctvCameras';
+import { normalizeRtspUrl, sortCamerasByChannel } from '@/lib/cctv';
+import type { CCTV } from '@/types/cctv';
+import { db } from '@/firebase/firebase';
+
 let seedPromise: Promise<void> | null = null;
+let syncPromise: Promise<void> | null = null;
 
 async function seedDefaultCamerasIfEmpty(): Promise<void> {
   if (seedPromise) return seedPromise;
@@ -47,8 +50,53 @@ async function seedDefaultCamerasIfEmpty(): Promise<void> {
   }
 }
 
+/** Fix RTSP URLs in Firestore (password @ encoding, channel paths). */
+async function syncSiteCameraUrls(): Promise<void> {
+  if (syncPromise) return syncPromise;
+
+  syncPromise = (async () => {
+    const existing = await getDocs(collection(db, 'cctv_cameras'));
+    const updates: Promise<void>[] = [];
+
+    for (const docSnap of existing.docs) {
+      const data = docSnap.data() as { rtspLink?: string; placeName?: string };
+      const link = data.rtspLink ?? '';
+      const channelMatch = link.match(/\/unicast\/c(\d+)\//i);
+      if (!channelMatch) continue;
+
+      const channel = Number.parseInt(channelMatch[1], 10);
+      const defaultCam = DEFAULT_CCTV_CAMERAS[channel - 1];
+      if (!defaultCam) continue;
+
+      const correctUrl = normalizeRtspUrl(defaultCam.rtspLink);
+      const normalizedExisting = normalizeRtspUrl(link);
+
+      if (normalizedExisting !== correctUrl) {
+        updates.push(
+          updateDoc(doc(db, 'cctv_cameras', docSnap.id), {
+            rtspLink: correctUrl,
+            placeName: defaultCam.placeName,
+            updatedAt: serverTimestamp(),
+          }).then(() => undefined)
+        );
+      }
+    }
+
+    await Promise.all(updates);
+  })();
+
+  try {
+    await syncPromise;
+  } catch (error) {
+    syncPromise = null;
+    console.error('Failed to sync site camera URLs:', error);
+  }
+}
+
 /** Import site NVR cameras, skipping channels already registered. */
 export async function importSiteCameras(): Promise<number> {
+  await syncSiteCameraUrls();
+
   const existing = await getDocs(collection(db, 'cctv_cameras'));
   const existingPaths = new Set(
     existing.docs.map((docSnap) => {
@@ -80,13 +128,16 @@ export async function importSiteCameras(): Promise<number> {
 }
 
 export function useCctvCameras() {
-  const [cameras, setCameras] = useState<CCTV[]>(getDefaultCamerasForDisplay());
+  const [cameras, setCameras] = useState<CCTV[]>(sortCamerasByChannel(getDefaultCamerasForDisplay()));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
-    void seedDefaultCamerasIfEmpty();
+    void (async () => {
+      await seedDefaultCamerasIfEmpty();
+      await syncSiteCameraUrls();
+    })();
 
     const q = query(collection(db, 'cctv_cameras'), orderBy('createdAt', 'desc'));
 
@@ -96,13 +147,15 @@ export function useCctvCameras() {
         if (cancelled) return;
 
         if (snapshot.empty) {
-          setCameras(getDefaultCamerasForDisplay());
+          setCameras(sortCamerasByChannel(getDefaultCamerasForDisplay()));
         } else {
           setCameras(
-            snapshot.docs.map((snapshotDoc) => ({
-              id: snapshotDoc.id,
-              ...snapshotDoc.data(),
-            })) as CCTV[]
+            sortCamerasByChannel(
+              snapshot.docs.map((snapshotDoc) => ({
+                id: snapshotDoc.id,
+                ...snapshotDoc.data(),
+              })) as CCTV[]
+            )
           );
         }
         setLoading(false);
@@ -110,7 +163,7 @@ export function useCctvCameras() {
       (error) => {
         console.error('Error listening to CCTV cameras:', error);
         if (!cancelled) {
-          setCameras(getDefaultCamerasForDisplay());
+          setCameras(sortCamerasByChannel(getDefaultCamerasForDisplay()));
           setLoading(false);
         }
       }

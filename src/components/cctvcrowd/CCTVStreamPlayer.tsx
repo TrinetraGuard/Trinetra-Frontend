@@ -20,6 +20,7 @@ interface CCTVStreamPlayerProps {
   showControls?: boolean;
   showLiveBadge?: boolean;
   compact?: boolean;
+  startupDelayMs?: number;
   onError?: (message: string) => void;
   onPlaying?: () => void;
 }
@@ -100,12 +101,14 @@ export function CCTVStreamPlayer({
   showControls = true,
   showLiveBadge = true,
   compact = false,
+  startupDelayMs = 0,
   onError,
   onPlaying,
 }: CCTVStreamPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const networkRetriesRef = useRef(0);
+  const connectAttemptRef = useRef(0);
   const [state, setState] = useState<PlayerState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [retryKey, setRetryKey] = useState(0);
@@ -137,11 +140,26 @@ export function CCTVStreamPlayer({
 
     destroyPlayer();
     networkRetriesRef.current = 0;
+    connectAttemptRef.current = 0;
     setState('loading');
     setErrorMessage('');
 
     void (async () => {
-      const playback = await resolveStreamPlayback(camera);
+      if (startupDelayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, startupDelayMs));
+      }
+      if (cancelled) return;
+
+      const maxAttempts = 3;
+      let playback: StreamPlayback | null = null;
+
+      while (connectAttemptRef.current < maxAttempts && !cancelled) {
+        connectAttemptRef.current += 1;
+        playback = await resolveStreamPlayback(camera);
+        if (playback || connectAttemptRef.current >= maxAttempts) break;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+
       if (cancelled) return;
 
       if (!playback) {
@@ -163,7 +181,7 @@ export function CCTVStreamPlayer({
       video.playsInline = true;
       video.controls = showControls;
 
-      const onVideoPlaying = () => {
+      const onVideoReady = () => {
         setState('playing');
         onPlaying?.();
       };
@@ -172,10 +190,12 @@ export function CCTVStreamPlayer({
         handleFailure('Video playback failed. Check the stream URL.');
       };
 
-      video.addEventListener('playing', onVideoPlaying);
+      video.addEventListener('playing', onVideoReady);
+      video.addEventListener('canplay', onVideoReady);
       video.addEventListener('error', onVideoError);
       removeVideoListeners = () => {
-        video.removeEventListener('playing', onVideoPlaying);
+        video.removeEventListener('playing', onVideoReady);
+        video.removeEventListener('canplay', onVideoReady);
         video.removeEventListener('error', onVideoError);
       };
 
@@ -196,6 +216,7 @@ export function CCTVStreamPlayer({
     onPlaying,
     retryKey,
     showControls,
+    startupDelayMs,
   ]);
 
   useEffect(() => {

@@ -9,7 +9,7 @@ import { CameraFeedCard } from '@/components/cctvcrowd/CameraFeedCard';
 import { CameraMonitorWall } from '@/components/cctvcrowd/CameraMonitorWall';
 import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
 import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
-import { formatCctvTimestamp } from '@/lib/cctv';
+import { formatCctvTimestamp, getCameraChannelOrder, sortCamerasByChannel } from '@/lib/cctv';
 import type { CCTV } from '@/types/cctv';
 import { useCctvCameras } from '@/hooks/useCctvCameras';
 
@@ -21,11 +21,13 @@ const CrowdControl = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('wall');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
 
-  const filteredCameras = cameras.filter((camera) => {
-    if (filterStatus === 'active') return camera.status === 'active';
-    if (filterStatus === 'inactive') return camera.status === 'inactive';
-    return true;
-  });
+  const filteredCameras = sortCamerasByChannel(
+    cameras.filter((camera) => {
+      if (filterStatus === 'active') return camera.status === 'active';
+      if (filterStatus === 'inactive') return camera.status === 'inactive';
+      return true;
+    })
+  );
 
   const activeCameras = cameras.filter((camera) => camera.status === 'active').length;
   const inactiveCameras = cameras.filter((camera) => camera.status === 'inactive').length;
@@ -198,6 +200,7 @@ const CrowdControl = () => {
               camera={camera}
               onViewLive={setSelectedCamera}
               variant="grid"
+              startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
             />
           ))}
         </div>
@@ -209,6 +212,7 @@ const CrowdControl = () => {
               camera={camera}
               onViewLive={setSelectedCamera}
               variant="list"
+              startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
             />
           ))}
         </div>

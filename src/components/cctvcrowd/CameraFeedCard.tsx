@@ -11,9 +11,15 @@ interface CameraFeedCardProps {
   camera: CCTV;
   onViewLive: (camera: CCTV) => void;
   variant?: 'grid' | 'list';
+  startupDelayMs?: number;
 }
 
-export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraFeedCardProps) {
+export function CameraFeedCard({
+  camera,
+  onViewLive,
+  variant = 'grid',
+  startupDelayMs = 0,
+}: CameraFeedCardProps) {
   if (variant === 'list') {
     return (
       <Card className="border-gray-200 transition-all duration-300 hover:shadow-lg">
@@ -28,6 +34,7 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
                 showControls={false}
                 showLiveBadge
                 compact
+                startupDelayMs={startupDelayMs}
               />
               <div className="absolute left-3 top-3">
                 <StatusBadge status={camera.status} />
@@ -90,6 +97,7 @@ export function CameraFeedCard({ camera, onViewLive, variant = 'grid' }: CameraF
             showControls={false}
             showLiveBadge
             compact
+            startupDelayMs={startupDelayMs}
           />
 
           <div className="absolute left-3 top-3 z-10">

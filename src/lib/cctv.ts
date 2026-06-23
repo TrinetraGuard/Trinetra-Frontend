@@ -1,4 +1,5 @@
 import type { CCTV, StreamPlayback } from '@/types/cctv';
+import { enqueueCctvPlayback } from '@/lib/cctvPlaybackQueue';
 
 const RTSP_PROXY_DEV_PATH = '/cctv-proxy';
 
@@ -119,6 +120,32 @@ export function buildGo2RtcHlsUrl(rtspLink: string): string | null {
   return `${proxyBase}/api/stream.m3u8?src=${encodeURIComponent(rtspLink.trim())}`;
 }
 
+/** Stable go2rtc stream id — prefer NVR channel (c1…c8) over Firestore doc id. */
+export function getStableStreamId(camera: CCTV, source?: string): string {
+  const link = normalizeRtspUrl((source ?? camera.rtspLink).trim());
+  const channelMatch = link.match(/\/unicast\/c(\d+)\//i);
+  if (channelMatch) return `c${channelMatch[1]}`;
+
+  if (camera.id?.startsWith('default-c')) {
+    return camera.id.replace('default-', '');
+  }
+  if (camera.id) return camera.id;
+
+  return `stream-${link.slice(-16)}`;
+}
+
+/** Channel number for sort order (1–8), or 999 if unknown. */
+export function getCameraChannelOrder(camera: CCTV): number {
+  const match = normalizeRtspUrl(camera.rtspLink).match(/\/unicast\/c(\d+)\//i);
+  return match ? Number.parseInt(match[1], 10) : 999;
+}
+
+export function sortCamerasByChannel(cameras: CCTV[]): CCTV[] {
+  return [...cameras].sort(
+    (a, b) => getCameraChannelOrder(a) - getCameraChannelOrder(b)
+  );
+}
+
 export function getStreamPlaybackUrl(camera: CCTV): StreamPlayback | null {
   const source = camera.rtspLink.trim();
 
@@ -137,6 +164,27 @@ export function getStreamPlaybackUrl(camera: CCTV): StreamPlayback | null {
   return null;
 }
 
+/** Rewrites backend proxy URLs to match the configured API host (avoids 127.0.0.1 vs localhost mismatches). */
+export function normalizePlaybackUrl(url: string): string {
+  const apiBase = getTrinetraApiBase();
+  if (!apiBase || !url) return url;
+
+  try {
+    const playback = new URL(url);
+    const match = playback.pathname.match(/\/api\/v1\/cctv\/proxy\/.*$/);
+    if (!match) return url;
+
+    if (apiBase.startsWith('/')) {
+      return `${match[0]}${playback.search}`;
+    }
+
+    const apiRoot = new URL(apiBase.endsWith('/api') ? apiBase : `${apiBase}/api`);
+    return `${apiRoot.origin}${match[0]}${playback.search}`;
+  } catch {
+    return url;
+  }
+}
+
 /** Resolves playback URL via backend (registers RTSP streams with go2rtc). */
 export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlayback | null> {
   const source = normalizeRtspUrl(camera.rtspLink.trim());
@@ -149,14 +197,15 @@ export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlaybac
   if (!apiBase) return null;
 
   const params = new URLSearchParams({ src: source });
-  const streamId = camera.id ?? `cam-${source.slice(-12)}`;
-  params.set('camera_id', streamId);
+  params.set('camera_id', getStableStreamId(camera, source));
 
   try {
-    const response = await fetchWithTimeout(
-      `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
-      { method: 'GET' },
-      45000
+    const response = await enqueueCctvPlayback(() =>
+      fetchWithTimeout(
+        `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
+        { method: 'GET' },
+        45000
+      )
     );
     if (!response.ok) {
       const err = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -165,7 +214,7 @@ export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlaybac
     }
     const data = (await response.json()) as StreamPlayback;
     if (!data.url || !data.type) return null;
-    return data;
+    return { ...data, url: normalizePlaybackUrl(data.url) };
   } catch (error) {
     console.error('[cctv] playback request failed:', error);
     return null;
