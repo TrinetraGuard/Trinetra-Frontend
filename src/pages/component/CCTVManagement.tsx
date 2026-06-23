@@ -30,6 +30,7 @@ import { CCTVStreamPlayer } from '@/components/cctvcrowd/CCTVStreamPlayer';
 import { CctvStreamRelayBanner } from '@/components/cctvcrowd/CctvStreamRelayBanner';
 import { checkRTSPStatus } from '@/lib/cctvApi';
 import {
+  dedupeCamerasByChannel,
   formatCctvTimestamp,
   getCameraChannelOrder,
   isValidStreamUrl,
@@ -54,7 +55,10 @@ const CCTVManagement = () => {
   const [refreshingAll, setRefreshingAll] = useState(false);
   const initialStatusCheckDone = useRef(false);
 
-  const orderedCameras = useMemo(() => sortCamerasByChannel(cameras), [cameras]);
+  const orderedCameras = useMemo(
+    () => dedupeCamerasByChannel(sortCamerasByChannel(cameras)),
+    [cameras]
+  );
   const liveCount = orderedCameras.filter((camera) => camera.status === 'active').length;
   const offlineCount = orderedCameras.length - liveCount;
 

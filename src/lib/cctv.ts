@@ -146,6 +146,44 @@ export function sortCamerasByChannel(cameras: CCTV[]): CCTV[] {
   );
 }
 
+function toDate(value: CCTV['lastStatusCheck'] | CCTV['updatedAt']): Date | null {
+  if (!value) return null;
+  if (typeof value === 'object' && 'toDate' in value) return value.toDate();
+  return new Date(value as Date);
+}
+
+function cameraRecencyScore(camera: CCTV): number {
+  let score = 0;
+  if (camera.status === 'active') score += 1_000_000;
+  const lastCheck = toDate(camera.lastStatusCheck);
+  if (lastCheck) score += lastCheck.getTime();
+  const updated = toDate(camera.updatedAt);
+  if (updated) score += updated.getTime() / 1000;
+  return score;
+}
+
+/** Stable key for deduplicating site NVR cameras (one row per channel). */
+export function getCameraDedupeKey(camera: CCTV): string {
+  const channel = getCameraChannelOrder(camera);
+  if (channel < 999) return `channel:c${channel}`;
+  return `url:${normalizeRtspUrl(camera.rtspLink)}`;
+}
+
+/** Keeps the best Firestore record when the same NVR channel was imported twice. */
+export function dedupeCamerasByChannel(cameras: CCTV[]): CCTV[] {
+  const bestByKey = new Map<string, CCTV>();
+
+  for (const camera of cameras) {
+    const key = getCameraDedupeKey(camera);
+    const existing = bestByKey.get(key);
+    if (!existing || cameraRecencyScore(camera) > cameraRecencyScore(existing)) {
+      bestByKey.set(key, camera);
+    }
+  }
+
+  return sortCamerasByChannel([...bestByKey.values()]);
+}
+
 export function getStreamPlaybackUrl(camera: CCTV): StreamPlayback | null {
   const source = camera.rtspLink.trim();
 
