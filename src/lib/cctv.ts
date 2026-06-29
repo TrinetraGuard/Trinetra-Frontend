@@ -95,18 +95,13 @@ export function getTrinetraApiBase(): string | null {
 }
 
 /**
- * Base URL for RTSP→HLS relay traffic.
- * Prefers Trinetra backend proxy, then direct go2rtc, then dev vite proxy.
+ * Base URL for RTSP→HLS relay traffic (go2rtc).
+ * go2rtc is optional — the AI backend handles all analytics without it.
  */
 export function getCctvProxyBase(): string | null {
   const directRelay = (import.meta.env.VITE_CCTV_PROXY_URL as string | undefined)?.trim();
   if (directRelay) return directRelay.replace(/\/$/, '');
-
-  const apiBase = getTrinetraApiBase();
-  if (apiBase) return `${apiBase}/v1/cctv/proxy`;
-
-  if (import.meta.env.DEV) return RTSP_PROXY_DEV_PATH;
-
+  // Do NOT fall back to Go backend or dev proxy — go2rtc is no longer required.
   return null;
 }
 
@@ -261,59 +256,59 @@ export interface CctvNvrHealth {
   message?: string;
 }
 
+/**
+ * Check Trinetra AI backend health.
+ * Replaces go2rtc relay check — all camera status now comes from the Python backend.
+ */
 export async function fetchCctvRelayHealth(): Promise<CctvRelayHealth> {
-  const apiBase = getTrinetraApiBase();
-  if (apiBase) {
-    try {
-      const response = await fetchWithTimeout(`${apiBase}/v1/cctv/relay/health`, { method: 'GET' }, 4000);
-      if (response.ok) {
-        return (await response.json()) as CctvRelayHealth;
-      }
-    } catch {
-      // Fall through to direct relay probe.
-    }
-  }
-
-  const proxyBase = getCctvProxyBase();
-  if (!proxyBase) {
-    return { online: false, message: 'Stream relay is not configured' };
-  }
-
   try {
-    const response = await fetchWithTimeout(`${proxyBase}/api/config`, { method: 'GET' }, 4000);
-    return response.ok
-      ? { online: true, message: 'Stream relay online' }
-      : { online: false, message: 'Stream relay returned an error' };
+    const response = await fetchWithTimeout('/trinetra-api/api/v1/health', { method: 'GET' }, 5000);
+    if (response.ok) {
+      const data = (await response.json()) as { status: string; cameras_live: number; cameras_total: number };
+      if (data.status === 'ok') {
+        return {
+          online: true,
+          message: `AI Backend online · ${data.cameras_live}/${data.cameras_total} cameras live`,
+        };
+      }
+    }
+    return { online: false, message: 'AI Backend returned an error' };
   } catch {
-    return { online: false, message: 'Stream relay unreachable' };
+    return { online: false, message: 'AI Backend unreachable — start Trinetra-backend' };
   }
 }
 
+/**
+ * Check NVR / camera reachability via AI backend camera status endpoint.
+ * Replaces Go backend NVR health check.
+ */
 export async function probeCctvNvr(rtspSource: string): Promise<CctvNvrHealth> {
   const source = normalizeRtspUrl(rtspSource.trim());
-  if (!isValidRtspUrl(source)) {
-    return { online: false, message: 'Invalid RTSP URL' };
-  }
+  const channelMatch = /\/unicast\/c(\d+)\//i.exec(source);
+  const cameraId = channelMatch ? `default-c${channelMatch[1]}` : null;
 
-  const apiBase = getTrinetraApiBase();
-  if (!apiBase) {
-    return { online: false, message: 'Backend required to probe NVR reachability' };
+  if (!cameraId) {
+    return { online: false, message: 'Could not determine camera ID from RTSP URL' };
   }
 
   try {
-    const params = new URLSearchParams({ src: source });
     const response = await fetchWithTimeout(
-      `${apiBase}/v1/cctv/nvr/health?${params.toString()}`,
+      `/trinetra-api/api/v1/cameras/${encodeURIComponent(cameraId)}/status`,
       { method: 'GET' },
-      30000
+      5000
     );
     if (response.ok) {
-      return (await response.json()) as CctvNvrHealth;
+      const data = (await response.json()) as { online: boolean; people_count?: number };
+      return {
+        online: data.online,
+        message: data.online
+          ? `Camera active · ${data.people_count ?? 0} people detected`
+          : 'Camera inactive in AI backend',
+      };
     }
-    const err = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { online: false, message: err?.error ?? 'NVR health check failed' };
+    return { online: false, message: 'Camera status unavailable' };
   } catch {
-    return { online: false, message: 'Could not reach backend for NVR health check' };
+    return { online: false, message: 'AI Backend unreachable' };
   }
 }
 

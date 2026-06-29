@@ -44,10 +44,12 @@ import { admin } from '@/lib/adminTheme';
 import { db } from '../../firebase/firebase';
 import { importSiteCameras, useCctvCameras } from '@/hooks/useCctvCameras';
 import { useStreamInfrastructure } from '@/hooks/useStreamInfrastructure';
+import { useTrinetraAnalytics } from '@/hooks/useTrinetraAnalytics';
 
 const CCTVManagement = () => {
   const { cameras, loading } = useCctvCameras();
-  const { relay, nvr, checking: infraChecking } = useStreamInfrastructure(cameras);
+  const { relay, nvr, aiBackend, checking: infraChecking } = useStreamInfrastructure(cameras);
+  const { cameras: aiCameraData, summary: aiSummary } = useTrinetraAnalytics();
   const [isAdding, setIsAdding] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
@@ -62,7 +64,23 @@ const CCTVManagement = () => {
     () => dedupeCamerasByChannel(sortCamerasByChannel(cameras)),
     [cameras]
   );
-  const liveCount = orderedCameras.filter((camera) => camera.status === 'active').length;
+
+  // Build AI status map by camera name (simulation gives real live status)
+  const aiStatusMap = useMemo(() => {
+    const m = new Map<string, boolean>();
+    for (const cam of aiCameraData) {
+      m.set(cam.place_name.toLowerCase(), cam.is_active);
+    }
+    return m;
+  }, [aiCameraData]);
+
+  const isCameraLive = (camera: CCTV): boolean => {
+    const aiStatus = aiStatusMap.get(camera.placeName?.toLowerCase() ?? '');
+    if (aiStatus !== undefined) return aiStatus;
+    return camera.status === 'active';
+  };
+
+  const liveCount = aiSummary?.active_cameras ?? orderedCameras.filter(isCameraLive).length;
   const offlineCount = orderedCameras.length - liveCount;
 
   const [formData, setFormData] = useState<Omit<CCTV, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'lastStatusCheck'>>({
@@ -310,7 +328,7 @@ const CCTVManagement = () => {
         </div>
       )}
 
-      <CctvStreamRelayBanner relay={relay} nvr={nvr} checking={infraChecking} />
+      <CctvStreamRelayBanner relay={relay} nvr={nvr} aiBackend={aiBackend} checking={infraChecking} />
 
       {(isAdding || editingId) && (
         <Card className={admin.card}>
@@ -477,7 +495,7 @@ const CCTVManagement = () => {
                 <TableBody>
                   {orderedCameras.map((camera) => {
                     const channel = getCameraChannelOrder(camera);
-                    const isLive = camera.status === 'active';
+                    const isLive = isCameraLive(camera);
                     const isChecking = camera.id ? checkingStatus.has(camera.id) : false;
 
                     return (

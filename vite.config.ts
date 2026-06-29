@@ -17,6 +17,7 @@ export default defineConfig({
       port: 3000,
     },
     proxy: {
+      // Go backend (railway, video-upload, legacy CCTV relay)
       "/api": {
         target: "http://127.0.0.1:8081",
         changeOrigin: true,
@@ -29,6 +30,14 @@ export default defineConfig({
           });
         },
       },
+      // Trinetra Python AI Backend (crowd analytics, lost & found, YOLO)
+      "/trinetra-api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/trinetra-api/, ""),
+        ws: true,
+      },
+      // go2rtc RTSP → HLS relay
       "/cctv-proxy": {
         target: "http://127.0.0.1:1984",
         changeOrigin: true,

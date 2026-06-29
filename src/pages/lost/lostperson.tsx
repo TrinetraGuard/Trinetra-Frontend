@@ -34,6 +34,20 @@ import {
   where,
 } from "firebase/firestore";
 import { Eye, Loader2, MapPin, Send, Trash2, Users } from "lucide-react";
+import { AiFaceSearch } from "@/components/cctvcrowd/AiFaceSearch";
+
+// Thin wrapper so we can use it without crashing if backend is down
+const AiFaceSearchSection = () => {
+  try {
+    return (
+      <div className="rounded-xl border bg-white shadow p-6">
+        <AiFaceSearch />
+      </div>
+    );
+  } catch {
+    return null;
+  }
+};
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -318,8 +332,11 @@ const LostpersonAdmin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Lost Person Reports</h1>
+    <div className="min-h-screen bg-gray-50 p-6 space-y-8">
+      <h1 className="text-2xl font-bold text-gray-800">Lost Person Reports</h1>
+
+      {/* ── AI Face Search (Trinetra AI backend) ── */}
+      <AiFaceSearchSection />
 
       <div className="overflow-x-auto rounded-xl border bg-white shadow">
         <Table>

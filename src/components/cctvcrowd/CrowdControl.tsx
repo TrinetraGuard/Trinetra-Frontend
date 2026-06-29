@@ -1,4 +1,4 @@
-import { Activity, Camera, Grid, LayoutGrid, List, MapPin, Monitor, RefreshCw, Wifi, WifiOff, X } from 'lucide-react';
+import { Activity, Brain, Camera, Grid, LayoutGrid, List, MapPin, Monitor, RefreshCw, Users, Wifi, WifiOff, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useState } from 'react';
 
@@ -13,26 +13,46 @@ import { formatCctvTimestamp, getCameraChannelOrder, sortCamerasByChannel } from
 import type { CCTV } from '@/types/cctv';
 import { useCctvCameras } from '@/hooks/useCctvCameras';
 import { useStreamInfrastructure } from '@/hooks/useStreamInfrastructure';
+import { useTrinetraAnalytics } from '@/hooks/useTrinetraAnalytics';
+import type { LiveCameraAnalytics } from '@/lib/trinetraApi';
 
 type ViewMode = 'grid' | 'list' | 'wall';
 
 const CrowdControl = () => {
   const { cameras, loading } = useCctvCameras();
-  const { relay, nvr, checking: infraChecking, streamsEnabled } = useStreamInfrastructure(cameras);
+  const { relay, nvr, aiBackend, checking: infraChecking, streamsEnabled } = useStreamInfrastructure(cameras);
+  const { cameras: aiCameraData, summary: aiSummary } = useTrinetraAnalytics();
   const [selectedCamera, setSelectedCamera] = useState<CCTV | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('wall');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
 
+  // Map AI analytics by place name for fast lookup
+  const analyticsMap = new Map<string, LiveCameraAnalytics>();
+  for (const cam of aiCameraData) {
+    analyticsMap.set(cam.place_name.toLowerCase(), cam);
+    analyticsMap.set(cam.camera_id, cam);
+  }
+
+  const getAnalytics = (camera: CCTV): LiveCameraAnalytics | undefined =>
+    analyticsMap.get(camera.placeName?.toLowerCase() ?? '') ??
+    analyticsMap.get(camera.id ?? '');
+
+  // Use AI backend counts when available
+  const aiActiveCameras = aiBackend.online ? aiBackend.cameras_live : 0;
+  const activeCameras = aiActiveCameras > 0
+    ? aiActiveCameras
+    : cameras.filter((camera) => camera.status === 'active').length;
+  const inactiveCameras = cameras.length - activeCameras;
+
   const filteredCameras = sortCamerasByChannel(
     cameras.filter((camera) => {
-      if (filterStatus === 'active') return camera.status === 'active';
-      if (filterStatus === 'inactive') return camera.status === 'inactive';
+      const analytics = getAnalytics(camera);
+      const isActive = analytics?.is_active ?? camera.status === 'active';
+      if (filterStatus === 'active') return isActive;
+      if (filterStatus === 'inactive') return !isActive;
       return true;
     })
   );
-
-  const activeCameras = cameras.filter((camera) => camera.status === 'active').length;
-  const inactiveCameras = cameras.filter((camera) => camera.status === 'inactive').length;
 
   if (loading) {
     return (
@@ -63,18 +83,24 @@ const CrowdControl = () => {
           <Card className={`${admin.statCard} shadow-sm`}>
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-gray-800" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                 <div>
                   <p className="text-xs font-medium text-gray-600">Active Cameras</p>
                   <p className="text-xl font-bold text-gray-900">{activeCameras}</p>
                 </div>
+                {aiBackend.online && (
+                  <Brain className="ml-1 h-4 w-4 text-blue-400" title="Powered by Trinetra AI Backend" />
+                )}
               </div>
             </CardContent>
           </Card>
-          <Card className="border-gray-200 bg-gray-50">
+          <Card className={inactiveCameras === 0 ? 'border-emerald-200 bg-emerald-50' : 'border-gray-200 bg-gray-50'}>
             <CardContent className="p-3">
               <div className="flex items-center gap-2">
-                <WifiOff className="h-4 w-4 text-gray-600" />
+                {inactiveCameras === 0
+                  ? <Wifi className="h-4 w-4 text-emerald-600" />
+                  : <WifiOff className="h-4 w-4 text-gray-600" />
+                }
                 <div>
                   <p className="text-xs font-medium text-gray-600">Offline Cameras</p>
                   <p className="text-xl font-bold text-gray-700">{inactiveCameras}</p>
@@ -82,10 +108,23 @@ const CrowdControl = () => {
               </div>
             </CardContent>
           </Card>
+          {aiSummary.total_people > 0 && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-600" />
+                  <div>
+                    <p className="text-xs font-medium text-blue-600">People on site</p>
+                    <p className="text-xl font-bold text-blue-900">{aiSummary.total_people}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
-      <CctvStreamRelayBanner relay={relay} nvr={nvr} checking={infraChecking} />
+      <CctvStreamRelayBanner relay={relay} nvr={nvr} aiBackend={aiBackend} checking={infraChecking} />
 
       <Card className="border-gray-200 shadow-sm">
         <CardHeader className="pb-3">
@@ -185,13 +224,14 @@ const CrowdControl = () => {
         <Card>
           <CardHeader>
             <CardTitle>Live Monitor Wall</CardTitle>
-            <CardDescription>All active camera feeds in a single operations view</CardDescription>
+            <CardDescription>Live AI analytics from all cameras — YOLO crowd detection active</CardDescription>
           </CardHeader>
           <CardContent>
             <CameraMonitorWall
               cameras={filteredCameras}
               streamsEnabled={streamsEnabled}
               nvrMessage={nvr.message}
+              analyticsMap={analyticsMap}
               onSelectCamera={(camera) => setSelectedCamera(camera)}
             />
           </CardContent>
@@ -207,6 +247,7 @@ const CrowdControl = () => {
               startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
               streamsEnabled={streamsEnabled}
               nvrMessage={nvr.message}
+              analyticsData={getAnalytics(camera)}
             />
           ))}
         </div>
@@ -221,6 +262,7 @@ const CrowdControl = () => {
               startupDelayMs={(getCameraChannelOrder(camera) - 1) * 400}
               streamsEnabled={streamsEnabled}
               nvrMessage={nvr.message}
+              analyticsData={getAnalytics(camera)}
             />
           ))}
         </div>
@@ -295,13 +337,46 @@ const CrowdControl = () => {
                     showControls
                     showLiveBadge
                   />
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-center text-white">
-                    <WifiOff className="h-12 w-12 text-red-400" />
-                    <p className="font-semibold">Live feed unavailable</p>
-                    <p className="max-w-md text-sm text-gray-400">{nvr.message}</p>
-                  </div>
-                )}
+                ) : (() => {
+                  const analytics = getAnalytics(selectedCamera);
+                  return analytics ? (
+                    <div className="flex h-full flex-col items-center justify-center gap-6 bg-gray-950 px-8 text-white">
+                      <div className="flex items-center gap-2">
+                        <Brain className="h-6 w-6 text-blue-400" />
+                        <span className="text-lg font-semibold text-blue-300">Live AI Analytics</span>
+                        <span className="flex items-center gap-1 text-xs text-emerald-400">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                          LIVE
+                        </span>
+                      </div>
+                      <div className="flex gap-12 text-center">
+                        <div>
+                          <p className="text-5xl font-bold">{analytics.people_count}</p>
+                          <p className="mt-1 text-sm text-gray-400 flex items-center justify-center gap-1">
+                            <Users className="h-4 w-4" /> People detected
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-5xl font-bold">{analytics.density_percentage.toFixed(0)}%</p>
+                          <p className="mt-1 text-sm text-gray-400">Capacity used</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold capitalize">{analytics.density_level}</p>
+                          <p className="mt-1 text-sm text-gray-400">Density level</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Live video requires go2rtc on port 1984 · AI analytics running via Python backend
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-3 bg-gray-900 px-6 text-center text-white">
+                      <WifiOff className="h-12 w-12 text-gray-500" />
+                      <p className="font-semibold">Live feed unavailable</p>
+                      <p className="max-w-md text-sm text-gray-400">Start go2rtc relay for live video</p>
+                    </div>
+                  );
+                })()}
               </div>
               {selectedCamera.lastStatusCheck && (
                 <div className="flex items-center gap-2 border-t border-gray-800 px-4 py-3 text-xs text-gray-400">
