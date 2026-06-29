@@ -69,9 +69,8 @@ export function useStreamInfrastructure(cameras: CCTV[]) {
 
   const state: InfraState = checking ? 'checking' : relay.online ? 'ready' : 'degraded';
 
-  // streamsEnabled = false always: go2rtc is removed, video needs the relay.
-  // AI analytics still works via aiBackend.online.
-  const streamsEnabled = false;
+  // streamsEnabled = true when AI backend is online: FFmpeg HLS streamer handles live video.
+  const streamsEnabled = relay.online;
 
   return { relay, nvr, aiBackend, checking, state, streamsEnabled, sampleRtsp };
 }

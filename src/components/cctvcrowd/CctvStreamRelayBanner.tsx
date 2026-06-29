@@ -1,7 +1,8 @@
-import { Activity, AlertCircle, Brain, CheckCircle2, Loader2, Server } from 'lucide-react';
+import { Activity, AlertCircle, Brain, CheckCircle2, Loader2, Server, Video } from 'lucide-react';
 import type { CctvNvrHealth, CctvRelayHealth } from '@/lib/cctv';
 
 import type { AiBackendHealth } from '@/hooks/useStreamInfrastructure';
+import { useHlsStreamStatus } from '@/hooks/useHlsStreamStatus';
 import { admin } from '@/lib/adminTheme';
 
 interface CctvStreamRelayBannerProps {
@@ -16,6 +17,8 @@ export function CctvStreamRelayBanner({
   nvr,
   checking = false,
 }: CctvStreamRelayBannerProps) {
+  const { readyChannels, anyReady, checked } = useHlsStreamStatus();
+
   if (checking) {
     return (
       <div className={`${admin.warning} flex items-center gap-2`}>
@@ -25,38 +28,53 @@ export function CctvStreamRelayBanner({
     );
   }
 
-  // ── AI backend + cameras fully online ─────────────────────────────────
-  if (relay.online && nvr.online) {
-    return (
-      <div className={`${admin.success} flex items-center gap-3`}>
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-        <div className="flex-1">
-          <span className="font-semibold">Trinetra AI Backend online</span>
-          {' — '}
-          <span className="text-emerald-700">all 8 cameras active · YOLO detection running</span>
+  // ── AI backend online ────────────────────────────────────────────────────
+  if (relay.online || nvr.online) {
+    if (anyReady) {
+      // HLS streams running — full live mode
+      return (
+        <div className={`${admin.success} flex items-center gap-3`}>
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+          <div className="flex-1">
+            <span className="font-semibold">Live cameras active</span>
+            {' — '}
+            <span className="text-emerald-700">
+              {readyChannels.size}/8 streams live · YOLO analytics running
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            LIVE
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 text-xs text-emerald-600">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-          LIVE
-        </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // ── AI backend online but NVR probing in progress ─────────────────────
-  if (relay.online && !nvr.online) {
+    // Backend online, HLS not started yet
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
-        <Brain className="h-4 w-4 shrink-0 text-blue-500" />
-        <div>
-          <span className="font-semibold">Trinetra AI Backend online</span>
-          {' — '}
-          <span className="text-blue-700">probing camera status…</span>
-          {nvr.message && <span className="ml-1 text-xs text-blue-500">({nvr.message})</span>}
+      <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+        <div className="flex items-center gap-3">
+          <Brain className="h-4 w-4 shrink-0 text-blue-500" />
+          <div className="flex-1">
+            <span className="font-semibold">AI Backend online · analytics active</span>
+            {' — '}
+            <span className="text-blue-700">
+              Run the HLS streamer to enable live camera video
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-blue-500">
+            <Activity className="h-3.5 w-3.5" />
+            {checked ? 'waiting for streams' : 'checking…'}
+          </div>
         </div>
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-blue-500">
-          <Activity className="h-3.5 w-3.5" />
-          analytics running
+        <div className="flex items-start gap-2 pl-7 text-xs text-blue-800">
+          <Video className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-400" />
+          <div>
+            Open a new terminal and run:{' '}
+            <code className="rounded bg-blue-100 px-1.5 py-0.5 font-mono text-blue-900">
+              cd Trinetra-backend &amp;&amp; bash start-hls.sh
+            </code>
+          </div>
         </div>
       </div>
     );
@@ -72,8 +90,8 @@ export function CctvStreamRelayBanner({
           Start the backend to enable live analytics and camera status.
         </div>
       </div>
-      <div className="pl-6 space-y-1 text-sm">
-        <p className="font-mono rounded bg-gray-100 px-2 py-1 text-xs inline-block">
+      <div className="space-y-1 pl-6 text-sm">
+        <p className="inline-block rounded bg-gray-100 px-2 py-1 font-mono text-xs">
           cd Trinetra-backend &amp;&amp; .venv/bin/uvicorn app.main:app --port 8000 --reload
         </p>
       </div>

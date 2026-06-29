@@ -24,7 +24,7 @@ export function CameraFeedCard({
   onViewLive,
   variant = 'grid',
   startupDelayMs = 0,
-  streamsEnabled = true,
+  streamsEnabled = false,
   analyticsData,
 }: CameraFeedCardProps) {
   if (variant === 'list') {

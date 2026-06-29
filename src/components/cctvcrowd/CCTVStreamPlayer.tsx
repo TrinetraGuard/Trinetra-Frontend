@@ -230,9 +230,9 @@ export function CCTVStreamPlayer({
 
     const timeoutId = window.setTimeout(() => {
       handleFailure(
-        'Connection timed out. Restart go2rtc with PREFER_BINARY=1 ./scripts/start-cctv-relay.sh and confirm ffplay can open the same RTSP URL on this Mac.'
+        'Connection timed out. Make sure the Trinetra AI backend is running and the camera RTSP URL is reachable from this machine.'
       );
-    }, 90000);
+    }, 30000);
 
     return () => window.clearTimeout(timeoutId);
   }, [state, handleFailure, retryKey]);

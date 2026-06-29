@@ -317,46 +317,55 @@ export type StreamPlaybackResult = {
   errorMessage?: string;
 };
 
-/** Resolves playback URL via backend (registers RTSP streams with go2rtc). */
+/**
+ * Resolves HLS playback URL via the Trinetra AI backend's FFmpeg HLS streamer.
+ * The backend converts each RTSP stream to HLS using ffmpeg subprocesses.
+ */
 export async function resolveStreamPlayback(camera: CCTV): Promise<StreamPlaybackResult> {
   const source = normalizeRtspUrl(camera.rtspLink.trim());
   if (!source) return { playback: null, errorMessage: 'Missing stream URL' };
 
+  // Prefer direct web-playable URLs (HTTP HLS/MP4)
   const direct = getStreamPlaybackUrl({ ...camera, rtspLink: source });
   if (direct) return { playback: direct };
 
-  const apiBase = getTrinetraApiBase();
-  if (!apiBase) {
-    return {
-      playback: null,
-      errorMessage: 'Start the Trinetra backend and stream relay to play RTSP cameras in the browser.',
-    };
+  // Extract channel number from RTSP URL (e.g. /unicast/c3/s0/live → 3)
+  const channelMatch = /\/unicast\/c(\d+)\//i.exec(source);
+  if (!channelMatch) {
+    return { playback: null, errorMessage: 'Cannot determine camera channel from RTSP URL' };
   }
-
-  const params = new URLSearchParams({ src: source });
-  params.set('camera_id', getStableStreamId(camera, source));
+  const channel = channelMatch[1];
 
   try {
-    const response = await enqueueCctvPlayback(() =>
-      fetchWithTimeout(
-        `${apiBase}/v1/cctv/stream/playback?${params.toString()}`,
-        { method: 'GET' },
-        90000
-      )
+    // Check if this channel's HLS stream is ready
+    const statusRes = await fetchWithTimeout(
+      `/trinetra-api/api/v1/streams/${channel}/status`,
+      { method: 'GET' },
+      5000
     );
-    if (!response.ok) {
-      const err = (await response.json().catch(() => null)) as { error?: string } | null;
-      const message = err?.error ?? `Playback request failed (${response.status})`;
-      console.error('[cctv] playback failed:', message);
-      return { playback: null, errorMessage: message };
+
+    if (statusRes.ok) {
+      const status = (await statusRes.json()) as { ready: boolean; hls_url: string | null };
+      if (status.ready && status.hls_url) {
+        // Proxy through Vite /trinetra-api so CORS is handled correctly
+        const hlsUrl = `/trinetra-api${status.hls_url}`;
+        return { playback: { url: hlsUrl, type: 'hls' } };
+      }
+      // Stream not ready yet — still starting up
+      return {
+        playback: null,
+        errorMessage: `Camera ${channel} stream is starting up — please wait a few seconds and retry`,
+      };
     }
-    const data = (await response.json()) as StreamPlayback;
-    if (!data.url || !data.type) {
-      return { playback: null, errorMessage: 'Backend returned an invalid playback response' };
-    }
-    return { playback: { ...data, url: normalizePlaybackUrl(data.url) } };
-  } catch (error) {
-    console.error('[cctv] playback request failed:', error);
-    return { playback: null, errorMessage: 'Could not reach the Trinetra backend for stream playback' };
+
+    return {
+      playback: null,
+      errorMessage: 'AI backend stream endpoint not reachable',
+    };
+  } catch {
+    return {
+      playback: null,
+      errorMessage: 'Could not reach Trinetra AI backend — make sure it is running on port 8000',
+    };
   }
 }
